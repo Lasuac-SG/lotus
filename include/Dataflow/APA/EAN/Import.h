@@ -12,29 +12,21 @@
 //
 // Flattening is done on the *Ref tree* (PathExprFactory's Union/Concat are
 // binary, so `(a⊕b)⊕c` is literally `Union(Union(a,b),c)`), which is cleaner
-// than post-hoc flattening inside the e-graph and needs no e-graph state.
-//
-// M1 scope: only the universally-valid Kleene simplifications are applied
-// (drop 0/1, annihilation, dedup/idempotence, (A*)*=A*, 0*=1*=1). No law
-// profile and no exploratory rewrites yet.
+// than post-hoc flattening inside the e-graph and needs no e-graph state. The
+// per-node canonical form is then produced by the shared canon:: builders.
 
 #include <cstdint>
-#include <algorithm>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "Dataflow/APA/Core/PathExpr.h"
 #include "Dataflow/APA/EAN/AtomTable.h"
+#include "Dataflow/APA/EAN/Canonical.h" // Graph + canon::join/seq/star
 #include "Dataflow/APA/EAN/PathLang.h"
-#include "Solvers/EGraph/Analysis.h"
-#include "Solvers/EGraph/EGraph.h"
 
 namespace elimination {
 namespace ean {
-
-// The concrete e-graph type EAN builds. M1 needs no e-class analysis data.
-using Graph = ::lotus::egraph::EGraph<PathLang, ::lotus::egraph::NoAnalysis<PathLang>>;
 
 template <typename TransferT> struct ImportResult {
   Graph g;
@@ -65,33 +57,28 @@ public:
   }
 
 private:
-  Id zeroId() { return g.add(makeZero()); }
-  Id oneId() { return g.add(makeOne()); }
-
-  const PathLang &firstNode(Id c) { return g[c].nodes.front(); }
-
   Id importFresh(const Ref &e) {
     switch (e->K) {
     case Kind::Zero:
-      return zeroId();
+      return canon::zeroId(g);
     case Kind::One:
-      return oneId();
+      return canon::oneId(g);
     case Kind::Atom:
       return g.add(makeAtom(atoms.intern(e)));
     case Kind::Union: {
       std::vector<Id> members;
       collectJoin(e, members);
-      return buildJoin(std::move(members));
+      return canon::join(g, std::move(members));
     }
     case Kind::Concat: {
       std::vector<Id> members;
       collectSeq(e, members);
-      return buildSeq(std::move(members));
+      return canon::seq(g, std::move(members));
     }
     case Kind::Star:
-      return buildStar(importExpr(e->L));
+      return canon::star(g, importExpr(e->L));
     }
-    return zeroId(); // unreachable; silences -Wreturn-type
+    return canon::zeroId(g); // unreachable; silences -Wreturn-type
   }
 
   // Flatten nested Union at the Ref level; leaves (non-Union) get imported.
@@ -111,67 +98,6 @@ private:
     } else {
       out.push_back(importExpr(e));
     }
-  }
-
-  // JOIN-ACI: canonicalize to reps, drop 0, sort, dedup. Members are never
-  // themselves join nodes (join e-nodes are only minted here, and collectJoin
-  // only imports non-Union Refs), so no id-level join flattening is needed.
-  Id buildJoin(std::vector<Id> members) {
-    const Id zero = zeroId();
-    std::vector<Id> kept;
-    kept.reserve(members.size());
-    for (Id m : members) {
-      m = g.find(m);
-      if (m != zero) {
-        kept.push_back(m);
-      }
-    }
-    std::sort(kept.begin(), kept.end());
-    kept.erase(std::unique(kept.begin(), kept.end()), kept.end());
-    if (kept.empty()) {
-      return zero;
-    }
-    if (kept.size() == 1) {
-      return kept.front();
-    }
-    return g.add(makeJoin(std::move(kept)));
-  }
-
-  // SEQ: canonicalize, drop 1, annihilate on 0, keep order, no dedup.
-  Id buildSeq(std::vector<Id> members) {
-    const Id zero = zeroId();
-    const Id one = oneId();
-    std::vector<Id> kept;
-    kept.reserve(members.size());
-    for (Id m : members) {
-      m = g.find(m);
-      if (m == zero) {
-        return zero; // 0 · x = x · 0 = 0
-      }
-      if (m == one) {
-        continue; // 1 · x = x · 1 = x
-      }
-      kept.push_back(m);
-    }
-    if (kept.empty()) {
-      return one;
-    }
-    if (kept.size() == 1) {
-      return kept.front();
-    }
-    return g.add(makeSeq(std::move(kept)));
-  }
-
-  Id buildStar(Id sub) {
-    sub = g.find(sub);
-    const PathLang &n = firstNode(sub);
-    if (isStar(n)) {
-      return sub; // (A*)* = A*
-    }
-    if (isZero(n) || isOne(n)) {
-      return oneId(); // 0* = 1* = 1
-    }
-    return g.add(makeStar(sub));
   }
 
   std::unordered_map<const typename Factory::Expr *, Id> memo_;

@@ -8,4 +8,5 @@ add_lotus_test_suite(apa_tests
     InterSummaryTransferTest.cpp
     PathSummaryEquationSolverTest.cpp
     EAN/RoundtripTest.cpp
+    EAN/FactorizeTest.cpp
   LINK_LIBS APADataFlow LotusEGraph)
