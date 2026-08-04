@@ -69,6 +69,19 @@ public:
 
   static LawProfile none() { return LawProfile(); }
 
+  // The universally-safe minimal profile: LEFT distributivity only. Left
+  // factorization (a·b)⊕(a·c) = a·(b⊕c) holds unconditionally for the
+  // compositional MOP interpretation (the shared prefix is applied once, then
+  // the branches meet), so enabling EAN with this profile can never change any
+  // client's result — including non-distributive clients like constant
+  // propagation. Distributive clients may additionally enable RightDistributive
+  // and the star laws.
+  static LawProfile safeMinimal() {
+    LawProfile p;
+    p.enable(Law::LeftDistributive);
+    return p;
+  }
+
 private:
   static unsigned idx(Law l) { return static_cast<unsigned>(l); }
   std::uint32_t bits_ = 0;

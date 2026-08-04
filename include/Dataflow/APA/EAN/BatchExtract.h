@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "Dataflow/APA/EAN/Canonical.h"
+#include "Dataflow/APA/EAN/CostFn.h"
 #include "Dataflow/APA/EAN/CostModel.h"
 #include "Dataflow/APA/EAN/ExtractOptions.h"
 #include "Dataflow/APA/EAN/PathLang.h"

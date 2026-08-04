@@ -20,6 +20,7 @@
 #include "Dataflow/APA/Core/PathExpr.h"
 #include "Dataflow/APA/EAN/BatchExtract.h"
 #include "Dataflow/APA/EAN/Budget.h"
+#include "Dataflow/APA/EAN/CostFn.h"
 #include "Dataflow/APA/EAN/CostModel.h"
 #include "Dataflow/APA/EAN/Export.h"
 #include "Dataflow/APA/EAN/ExtractOptions.h"

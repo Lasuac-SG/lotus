@@ -5,6 +5,7 @@
 #include "Dataflow/APA/Core/PathExpr.h"
 #include "Dataflow/APA/Core/Problem.h"
 #include "Dataflow/APA/Core/Result.h"
+#include "Dataflow/APA/EAN/EAN.h"
 
 #include <algorithm>
 #include <cassert>
@@ -770,6 +771,37 @@ public:
     auto It = Index.find(N);
     assert(It != Index.end());
     return It->second;
+  }
+
+  // EAN post-optimization: replace each summary's path expression with a
+  // reuse-aware, cost-minimized equivalent (as a batch), then interpret the
+  // optimized forms. Runs only when Opts.EnableEAN. Results are preserved
+  // because EAN preserves semantics under the client's declared law profile
+  // (the default profile is universally safe); on any internal resource failure
+  // ean() falls back to the original batch (root preservation, I3).
+  void applyEAN() {
+    const result_t &ConstResults = Results;
+    std::vector<n_t> Ns;
+    std::vector<expr_ref_t> Roots;
+    for (const auto &N : Problem.nodes()) {
+      expr_ref_t E = ConstResults.ExprTo(N);
+      if (!E) {
+        continue; // node has no constructed summary
+      }
+      Ns.push_back(N);
+      Roots.push_back(std::move(E));
+    }
+    if (Roots.empty()) {
+      return;
+    }
+    auto Optimized =
+        ean::ean<transfer_t>(Roots, Opts.EANLaws, Opts.EANCost, Opts.EANBudget,
+                             Exprs, nullptr, Opts.EANExtract);
+    const auto Init = Problem.initialFact();
+    for (std::size_t i = 0; i < Ns.size(); ++i) {
+      Results.ExprTo(Ns[i]) = Optimized[i];
+      Results.IN(Ns[i]) = eval(Optimized[i], Init);
+    }
   }
 
   const ProblemTy &Problem;

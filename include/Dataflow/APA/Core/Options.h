@@ -3,6 +3,11 @@
 
 #include <cstddef>
 
+#include "Dataflow/APA/EAN/Budget.h"
+#include "Dataflow/APA/EAN/CostModel.h"
+#include "Dataflow/APA/EAN/ExtractOptions.h"
+#include "Dataflow/APA/EAN/LawProfile.h"
+
 namespace elimination {
 
 enum class EliminationMethod {
@@ -53,6 +58,18 @@ struct EliminationOptions final {
   // Reserved for future conditional collection. Diagnostics are currently
   // recorded unconditionally by the solver and attached to result metadata.
   bool RecordDiagnostics = true;
+
+  // EAN (Equality-saturation Algebraic Normalizer) post-optimization. When
+  // enabled, the solver runs EAN on the batch of path-expression summaries
+  // before interpreting them (see SolverContext::applyEAN). Default off, so the
+  // baseline "Default" configuration is unchanged. The default law profile is
+  // universally safe (left distributivity only); distributive clients may set a
+  // richer profile (RightDistributive/Sliding/...) per their algebra.
+  bool EnableEAN = false;
+  ean::LawProfile EANLaws = ean::LawProfile::safeMinimal();
+  ean::CostModel EANCost = ean::CostModel::uniform();
+  ean::Budget EANBudget = ean::Budget::unbounded();
+  ean::ExtractOptions EANExtract = {};
 };
 
 } // namespace elimination

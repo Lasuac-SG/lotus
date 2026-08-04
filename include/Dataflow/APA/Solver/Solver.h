@@ -34,6 +34,15 @@ public:
   // reducibility assumptions do not hold; in that case we transparently fall
   // back to the generic state-elimination engine.
   SolveStatus solve() {
+    SolveStatus S = solveImpl();
+    // Run EAN once after a successful solve, before results are read.
+    if (Opts.EnableEAN && S != SolveStatus::InvalidProblem) {
+      Ctx.applyEAN();
+    }
+    return S;
+  }
+
+  SolveStatus solveImpl() {
     UsedADT = false;
     LastStatus = SolveStatus::Ok;
     Ctx.Diagnostics = {};

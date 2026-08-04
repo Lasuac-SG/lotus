@@ -134,7 +134,11 @@ bool materializeStateResults(
     // Each remaining matrix entry summarizes all paths from entry to N.
     auto E = Ctx.Matrix[EntryIdx][j];
     Ctx.Results.ExprTo(N) = E;
-    Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    // Skip the interpretation when EAN will re-optimize and re-evaluate the
+    // whole batch afterwards (avoids a wasted eval and keeps timing clean).
+    if (!Ctx.Opts.EnableEAN) {
+      Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    }
   }
   return true;
 }
