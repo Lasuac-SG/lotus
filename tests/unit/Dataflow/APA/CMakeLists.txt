@@ -11,4 +11,5 @@ add_lotus_test_suite(apa_tests
     EAN/FactorizeTest.cpp
     EAN/SaturateTest.cpp
     EAN/BatchExtractTest.cpp
+    EAN/StarTest.cpp
   LINK_LIBS APADataFlow LotusEGraph)

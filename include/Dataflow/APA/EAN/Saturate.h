@@ -25,6 +25,7 @@
 #include "Dataflow/APA/EAN/Canonical.h"
 #include "Dataflow/APA/EAN/Factorize.h"
 #include "Dataflow/APA/EAN/LawProfile.h"
+#include "Dataflow/APA/EAN/Star.h"
 #include "Solvers/EGraph/Analysis.h"
 #include "Solvers/EGraph/Extract.h"
 
@@ -38,9 +39,10 @@ inline std::size_t applyPhaseRound(Phase p, Graph &g, const LawProfile &L) {
   switch (p) {
   case Phase::Factor:
     return factorizeRound(g, L);
+  case Phase::Star:
+    return slideRound(g, L);
   case Phase::Cleanup: // canonical laws enforced at construction (M1)
-  case Phase::Star:    // M5
-  case Phase::Explore: // M5
+  case Phase::Explore: // deferred
     return 0;
   }
   return 0;
