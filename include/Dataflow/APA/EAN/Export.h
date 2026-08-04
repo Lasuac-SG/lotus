@@ -3,17 +3,19 @@
 
 // Export: canonical e-graph  ->  PathExprFactory<TransferT>::Ref.
 //
-// M1 "tree" export: each e-class currently holds a single e-node (no rewrites
-// have run), so node selection is trivially `nodes.front()`. When reuse-aware
-// batch extraction lands (M4), only `pick()` below changes — it becomes a
-// cost-driven choice of the best e-node per class; the recursive rebuild and
-// the shared-node memo stay exactly as they are.
+// Node selection per e-class is the `pick` callback. It defaults to
+// `nodes.front()` (fine when a class has a single e-node, e.g. right after
+// import). Once saturation adds competing forms, the caller supplies a
+// cost-driven pick (e.g. egg Extractor::findBestNode) so export materializes
+// the cheapest representative. The recursive rebuild and the shared-node memo
+// are independent of the pick.
 //
 // Cross-root sharing is recovered automatically: `memo_` keyed by canonical Id
 // ensures each e-class is materialized once, and PathExprFactory's own
 // hash-consing (unite/concat/star caches) collapses structurally equal nodes.
 // Atoms are re-exported by reusing their original Ref verbatim (opaque to EAN).
 
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -25,6 +27,10 @@
 namespace elimination {
 namespace ean {
 
+// Chooses which e-node represents a class during export. Returns a reference
+// valid for the duration of the export call.
+using PickFn = std::function<const PathLang &(Id)>;
+
 namespace detail {
 
 template <typename TransferT> class Exporter {
@@ -32,8 +38,9 @@ public:
   using Factory = PathExprFactory<TransferT>;
   using Ref = typename Factory::Ref;
 
-  Exporter(const Graph &g, const AtomTable<TransferT> &atoms, Factory &f)
-      : g_(g), atoms_(atoms), f_(f) {}
+  Exporter(const Graph &g, const AtomTable<TransferT> &atoms, Factory &f,
+           PickFn pick = {})
+      : g_(g), atoms_(atoms), f_(f), pick_(std::move(pick)) {}
 
   Ref exportId(Id c) {
     c = g_.find(c);
@@ -47,8 +54,9 @@ public:
   }
 
 private:
-  // M1: single e-node per class. M4 replaces this with cost-based selection.
-  const PathLang &pick(Id c) { return g_[c].nodes.front(); }
+  const PathLang &pick(Id c) {
+    return pick_ ? pick_(c) : g_[c].nodes.front();
+  }
 
   Ref build(const PathLang &n) {
     if (isZero(n)) {
@@ -83,18 +91,19 @@ private:
   const Graph &g_;
   const AtomTable<TransferT> &atoms_;
   Factory &f_;
+  PickFn pick_;
   std::unordered_map<Id, Ref> memo_;
 };
 
 } // namespace detail
 
 // Export one e-class `root` back into factory `F`, returning an equivalent
-// path-expression Ref.
+// path-expression Ref. `pick` defaults to nodes.front().
 template <typename TransferT>
 typename PathExprFactory<TransferT>::Ref
 exportTree(const Graph &g, const AtomTable<TransferT> &atoms, Id root,
-           PathExprFactory<TransferT> &F) {
-  detail::Exporter<TransferT> exp(g, atoms, F);
+           PathExprFactory<TransferT> &F, PickFn pick = {}) {
+  detail::Exporter<TransferT> exp(g, atoms, F, std::move(pick));
   return exp.exportId(root);
 }
 
@@ -102,8 +111,9 @@ exportTree(const Graph &g, const AtomTable<TransferT> &atoms, Id root,
 // cross-root sharing within a single Exporter (one shared memo).
 template <typename TransferT>
 std::vector<typename PathExprFactory<TransferT>::Ref>
-exportBatch(const ImportResult<TransferT> &imp, PathExprFactory<TransferT> &F) {
-  detail::Exporter<TransferT> exp(imp.g, imp.atoms, F);
+exportBatch(const ImportResult<TransferT> &imp, PathExprFactory<TransferT> &F,
+            PickFn pick = {}) {
+  detail::Exporter<TransferT> exp(imp.g, imp.atoms, F, std::move(pick));
   std::vector<typename PathExprFactory<TransferT>::Ref> out;
   out.reserve(imp.roots.size());
   for (Id r : imp.roots) {

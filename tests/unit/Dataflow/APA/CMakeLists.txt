@@ -9,4 +9,6 @@ add_lotus_test_suite(apa_tests
     PathSummaryEquationSolverTest.cpp
     EAN/RoundtripTest.cpp
     EAN/FactorizeTest.cpp
+    EAN/SaturateTest.cpp
+    EAN/BatchExtractTest.cpp
   LINK_LIBS APADataFlow LotusEGraph)
