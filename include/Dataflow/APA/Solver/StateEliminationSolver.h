@@ -1,6 +1,7 @@
 #ifndef DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 #define DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 
+#include "Dataflow/APA/EAN/DagStats.h"
 #include "Dataflow/APA/Solver/EliminationOrder.h"
 #include "Dataflow/APA/Solver/SolverContext.h"
 
@@ -111,11 +112,34 @@ template <typename AnalysisDomainTy>
 void eliminateStateIntermediates(
     IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
   using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
+  using transfer_t = typename Context::transfer_t;
   const auto N = Ctx.Nodes.size();
   std::vector<typename Context::expr_ref_t> ColK(N);
   std::vector<typename Context::expr_ref_t> RowK(N);
 
+  // Opt-in RQ3 instrumentation: peak unique DAG nodes across the whole matrix.
+  const bool Measure = Ctx.Opts.MeasurePeakNodes;
+  auto measurePeak = [&]() {
+    if (!Measure) {
+      return;
+    }
+    std::vector<typename Context::expr_ref_t> Live;
+    Live.reserve(N * N);
+    for (std::size_t i = 0; i < N; ++i) {
+      for (std::size_t j = 0; j < N; ++j) {
+        if (!Context::expr_factory_t::isZero(Ctx.Matrix[i][j])) {
+          Live.push_back(Ctx.Matrix[i][j]);
+        }
+      }
+    }
+    const std::size_t nodes = ean::computeDagStats<transfer_t>(Live).uniqueNodes;
+    if (nodes > Ctx.Diagnostics.peak_matrix_nodes) {
+      Ctx.Diagnostics.peak_matrix_nodes = nodes;
+    }
+  };
+
   const auto Order = getStateEliminationOrder(Ctx);
+  measurePeak(); // initial (direct-edge) matrix
   for (std::size_t ki = 0; ki < N; ++ki) {
     const std::size_t k = Order[ki];
     // Snapshot row/column k before mutating the matrix. This mirrors the
@@ -142,6 +166,7 @@ void eliminateStateIntermediates(
         Ctx.Matrix[i][j] = Ctx.Exprs.unite(Ctx.Matrix[i][j], Via);
       }
     }
+    measurePeak(); // after eliminating k
   }
 }
 

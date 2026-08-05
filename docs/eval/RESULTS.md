@@ -70,17 +70,36 @@
 
 可写入正文：随预算增大，抽取节点数持续下降到第 6 轮后**平台化（125）**，而峰值 e-nodes 单调升到 333——即"**收益递减的膝点同时伴随瞬时内存增长**，这正是默认预算的动机"。NestedTrie(7) 同形：316→253（7 轮），peak→733。
 
+### 6. RQ3 互补性（Order 2×2）→ `table6_order_rows.csv` / `rq3_peak.csv` / `rq3_complementarity.csv`
+方法：合成 CFG 语料（Hub/Dense/DiamondChain/NestedLoop/Random，33 subject）过**真实求解器**，分布式 ReachDomain，4 配置 {Default,Order}×{no-EAN,EAN}。**parity 358/358 逐点相等**（枢轴序 + EAN 保结果）。
+
+**Table VI 的 Order / EAN(CFG语料) / Order+EAN 三行**（几何均值 vs Default）：
+
+| Config | Unique nodes | DAG edges | Tree size | Sequence | Stars | Sharing→ |
+|---|---|---|---|---|---|---|
+| Order | 0.874 | 0.859 | 0.520 | 0.893 | 0.640 | 49.1→15.1 |
+| EAN | 0.884 | 0.823 | 0.654 | 0.784 | 1.00 | 49.1→38.7 |
+| **Order+EAN** | **0.739** | **0.671** | **0.374** | **0.637** | 0.640 | 49.1→14.5 |
+
+**RQ3 正文（核心）**：
+- **Order+EAN (0.739) 优于单独 Order (0.874) 与 EAN (0.884)** → 互补；`orderEAN_vs_order_final=0.846`（Order 之上 EAN 再降 15%）。
+- **Spearman ρ(ordering 收益, EAN 收益) = −0.221** → 两者作用在不同 subject 上（负相关=互补，非冗余）。可直接填"the two gains have Spearman ρ=[−0.22]"。
+- **peak construction nodes 降幅**（`rq3_peak.csv`，Order vs Default）：**NestedLoop 0.385×**、**Random 0.720×**（基线序糟糕的环状/不规则图 ordering 主导）；Hub/Dense/DiamondChain=1.00（前馈 hub 的 entry-first 基线已够好、完全图已饱和）。印证"ordering dominates on dense/hub/irregular where Eq.1 product drives the peak"，且节点峰值比 peakFill 边代理更能体现膨胀（NestedLoop 节点 0.385 vs 边 9.5→8）。
+- Order 单独把 final nodes 只降到 0.874（"reduces final nodes by only a little"），大头留给 EAN——与论文分工叙事一致。
+
 ---
 
 ## 尚不能填（需后续里程碑，**未伪造**）
 
 | 论文位置 | 缺什么 | 阻塞于 |
 |---|---|---|
-| Table VI 的 Greedy/Order/Order+EAN 行 | 这两个配置 | 造 **Greedy** 一遍化简器 + **Order** 代价感知消除次序 |
+| Table VI 的 **Greedy** 行 | Greedy 配置 | 造 **Greedy** 一遍化简器 |
 | Table VII 全表（RQ2 计时）| Generation/Normalization/Interpretation/End-to-end/RSS | 需**真实 client + LLVM 语料**；合成计时无代表性 |
-| RQ3 全部（Order 2×2 互补性、Spearman）| Order 配置 | 同上 + Order |
 | Table IV 真实 LLVM 两族 | 真实 bitcode 语料 | `-elim-ean` pass 开关 + 各 `runIntraElim*` 入口按 client 配档案 |
+| Table VII 的 Order/Order+EAN 计时行 | 真实计时 | 同 RQ2 |
 | Table VIII 的 guarded-expansion / phase-schedule 行 | 这两个机制 | Explore 阶段与可切换调度（当前推后）|
+
+> **已解锁（本轮 M-Order + RQ3 harness）**：Table VI 的 Order/Order+EAN 行、RQ3 全部结构化指标（peak 构造节点、final 降幅、Spearman 互补性）。
 
 ---
 
@@ -88,7 +107,10 @@
 | 文件 | 对应论文 |
 |---|---|
 | `table4_corpus.csv` | Table IV（Synthetic 行 + 各族明细）|
-| `table6_ir_quality.csv` | Table VI（EAN 行已填，其余 TBD）|
+| `table6_ir_quality.csv` | Table VI（EAN 行，手搓 path-expr 语料）|
+| `table6_order_rows.csv` | **Table VI 的 Order / EAN(CFG) / Order+EAN 行** |
 | `rq1_correctness.csv` | RQ1 正文计数 + Answer to RQ1 |
+| `rq3_peak.csv` | **RQ3 peak 构造节点（Order vs Default，按族）** |
+| `rq3_complementarity.csv` | **RQ3 Spearman + Order+EAN headline 比值** |
 | `table8_ablation.csv` | Table VIII（已实现机制的行）|
 | `rq4_budget.csv` | RQ4 预算扫描 / 膝点 |

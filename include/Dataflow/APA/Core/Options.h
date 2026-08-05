@@ -61,6 +61,11 @@ struct SolveDiagnostics final {
   FallbackReason fallback_reason = FallbackReason::None;
   std::size_t star_iterations_total = 0;
   bool max_star_hit = false;
+  // Peak unique path-expression DAG nodes reachable from the WHOLE elimination
+  // matrix at any point during construction (state elimination only). Populated
+  // only when EliminationOptions::MeasurePeakNodes is set; 0 otherwise. This is
+  // the paper's RQ3 "peak construction nodes" metric.
+  std::size_t peak_matrix_nodes = 0;
 };
 
 struct EliminationOptions final {
@@ -74,6 +79,12 @@ struct EliminationOptions final {
   // Reserved for future conditional collection. Diagnostics are currently
   // recorded unconditionally by the solver and attached to result metadata.
   bool RecordDiagnostics = true;
+
+  // Opt-in RQ3 instrumentation: when set, the state-elimination engine records
+  // SolveDiagnostics::peak_matrix_nodes (peak unique DAG nodes across the whole
+  // matrix during construction). Default off — adds a per-pivot reachability
+  // scan, so it is enabled only by the evaluation harness.
+  bool MeasurePeakNodes = false;
 
   // EAN (Equality-saturation Algebraic Normalizer) post-optimization. When
   // enabled, the solver runs EAN on the batch of path-expression summaries
