@@ -7,6 +7,7 @@ add_lotus_test_suite(apa_tests
     InterAffineEqualitiesTest.cpp
     InterSummaryTransferTest.cpp
     PathSummaryEquationSolverTest.cpp
+    OrderTest.cpp
     EAN/RoundtripTest.cpp
     EAN/FactorizeTest.cpp
     EAN/SaturateTest.cpp

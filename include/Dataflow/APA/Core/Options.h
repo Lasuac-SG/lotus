@@ -19,6 +19,19 @@ enum class EliminationMethod {
   ADTDelayed,
 };
 
+// Pivot-order policy for the state-elimination engine (paper's "Order"
+// configuration). The order never changes the final all-pairs result (the
+// k-loop is a Floyd–Warshall closure), only the peak construction cost — see
+// Solver/EliminationOrder.h.
+enum class OrderingPolicy {
+  // Baseline: reverse-topological order for reducible problems, identity
+  // otherwise (unchanged historical behavior).
+  Default,
+  // Cost-aware greedy minimum-product ordering that minimizes the
+  // predecessor–successor product driving Eq. 1's intermediate growth.
+  CostAware,
+};
+
 enum class OnNonConvergentStar {
   // Abort solve with NonConvergentStar status.
   Fail,
@@ -52,6 +65,9 @@ struct SolveDiagnostics final {
 
 struct EliminationOptions final {
   EliminationMethod Method = EliminationMethod::StateElimination;
+  // Pivot-order policy for the state-elimination engine. Default preserves the
+  // historical baseline order; CostAware selects the paper's "Order" policy.
+  OrderingPolicy Ordering = OrderingPolicy::Default;
   OnNonConvergentStar NonConvergentStarPolicy = OnNonConvergentStar::Fail;
   // 0 means "use Problem.maxStarIterations()".
   std::size_t MaxStarIterations = 0;

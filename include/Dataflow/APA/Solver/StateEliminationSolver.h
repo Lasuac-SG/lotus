@@ -1,10 +1,34 @@
 #ifndef DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 #define DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 
+#include "Dataflow/APA/Solver/EliminationOrder.h"
 #include "Dataflow/APA/Solver/SolverContext.h"
 
 namespace elimination {
 namespace detail {
+
+// Build the boolean elimination graph from the current matrix's off-diagonal
+// nonzeros (direct CFG edges at this point). Self-loops are the diagonal
+// (always one()) and are intentionally excluded — they do not affect the
+// predecessor–successor product.
+template <typename AnalysisDomainTy>
+order::EliminationGraph buildEliminationGraph(
+    const IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
+  using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
+  const auto N = Ctx.Nodes.size();
+  order::EliminationGraph G(N);
+  for (std::size_t i = 0; i < N; ++i) {
+    for (std::size_t j = 0; j < N; ++j) {
+      if (i == j) {
+        continue;
+      }
+      if (!Context::expr_factory_t::isZero(Ctx.Matrix[i][j])) {
+        G.addEdge(i, j);
+      }
+    }
+  }
+  return G;
+}
 
 // Generic Floyd-Warshall-style elimination over the full CFG. This engine
 // makes no reducibility assumptions and therefore serves as the baseline
@@ -14,6 +38,14 @@ std::vector<std::size_t> getStateEliminationOrder(
     const IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
   using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
   const auto N = Ctx.Nodes.size();
+
+  // Cost-aware policy: greedy minimum-product order over the elimination graph.
+  // Fully replaces the baseline order (including the reducible reverse-topo
+  // path). The final all-pairs result is invariant to pivot order.
+  if (Ctx.Opts.Ordering == OrderingPolicy::CostAware) {
+    return order::computeCostAwareOrder(buildEliminationGraph(Ctx));
+  }
+
   std::vector<std::size_t> Order(N);
   const auto *R =
       dynamic_cast<const typename Context::ReducibleProblemTy *>(&Ctx.Problem);
