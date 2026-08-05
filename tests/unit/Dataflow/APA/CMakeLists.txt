@@ -13,4 +13,6 @@ add_lotus_test_suite(apa_tests
     EAN/BatchExtractTest.cpp
     EAN/StarTest.cpp
     EAN/SolverWiringTest.cpp
+    EAN/EvalRq1Test.cpp
+    EAN/EvalExportTest.cpp
   LINK_LIBS APADataFlow LotusEGraph)
