@@ -21,10 +21,12 @@
 #include "Dataflow/APA/Analyses/Intra/IntraReachability.h"
 #include "Dataflow/APA/Analyses/Intra/IntraReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Intra/IntraUninitializedVariables.h"
+#include "Dataflow/APA/EAN/DagStats.h"
 #include "ToolSupport.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -32,6 +34,24 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+// psapi.h must follow windows.h
+#include <psapi.h>
+// windows.h defines IN/OUT as empty SAL macros, which would mangle the solver
+// result accessor Result.IN(...). Drop them.
+#undef IN
+#undef OUT
+#else
+#include <sys/resource.h>
+#endif
 
 using namespace llvm;
 
@@ -67,12 +87,106 @@ static cl::opt<bool>
                  cl::desc("Dump per-instruction path-expression summaries"),
                  cl::init(false));
 
+// --- EAN / Order (evaluation) configuration ---------------------------------
+static cl::opt<std::string>
+    OrderingOpt("ordering",
+                cl::desc("Pivot order for state elimination: default|cost-aware"),
+                cl::init("default"));
+static cl::opt<bool> EanOpt("ean",
+                            cl::desc("Run the EAN normalizer post-pass"),
+                            cl::init(false));
+static cl::opt<std::string>
+    EanLawsOpt("ean-laws", cl::desc("EAN law profile: safe|kleene"),
+               cl::init("safe"));
+static cl::opt<unsigned>
+    EanRoundLimit("ean-round-limit",
+                  cl::desc("EAN saturation round budget (0 = unbounded)"),
+                  cl::init(0));
+static cl::opt<unsigned>
+    EanNodeLimit("ean-node-limit",
+                 cl::desc("EAN e-node budget (0 = unbounded)"), cl::init(0));
+static cl::opt<double>
+    EanTimeLimit("ean-time-limit",
+                 cl::desc("EAN wall-clock budget in seconds (0 = unbounded)"),
+                 cl::init(0.0));
+static cl::opt<bool>
+    MeasurePeakOpt("measure-peak",
+                   cl::desc("Record peak construction nodes (slower)"),
+                   cl::init(false));
+static cl::opt<unsigned>
+    MaxFuncInsts("max-func-insts",
+                 cl::desc("Skip functions with more instructions (0 = no cap)"),
+                 cl::init(0));
+static cl::opt<unsigned>
+    RepeatOpt("repeat", cl::desc("Measured runs per function (timing median)"),
+              cl::init(1));
+static cl::opt<unsigned>
+    WarmupOpt("warmup", cl::desc("Warmup runs per function before measuring"),
+              cl::init(0));
+
 namespace {
 
 using lotus::dataflow_tool::FunctionView;
 using lotus::dataflow_tool::ValueIdMap;
 using InstructionExprFactory = elimination::PathExprFactory<Instruction *>;
 using InstructionExprRef = InstructionExprFactory::Ref;
+
+// Aggregated stage timings (microseconds) across the measured repeats.
+struct Timings final {
+  std::uint64_t gen = 0;
+  std::uint64_t norm = 0;
+  std::uint64_t interp = 0;
+  std::uint64_t end2end = 0;
+  unsigned runs = 1;
+};
+
+std::uint64_t medianOf(std::vector<std::uint64_t> V) {
+  if (V.empty())
+    return 0;
+  std::sort(V.begin(), V.end());
+  return V[V.size() / 2];
+}
+
+// Peak resident memory of this process in KiB (Table VII Peak RSS).
+std::uint64_t peakRssKb() {
+#ifdef _WIN32
+  PROCESS_MEMORY_COUNTERS PMC;
+  if (GetProcessMemoryInfo(GetCurrentProcess(), &PMC, sizeof(PMC)))
+    return static_cast<std::uint64_t>(PMC.PeakWorkingSetSize) / 1024;
+  return 0;
+#elif defined(__APPLE__)
+  struct rusage RU;
+  if (getrusage(RUSAGE_SELF, &RU) == 0)
+    return static_cast<std::uint64_t>(RU.ru_maxrss) / 1024; // bytes on macOS
+  return 0;
+#else
+  struct rusage RU;
+  if (getrusage(RUSAGE_SELF, &RU) == 0)
+    return static_cast<std::uint64_t>(RU.ru_maxrss); // KiB on Linux
+  return 0;
+#endif
+}
+
+// Build EliminationOptions from the evaluation CLI flags.
+elimination::EliminationOptions buildElimOpts() {
+  auto Opts = lotus::dataflow_tool::parseEliminationOptions(ElimMethodOpt);
+  if (OrderingOpt == "cost-aware")
+    Opts.Ordering = elimination::OrderingPolicy::CostAware;
+  Opts.EnableEAN = EanOpt;
+  Opts.EANLaws = (EanLawsOpt == "kleene")
+                     ? elimination::ean::LawProfile::kleeneAlgebra()
+                     : elimination::ean::LawProfile::safeMinimal();
+  elimination::ean::Budget B = elimination::ean::Budget::unbounded();
+  if (EanRoundLimit)
+    B.roundLimit = EanRoundLimit;
+  if (EanNodeLimit)
+    B.nodeLimit = EanNodeLimit;
+  if (EanTimeLimit > 0.0)
+    B.timeLimitSec = EanTimeLimit;
+  Opts.EANBudget = B;
+  Opts.MeasurePeakNodes = MeasurePeakOpt;
+  return Opts;
+}
 
 ValueIdMap buildModuleValueIdMap(Module &M) {
   ValueIdMap ValueToId;
@@ -332,7 +446,8 @@ void printSolveMetadata(raw_ostream &OS, const ResultT &Result) {
      << ", used_adt=" << (Diag.used_adt ? "true" : "false")
      << ", fallback=" << toString(Diag.fallback_reason)
      << ", star_iters=" << Diag.star_iterations_total
-     << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false") << "\n";
+     << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false")
+     << ", peak_nodes=" << Diag.peak_matrix_nodes << "\n";
 }
 
 template <unsigned K, typename FactT, typename TransferT, typename NodeT>
@@ -347,7 +462,7 @@ void printSolveMetadata(
 
 template <typename ResultT>
 void dumpProfile(raw_ostream &OS, const FunctionView &View,
-                 const ResultT &Result, std::chrono::microseconds Elapsed) {
+                 const ResultT &Result, const Timings &T) {
   const auto CFG = collectCFGStats(View.Function);
   OS << "  [cfg] args=" << CFG.Arguments << ", blocks=" << CFG.Blocks
      << ", insts=" << CFG.Instructions << ", edges=" << CFG.Edges
@@ -355,8 +470,27 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
      << ", max_succs=" << CFG.MaxSuccessors << ", phis=" << CFG.PhiNodes
      << ", calls=" << CFG.Calls << ", returns=" << CFG.Returns
      << ", unreachable=" << CFG.Unreachable
-     << ", elapsed_us=" << Elapsed.count() << "\n";
+     << ", elapsed_us=" << T.end2end << "\n";
+  OS << "  [timing] gen_us=" << T.gen << ", norm_us=" << T.norm
+     << ", interp_us=" << T.interp << ", end2end_us=" << T.end2end
+     << ", runs=" << T.runs << "\n";
   printSolveMetadata(OS, Result);
+
+  // Unified DAG statistics over the whole summary batch (matches the synthetic
+  // evaluation's DagStats — the Table VI structural metrics).
+  std::vector<InstructionExprRef> Batch;
+  Batch.reserve(View.OrderedInsts.size());
+  for (auto *I : View.OrderedInsts) {
+    auto E = Result.ExprTo(I);
+    if (E)
+      Batch.push_back(E);
+  }
+  const auto DS = elimination::ean::computeDagStats<Instruction *>(Batch);
+  OS << "  [dagstats] nodes=" << DS.uniqueNodes << ", edges=" << DS.uniqueEdges
+     << ", tree=" << DS.expandedTree << ", seq=" << DS.concats
+     << ", stars=" << DS.stars << ", unions=" << DS.unions
+     << ", atoms=" << DS.atoms << ", sharing=" << DS.sharing()
+     << ", roots=" << Batch.size() << "\n";
 
   size_t NodesWithExpr = 0;
   size_t MissingExpr = 0;
@@ -424,9 +558,9 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
 
 template <typename ResultT, typename Printer>
 void dumpTimedResult(raw_ostream &OS, const FunctionView &View, ResultT &Result,
-                     std::chrono::microseconds Elapsed, Printer &&PrintState) {
+                     const Timings &T, Printer &&PrintState) {
   if (DumpProfileOpt || DumpExprsOpt)
-    dumpProfile(OS, View, Result, Elapsed);
+    dumpProfile(OS, View, Result, T);
   lotus::dataflow_tool::printInstructionStates(
       OS, View, [&](Instruction *I) { PrintState(I, Result); });
 }
@@ -435,11 +569,45 @@ template <typename Runner, typename Printer>
 void runTimedAnalysis(raw_ostream &OS, const FunctionView &View,
                       const elimination::EliminationOptions &ElimOpts,
                       Runner &&Run, Printer &&PrintState) {
+  for (unsigned W = 0; W < WarmupOpt; ++W) {
+    auto Warm = Run(View.Function, ElimOpts);
+    (void)Warm;
+  }
+  const unsigned R = std::max(1u, static_cast<unsigned>(RepeatOpt));
+  std::vector<std::uint64_t> Gen, Norm, Interp, End;
+  Gen.reserve(R);
+  Norm.reserve(R);
+  Interp.reserve(R);
+  End.reserve(R);
+
+  // The R-1 timing-only runs are constructed and discarded (DataFlowResultT is
+  // not assignable, so we never reassign — we construct fresh each run).
+  auto Sample = [&](const auto &Res, std::uint64_t Us) {
+    const auto &D = Res.solveDiagnostics();
+    Gen.push_back(D.gen_time_us);
+    Norm.push_back(D.norm_time_us);
+    Interp.push_back(D.interp_time_us);
+    End.push_back(Us);
+  };
+  for (unsigned I = 0; I + 1 < R; ++I) {
+    const auto Start = std::chrono::steady_clock::now();
+    auto Tmp = Run(View.Function, ElimOpts);
+    Sample(Tmp, static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now() - Start)
+                        .count()));
+  }
+  // Final measured run is kept for the structural dump.
   const auto Start = std::chrono::steady_clock::now();
   auto Result = Run(View.Function, ElimOpts);
-  const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-      std::chrono::steady_clock::now() - Start);
-  dumpTimedResult(OS, View, Result, Elapsed, std::forward<Printer>(PrintState));
+  Sample(Result, static_cast<std::uint64_t>(
+                     std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::steady_clock::now() - Start)
+                         .count()));
+
+  const Timings T{medianOf(Gen), medianOf(Norm), medianOf(Interp),
+                  medianOf(End), R};
+  dumpTimedResult(OS, View, Result, T, std::forward<Printer>(PrintState));
 }
 
 template <typename ResultT, typename Printer>
@@ -696,31 +864,68 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  const auto *Handler =
-      lotus::dataflow_tool::findHandler(AnalysisOpt, Handlers);
-  if (!Handler) {
-    errs() << "error: unknown elimination analysis '" << AnalysisOpt << "'\n";
+  // Parse a comma-separated client list (amortizes module loading across
+  // clients in one process).
+  std::vector<const AnalysisHandler *> Clients;
+  {
+    std::stringstream SS(AnalysisOpt);
+    std::string Name;
+    while (std::getline(SS, Name, ',')) {
+      if (Name.empty())
+        continue;
+      const auto *H = lotus::dataflow_tool::findHandler(StringRef(Name), Handlers);
+      if (!H) {
+        errs() << "error: unknown elimination analysis '" << Name << "'\n";
+        return 1;
+      }
+      Clients.push_back(H);
+    }
+  }
+  if (Clients.empty()) {
+    errs() << "error: no analysis selected\n";
     return 1;
   }
 
-  const auto ElimOpts =
-      lotus::dataflow_tool::parseEliminationOptions(ElimMethodOpt);
-  OS << "[elim:" << AnalysisOpt << "]\n";
+  const auto ElimOpts = buildElimOpts();
+  OS << "[elim] clients=" << AnalysisOpt << ", method=" << ElimMethodOpt
+     << ", ordering=" << OrderingOpt << ", ean=" << (EanOpt ? "on" : "off")
+     << ", ean_laws=" << EanLawsOpt << ", repeat=" << RepeatOpt
+     << ", max_func_insts=" << MaxFuncInsts << "\n";
 
-  if (Handler->ModuleScoped) {
+  const bool AnyModule =
+      std::any_of(Clients.begin(), Clients.end(),
+                  [](const AnalysisHandler *H) { return H->ModuleScoped; });
+  if (AnyModule) {
+    if (Clients.size() != 1) {
+      errs() << "error: module-scoped analyses must be run one at a time\n";
+      return 1;
+    }
     Function *Entry = M->getFunction(EntryFunctionOpt);
     if (Entry == nullptr || Entry->isDeclaration()) {
       errs() << "error: entry function '" << EntryFunctionOpt
              << "' not found or is a declaration\n";
       return 1;
     }
-    Handler->RunModule(OS, *M, *Entry);
+    Clients.front()->RunModule(OS, *M, *Entry);
   } else {
+    std::size_t Skipped = 0;
     lotus::dataflow_tool::forEachDefinedFunction(
         *M, OS, [&](const FunctionView &View) {
-          Handler->RunFunction(OS, View, ElimOpts);
+          if (MaxFuncInsts != 0 &&
+              View.OrderedInsts.size() > MaxFuncInsts) {
+            OS << "  [skipped] reason=too_large insts="
+               << View.OrderedInsts.size() << "\n";
+            ++Skipped;
+            return;
+          }
+          for (const AnalysisHandler *H : Clients) {
+            OS << "  [client:" << H->Name << "]\n";
+            H->RunFunction(OS, View, ElimOpts);
+          }
         });
+    OS << "[summary] skipped_functions=" << Skipped << "\n";
   }
 
+  OS << "[mem] peak_rss_kb=" << peakRssKb() << "\n";
   return 0;
 }

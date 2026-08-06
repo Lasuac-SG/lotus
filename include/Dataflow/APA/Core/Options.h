@@ -66,6 +66,14 @@ struct SolveDiagnostics final {
   // only when EliminationOptions::MeasurePeakNodes is set; 0 otherwise. This is
   // the paper's RQ3 "peak construction nodes" metric.
   std::size_t peak_matrix_nodes = 0;
+  // Stage timings (microseconds), recorded by the state-elimination path:
+  //   generation    = build matrix + eliminate intermediates (raw DAG),
+  //   normalization = EAN optimization pass (0 unless EnableEAN),
+  //   interpretation = evaluating summaries into client facts.
+  // These fill the paper's Table VII stage columns.
+  std::size_t gen_time_us = 0;
+  std::size_t norm_time_us = 0;
+  std::size_t interp_time_us = 0;
 };
 
 struct EliminationOptions final {

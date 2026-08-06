@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -794,14 +795,24 @@ public:
     if (Roots.empty()) {
       return;
     }
+    const auto NormStart = std::chrono::steady_clock::now();
     auto Optimized =
         ean::ean<transfer_t>(Roots, Opts.EANLaws, Opts.EANCost, Opts.EANBudget,
                              Exprs, nullptr, Opts.EANExtract);
+    Diagnostics.norm_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - NormStart)
+            .count());
     const auto Init = Problem.initialFact();
+    const auto InterpStart = std::chrono::steady_clock::now();
     for (std::size_t i = 0; i < Ns.size(); ++i) {
       Results.ExprTo(Ns[i]) = Optimized[i];
       Results.IN(Ns[i]) = eval(Optimized[i], Init);
     }
+    Diagnostics.interp_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - InterpStart)
+            .count());
   }
 
   const ProblemTy &Problem;

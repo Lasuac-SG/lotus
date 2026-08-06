@@ -5,6 +5,8 @@
 #include "Dataflow/APA/Solver/EliminationOrder.h"
 #include "Dataflow/APA/Solver/SolverContext.h"
 
+#include <chrono>
+
 namespace elimination {
 namespace detail {
 
@@ -186,6 +188,7 @@ bool materializeStateResults(
   const auto EntryIdx = EntryIt->second;
 
   const auto Init = Ctx.Problem.initialFact();
+  const auto InterpStart = std::chrono::steady_clock::now();
   for (std::size_t j = 0; j < Ctx.Nodes.size(); ++j) {
     const auto &N = Ctx.Nodes[j];
     // Each remaining matrix entry summarizes all paths from entry to N.
@@ -197,14 +200,23 @@ bool materializeStateResults(
       Ctx.Results.IN(N) = Ctx.eval(E, Init);
     }
   }
+  Ctx.Diagnostics.interp_time_us += static_cast<std::size_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - InterpStart)
+          .count());
   return true;
 }
 
 template <typename AnalysisDomainTy>
 bool solveStateElimination(
     IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
+  const auto GenStart = std::chrono::steady_clock::now();
   buildStateEliminationMatrix(Ctx);
   eliminateStateIntermediates(Ctx);
+  Ctx.Diagnostics.gen_time_us += static_cast<std::size_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - GenStart)
+          .count());
   return materializeStateResults(Ctx);
 }
 
