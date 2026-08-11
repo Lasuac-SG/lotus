@@ -35,9 +35,14 @@ public:
   // back to the generic state-elimination engine.
   SolveStatus solve() {
     SolveStatus S = solveImpl();
-    // Run EAN once after a successful solve, before results are read.
-    if (Opts.EnableEAN && S != SolveStatus::InvalidProblem) {
-      Ctx.applyEAN();
+    // Run a post-optimization pass once after a successful solve, before results
+    // are read. EAN and Greedy are mutually exclusive (EAN takes precedence).
+    if (S != SolveStatus::InvalidProblem) {
+      if (Opts.EnableEAN) {
+        Ctx.applyEAN();
+      } else if (Opts.EnableGreedy) {
+        Ctx.applyGreedy();
+      }
     }
     return S;
   }

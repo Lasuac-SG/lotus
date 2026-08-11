@@ -188,16 +188,22 @@ bool materializeStateResults(
   const auto EntryIdx = EntryIt->second;
 
   const auto Init = Ctx.Problem.initialFact();
+  const std::size_t Reps = Ctx.Opts.InterpRepeat ? Ctx.Opts.InterpRepeat : 1;
   const auto InterpStart = std::chrono::steady_clock::now();
   for (std::size_t j = 0; j < Ctx.Nodes.size(); ++j) {
     const auto &N = Ctx.Nodes[j];
     // Each remaining matrix entry summarizes all paths from entry to N.
     auto E = Ctx.Matrix[EntryIdx][j];
     Ctx.Results.ExprTo(N) = E;
-    // Skip the interpretation when EAN will re-optimize and re-evaluate the
-    // whole batch afterwards (avoids a wasted eval and keeps timing clean).
-    if (!Ctx.Opts.EnableEAN) {
-      Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    // Skip the interpretation when EAN or Greedy will re-optimize and
+    // re-evaluate the whole batch afterwards (avoids a wasted eval), or when a
+    // memoizing client interpreter (InterpMemo) will fill IN facts itself.
+    if (!Ctx.Opts.EnableEAN && !Ctx.Opts.EnableGreedy && !Ctx.Opts.InterpMemo) {
+      typename Context::fact_t V = Ctx.eval(E, Init);
+      for (std::size_t r = 1; r < Reps; ++r) {
+        V = Ctx.eval(E, Init); // amortization measurement (RQ2)
+      }
+      Ctx.Results.IN(N) = std::move(V);
     }
   }
   Ctx.Diagnostics.interp_time_us += static_cast<std::size_t>(

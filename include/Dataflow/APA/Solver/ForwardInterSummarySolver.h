@@ -3,11 +3,15 @@
 
 #include "Dataflow/APA/Core/InterProblem.h"
 #include "Dataflow/APA/Core/InterResult.h"
+#include "Dataflow/APA/EAN/DagStats.h"
+#include "Dataflow/APA/EAN/EAN.h"
+#include "Dataflow/APA/EAN/Greedy.h"
 #include "Dataflow/APA/Solver/InterSummaryTransfer.h"
 #include "Dataflow/APA/Solver/PathSummaryEquationSolver.h"
 #include "Dataflow/ControlFlow/FlowDirection.h"
 #include "Dataflow/Mono/Core/CallStringContext.h"
 
+#include <chrono>
 #include <deque>
 #include <map>
 #include <set>
@@ -60,6 +64,13 @@ public:
     PathSummaryEquationDiagnostics equation_graph;
     std::size_t discovered_context_node_count = 0;
     std::size_t seed_count = 0;
+    // EAN/Greedy post-pass instrumentation (see applySummaryPostPass). Zero
+    // unless the pass ran.
+    std::size_t gen_time_us = 0;
+    std::size_t norm_time_us = 0;
+    std::size_t interp_time_us = 0;
+    ean::DagStats summary_before;
+    ean::DagStats summary_after;
   };
 
   explicit ForwardInterSummarySolver(ProblemTy &Problem,
@@ -81,16 +92,35 @@ public:
     InitialFact = Problem.allTop();
     HaveInitialFact = false;
 
+    const auto GenStart = std::chrono::steady_clock::now();
     discoverEquationGraph();
     auto SolverOptions = Options;
     SolverOptions.Direction = PathSummaryEquationDirection::ForwardPath;
     PathSummaryEquationSolver<ContextKey, atom_t> Solver(Graph, SolverOptions);
     auto Summary = Solver.solve();
     DiagnosticsValue.equation_graph = Summary.diagnostics();
+    DiagnosticsValue.gen_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - GenStart)
+            .count());
+
+    // EAN/Greedy post-optimization of the solved summary batch (no-op unless
+    // enabled in Options.EAN). Runs before interpretation so the cheaper,
+    // semantics-preserving IR is what gets evaluated into client facts.
+    applySummaryPostPass(Summary);
 
     Result = result_t{};
     Result.setMissingFactFallback(Problem.allTop());
-    evaluateSummaries(Summary);
+    const std::size_t Reps =
+        Options.EAN.InterpRepeat ? Options.EAN.InterpRepeat : 1;
+    const auto InterpStart = std::chrono::steady_clock::now();
+    for (std::size_t R = 0; R < Reps; ++R) {
+      evaluateSummaries(Summary); // idempotent: re-runs measure amortized cost
+    }
+    DiagnosticsValue.interp_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - InterpStart)
+            .count());
     Result.setSolveStatus(SolveStatus::Ok);
     HaveResult = true;
     return LastStatus = SolveStatus::Ok;
@@ -109,6 +139,11 @@ public:
     Out.equation_edge_count = DiagnosticsValue.equation_graph.edge_count;
     Out.scc_count = DiagnosticsValue.equation_graph.scc_count;
     Out.cyclic_scc_count = DiagnosticsValue.equation_graph.cyclic_scc_count;
+    Out.gen_time_us = DiagnosticsValue.gen_time_us;
+    Out.norm_time_us = DiagnosticsValue.norm_time_us;
+    Out.interp_time_us = DiagnosticsValue.interp_time_us;
+    Out.summary_before = DiagnosticsValue.summary_before;
+    Out.summary_after = DiagnosticsValue.summary_after;
     return Out;
   }
 
@@ -257,6 +292,63 @@ private:
         }
       }
     }
+  }
+
+  // EAN/Greedy post-optimization: replace each context summary's path
+  // expression with a reuse-aware, cost-minimized equivalent (as one batch),
+  // then interpretation reads the optimized forms. No-op unless Options.EAN
+  // enables a pass. Semantics are preserved because EAN/Greedy preserve
+  // meaning under the client's declared law profile (the default profile is
+  // universally safe); on any internal resource failure ean() falls back to the
+  // original batch (root preservation, I3). The atoms are opaque to EAN and are
+  // re-exported into the same factory (Graph.exprs()) that owns them, so the
+  // evaluator consumes the optimized expressions unchanged.
+  void applySummaryPostPass(
+      PathSummaryEquationResult<ContextKey, atom_t> &Summary) {
+    auto &Sums = Summary.summaries(); // non-const: rewrite values in place
+    if (Sums.empty()) {
+      return;
+    }
+    std::vector<ContextKey> Keys;
+    std::vector<expr_ref_t> Roots;
+    Keys.reserve(Sums.size());
+    Roots.reserve(Sums.size());
+    for (auto &KV : Sums) {
+      Keys.push_back(KV.first);
+      Roots.push_back(KV.second);
+    }
+
+    DiagnosticsValue.summary_before = ean::computeDagStats<atom_t>(Roots);
+    DiagnosticsValue.summary_after = DiagnosticsValue.summary_before;
+
+    const auto &EAN = Options.EAN;
+    if (!EAN.EnableEAN && !EAN.EnableGreedy) {
+      return; // baseline: no post-pass
+    }
+
+    const auto NormStart = std::chrono::steady_clock::now();
+    std::vector<expr_ref_t> Optimized;
+    if (EAN.EnableEAN) {
+      ean::ExtractOptions EO = EAN.EANExtract;
+      EO.gateMinNodes = EAN.EANMinNodes;
+      EO.monotoneGuard = EAN.EANMonotone;
+      Optimized = ean::ean<atom_t>(Roots, EAN.EANLaws, EAN.EANCost,
+                                   EAN.EANBudget, Graph.exprs(), nullptr, EO);
+    } else {
+      Optimized = greedySimplify<atom_t>(Roots, Graph.exprs());
+    }
+    DiagnosticsValue.norm_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - NormStart)
+            .count());
+
+    if (Optimized.size() != Roots.size()) {
+      return; // shape mismatch: keep the original summaries (I3)
+    }
+    for (std::size_t I = 0; I < Keys.size(); ++I) {
+      Sums[Keys[I]] = Optimized[I];
+    }
+    DiagnosticsValue.summary_after = ean::computeDagStats<atom_t>(Optimized);
   }
 
   void evaluateSummaries(

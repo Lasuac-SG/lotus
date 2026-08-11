@@ -6,6 +6,7 @@
 #include "Dataflow/APA/Core/Problem.h"
 #include "Dataflow/APA/Core/Result.h"
 #include "Dataflow/APA/EAN/EAN.h"
+#include "Dataflow/APA/EAN/Greedy.h"
 
 #include <algorithm>
 #include <cassert>
@@ -795,19 +796,75 @@ public:
     if (Roots.empty()) {
       return;
     }
+    ean::ExtractOptions EO = Opts.EANExtract;
+    EO.gateMinNodes = Opts.EANMinNodes;
+    EO.monotoneGuard = Opts.EANMonotone;
     const auto NormStart = std::chrono::steady_clock::now();
     auto Optimized =
         ean::ean<transfer_t>(Roots, Opts.EANLaws, Opts.EANCost, Opts.EANBudget,
-                             Exprs, nullptr, Opts.EANExtract);
+                             Exprs, nullptr, EO);
     Diagnostics.norm_time_us += static_cast<std::size_t>(
         std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now() - NormStart)
             .count());
     const auto Init = Problem.initialFact();
+    const std::size_t Reps = Opts.InterpRepeat ? Opts.InterpRepeat : 1;
     const auto InterpStart = std::chrono::steady_clock::now();
     for (std::size_t i = 0; i < Ns.size(); ++i) {
       Results.ExprTo(Ns[i]) = Optimized[i];
-      Results.IN(Ns[i]) = eval(Optimized[i], Init);
+      if (Opts.InterpMemo) {
+        continue; // client fills IN via its memoizing interpreter
+      }
+      fact_t V = eval(Optimized[i], Init);
+      for (std::size_t r = 1; r < Reps; ++r) {
+        V = eval(Optimized[i], Init); // amortization measurement (RQ2)
+      }
+      Results.IN(Ns[i]) = std::move(V);
+    }
+    Diagnostics.interp_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - InterpStart)
+            .count());
+  }
+
+  // Greedy post-optimization (paper's "Greedy" config): a single deterministic
+  // prefix-factorization pass over the summary batch, then re-interpret. Like
+  // applyEAN but with greedySimplify instead of the e-graph optimizer. Runs only
+  // when Opts.EnableGreedy (and not EnableEAN). Semantics-preserving.
+  void applyGreedy() {
+    const result_t &ConstResults = Results;
+    std::vector<n_t> Ns;
+    std::vector<expr_ref_t> Roots;
+    for (const auto &N : Problem.nodes()) {
+      expr_ref_t E = ConstResults.ExprTo(N);
+      if (!E) {
+        continue;
+      }
+      Ns.push_back(N);
+      Roots.push_back(std::move(E));
+    }
+    if (Roots.empty()) {
+      return;
+    }
+    const auto NormStart = std::chrono::steady_clock::now();
+    auto Simplified = greedySimplify<transfer_t>(Roots, Exprs);
+    Diagnostics.norm_time_us += static_cast<std::size_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - NormStart)
+            .count());
+    const auto Init = Problem.initialFact();
+    const std::size_t Reps = Opts.InterpRepeat ? Opts.InterpRepeat : 1;
+    const auto InterpStart = std::chrono::steady_clock::now();
+    for (std::size_t i = 0; i < Ns.size(); ++i) {
+      Results.ExprTo(Ns[i]) = Simplified[i];
+      if (Opts.InterpMemo) {
+        continue; // client fills IN via its memoizing interpreter
+      }
+      fact_t V = eval(Simplified[i], Init);
+      for (std::size_t r = 1; r < Reps; ++r) {
+        V = eval(Simplified[i], Init);
+      }
+      Results.IN(Ns[i]) = std::move(V);
     }
     Diagnostics.interp_time_us += static_cast<std::size_t>(
         std::chrono::duration_cast<std::chrono::microseconds>(

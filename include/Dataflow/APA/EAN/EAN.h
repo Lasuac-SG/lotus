@@ -22,6 +22,7 @@
 #include "Dataflow/APA/EAN/Budget.h"
 #include "Dataflow/APA/EAN/CostFn.h"
 #include "Dataflow/APA/EAN/CostModel.h"
+#include "Dataflow/APA/EAN/DagStats.h"
 #include "Dataflow/APA/EAN/Export.h"
 #include "Dataflow/APA/EAN/ExtractOptions.h"
 #include "Dataflow/APA/EAN/Import.h"
@@ -37,6 +38,12 @@ ean(const std::vector<typename PathExprFactory<TransferT>::Ref> &R,
     const LawProfile &L, const CostModel &C, const Budget &B,
     PathExprFactory<TransferT> &F, SaturationStats *stats = nullptr,
     ExtractOptions opts = {}) {
+  // Invocation gate: below the raw-node threshold, saturation cannot repay its
+  // overhead — return the input verbatim (root preservation, I3).
+  if (opts.gateMinNodes > 0 &&
+      computeDagStats<TransferT>(R).uniqueNodes < opts.gateMinNodes) {
+    return R;
+  }
   try {
     auto imp = importCanonical<TransferT>(R);
 
@@ -68,6 +75,13 @@ ean(const std::vector<typename PathExprFactory<TransferT>::Ref> &R,
     auto out = exportBatch<TransferT>(imp, F, pick);
     if (out.size() != R.size()) {
       return R; // shape mismatch: fall back
+    }
+    // Monotone guard: never return a batch larger than the input (I3 extended
+    // to output quality). Keeps EAN from degrading an already-compact input.
+    if (opts.monotoneGuard &&
+        computeDagStats<TransferT>(out).uniqueNodes >
+            computeDagStats<TransferT>(R).uniqueNodes) {
+      return R;
     }
     return out;
   } catch (...) {

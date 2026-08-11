@@ -1,6 +1,7 @@
 #ifndef DATAFLOW_APA_SOLVER_PATHSUMMARYEQUATIONSOLVER_H_
 #define DATAFLOW_APA_SOLVER_PATHSUMMARYEQUATIONSOLVER_H_
 
+#include "Dataflow/APA/Core/Options.h"
 #include "Dataflow/APA/Core/PathExpr.h"
 
 #include <algorithm>
@@ -89,6 +90,10 @@ enum class PathSummaryEquationDirection {
 struct PathSummaryEquationOptions final {
   PathSummaryEquationDirection Direction =
       PathSummaryEquationDirection::DependencyPrefix;
+  // EAN/Greedy post-optimization of the solved summary batch, applied by
+  // ForwardInterSummarySolver between summary solving and interpretation.
+  // Default is a no-op pass, so the interprocedural baseline is unchanged.
+  InterEANOptions EAN = {};
 };
 
 struct PathSummaryEquationDiagnostics final {
@@ -109,6 +114,11 @@ public:
   }
 
   const std::map<KeyT, expr_ref_t> &summaries() const { return Summaries; }
+  // Non-const access so a post-solve optimization pass (EAN/Greedy in
+  // ForwardInterSummarySolver) can replace each context's summary expression
+  // in place with a semantically-equivalent, cost-minimized form before
+  // interpretation. Keys are never added or removed through this handle.
+  std::map<KeyT, expr_ref_t> &summaries() { return Summaries; }
   const PathSummaryEquationDiagnostics &diagnostics() const {
     return Diagnostics;
   }

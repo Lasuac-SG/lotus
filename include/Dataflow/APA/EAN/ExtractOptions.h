@@ -20,6 +20,17 @@ struct ExtractOptions {
   // choice can be made from evaluation data (RQ4).
   enum class PlateauCost { Tree, Dag };
   PlateauCost plateauMode = PlateauCost::Tree;
+
+  // Invocation gate (paper §IV-C): skip EAN entirely when the raw batch has
+  // fewer than this many unique DAG nodes (0 = no gate). Below the threshold
+  // saturation cannot repay its overhead, so ean() returns the input verbatim.
+  std::size_t gateMinNodes = 0;
+
+  // Monotone guard: if the exported batch has MORE unique nodes than the input,
+  // return the input verbatim. Extends I3 (root preservation) to output-quality
+  // preservation, so EAN never degrades an already-compact input (e.g. one
+  // produced by cost-aware elimination ordering). Off by default.
+  bool monotoneGuard = false;
 };
 
 } // namespace ean

@@ -38,6 +38,21 @@ struct CostModel {
     m.wOne = 0.0;
     return m;
   }
+
+  // Shared-DAG objective (Eq. 5) that scores by unique nodes AND edges, so the
+  // reuse-aware extractor minimizes the *exported* factory node count (which
+  // tracks variadic-child edges after re-binarization) rather than just the
+  // e-class count. Candidate generation is unchanged (per-op weight 1); only the
+  // scoring changes, biasing selection toward the fewest-edge equivalent form.
+  static CostModel dag() {
+    CostModel m;
+    m.wJoin = m.wSeq = m.wStar = m.wAtom = 1.0;
+    m.wZero = m.wOne = 0.0;
+    m.alpha = 1.0; // unique DAG nodes
+    m.beta = 1.0;  // unique DAG edges (≈ exported factory nodes)
+    m.gamma = 0.0; // retained-size objective, not interpreter repeat cost
+    return m;
+  }
 };
 
 } // namespace ean

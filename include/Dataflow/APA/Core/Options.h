@@ -105,6 +105,61 @@ struct EliminationOptions final {
   ean::CostModel EANCost = ean::CostModel::uniform();
   ean::Budget EANBudget = ean::Budget::unbounded();
   ean::ExtractOptions EANExtract = {};
+  // Greedy post-pass (paper's "Greedy" config): deterministic one-pass prefix
+  // factorization, no e-graph, no retained alternatives. Mutually exclusive
+  // with EnableEAN (EAN takes precedence if both set). Default off.
+  bool EnableGreedy = false;
+  // Invocation gate: run EAN only on batches whose raw unique-node count is at
+  // least this (0 = always run). Copied into EANExtract.gateMinNodes at use.
+  std::size_t EANMinNodes = 0;
+  // Monotone guard: EAN returns the input if its output has more unique nodes
+  // (never degrade an already-compact input). Copied into EANExtract at use.
+  bool EANMonotone = false;
+  // Interpret each summary this many times (>=1). Amortization knob for RQ2:
+  // reveals the per-query interpretation cost so EAN's cheaper IR can be
+  // weighed against its one-time normalization cost. Does not change results.
+  std::size_t InterpRepeat = 1;
+
+  // Memoizing (transformer-composition) interpretation. When set, the generic
+  // engines SKIP the tree-walking interpreter — they still build/optimize the
+  // path-expression ExprTo batch, but leave IN facts for the CLIENT to fill via
+  // a memoizing interpreter that evaluates each unique DAG node once (cost ∝
+  // unique nodes instead of the expanded tree). This only makes sense for a
+  // relational client whose fact is a transformer and whose initialFact is the
+  // compositional unit (e.g. the affine-equalities client); other clients must
+  // not set it (their IN facts would be left empty). Default off.
+  bool InterpMemo = false;
+};
+
+// EAN/Greedy post-optimization configuration for the interprocedural
+// path-summary solver (ForwardInterSummarySolver). Mirrors the EAN-relevant
+// subset of EliminationOptions so the intra and inter stories share identical
+// knobs and defaults. All fields default to a no-op pass (EnableEAN and
+// EnableGreedy both false), so the interprocedural baseline is unchanged.
+//
+// Soundness note: the interprocedural summary interpreter composes atoms the
+// same way as the intra interpreter (Concat = sequential apply, Union = merge),
+// so left distributivity holds unconditionally and the default safe-minimal law
+// profile preserves every client's results. Distributive clients may opt into a
+// richer profile per their algebra.
+struct InterEANOptions final {
+  // Run EAN on the batch of context summaries before interpreting them.
+  bool EnableEAN = false;
+  ean::LawProfile EANLaws = ean::LawProfile::safeMinimal();
+  ean::CostModel EANCost = ean::CostModel::uniform();
+  ean::Budget EANBudget = ean::Budget::unbounded();
+  ean::ExtractOptions EANExtract = {};
+  // Greedy post-pass (paper's "Greedy" config). Mutually exclusive with
+  // EnableEAN (EAN takes precedence if both set). Default off.
+  bool EnableGreedy = false;
+  // Invocation gate: run EAN only when the batch's raw unique-node count is at
+  // least this (0 = always). Copied into EANExtract.gateMinNodes at use.
+  std::size_t EANMinNodes = 0;
+  // Monotone guard: return the input batch if EAN's output has more unique
+  // nodes. Copied into EANExtract.monotoneGuard at use.
+  bool EANMonotone = false;
+  // Interpret each summary this many times (>=1). Amortization knob for RQ2.
+  std::size_t InterpRepeat = 1;
 };
 
 } // namespace elimination

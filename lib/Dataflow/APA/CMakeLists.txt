@@ -17,6 +17,7 @@ set(APA_SOURCES
   Analyses/Intra/IntraVeryBusyExpressions.cpp
   Analyses/Intra/IntraNonNull.cpp
   Analyses/Intra/IntraSignAnalysis.cpp
+  Analyses/Intra/IntraAffineEqualities.cpp
   Analyses/Inter/InterReachable.cpp
   Analyses/Inter/InterConstantPropagation.cpp
   Analyses/Inter/InterLiveVariables.cpp
