@@ -1,0 +1,148 @@
+[elim] clients=liveness, method=state, ordering=default, ean=off, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
+FUNC stdbuf
+  [client:liveness]
+  i0 IN: 
+  i1 IN: i0
+  i2 IN: i0,i1
+  i3 IN: i0,i1,i2
+  i4 IN: i0,i1,i2
+  i5 IN: i0,i1,i2,i4
+  i6 IN: i0,i1,i2
+  i7 IN: i0,i1,i2
+  i8 IN: i0,i1,i2,i7
+  i9 IN: i0,i1,i2
+  i10 IN: i0,i1,i2
+  i11 IN: i0,i1,i10,i2
+  i12 IN: i0,i1,i2
+  i13 IN: i0,i1,i12,i2
+  i14 IN: i0,i1,i13,i2
+  i15 IN: i0,i1,i2
+  i16 IN: i0,i1,i15,i2
+  i17 IN: i1,i15,i16,i2
+  i18 IN: i1,i2
+  i19 IN: i1,i2
+  i20 IN: i1,i19,i2
+  i21 IN: i1,i2,i20
+  i22 IN: i1,i2
+  i23 IN: i1,i2,i22
+  i24 IN: i2,i22,i23
+  i25 IN: i2
+  i26 IN: i2
+  i27 IN: i2,i26
+  i28 IN: i2,i27
+  i29 IN: i2
+  i30 IN: i2,i29
+  i31 IN: i29,i30
+  i32 IN: 
+  i33 IN: 
+FUNC apply_mode
+  [client:liveness]
+  i0 IN: arg0,arg1,i54
+  i1 IN: arg0,arg1,i0,i54
+  i2 IN: arg0,arg1,i0,i1,i54
+  i3 IN: arg0,arg1,i0,i1,i2,i54
+  i4 IN: arg0,arg1,i0,i1,i2,i3,i54
+  i5 IN: arg0,arg1,i0,i1,i2,i3,i4,i54
+  i6 IN: arg0,arg1,i0,i1,i2,i3,i4,i5,i54
+  i7 IN: arg1,i0,i1,i2,i3,i4,i5,i54
+  i8 IN: arg1,i0,i1,i2,i3,i4,i5,i54
+  i9 IN: i0,i1,i2,i3,i4,i5,i54
+  i10 IN: i0,i1,i2,i3,i4,i5,i54
+  i11 IN: i0,i1,i2,i3,i4,i5,i54
+  i12 IN: i0,i1,i2,i3,i4,i5,i54
+  i13 IN: i0,i1,i2,i3,i4,i5,i54
+  i14 IN: i0,i1,i2,i3,i4,i5,i54
+  i15 IN: i0,i1,i2,i3,i4,i5,i54
+  i16 IN: i0,i1,i15,i2,i3,i4,i5,i54
+  i17 IN: i0,i1,i16,i2,i3,i4,i5,i54
+  i18 IN: i0,i1,i17,i2,i3,i4,i5,i54
+  i19 IN: i0,i1,i18,i2,i3,i4,i5,i54
+  i20 IN: i0,i1,i2,i3,i4
+  i21 IN: i0,i1,i2,i3,i4
+  i22 IN: i0,i1,i2,i3,i4,i5,i54
+  i23 IN: i0,i1,i2,i22,i3,i4,i5,i54
+  i24 IN: i0,i1,i2,i23,i3,i4,i5,i54
+  i25 IN: i0,i1,i2,i24,i3,i4,i5,i54
+  i26 IN: i0,i1,i2,i25,i3,i4,i5,i54
+  i27 IN: i0,i1,i2,i3,i4
+  i28 IN: i0,i1,i2,i3,i4
+  i29 IN: i0,i1,i2,i3,i4,i5,i54
+  i30 IN: i0,i1,i2,i3,i4,i5,i54
+  i31 IN: i0,i1,i2,i3,i4,i5,i54
+  i32 IN: i0,i1,i2,i3,i31,i4,i5,i54
+  i33 IN: i0,i1,i2,i3,i32,i4,i5,i54
+  i34 IN: i0,i1,i2,i3,i4,i5,i54
+  i35 IN: i0,i1,i2,i3,i34,i4,i5,i54
+  i36 IN: i0,i1,i2,i3,i35,i4,i5,i54
+  i37 IN: i0,i1,i2,i3,i4,i5,i54
+  i38 IN: i0,i1,i2,i3,i37,i4,i54
+  i39 IN: i0,i1,i2,i3,i38,i4,i54
+  i40 IN: i0,i1,i2,i3,i39,i4,i54
+  i41 IN: i0,i1,i2,i3,i4,i40,i54
+  i42 IN: i0,i1
+  i43 IN: i0,i1,i42
+  i44 IN: i0,i1,i42,i43
+  i45 IN: i0,i42,i43,i44
+  i46 IN: i42,i43,i44,i45
+  i47 IN: i42,i43,i44,i46
+  i48 IN: i42,i43,i44,i47
+  i49 IN: 
+  i50 IN: i0,i1,i2,i3,i4,i54
+  i51 IN: i0,i1,i2,i3,i4,i50,i54
+  i52 IN: i0,i1,i2,i3,i4,i51,i54
+  i53 IN: i0,i1,i2,i3,i4
+  i54 IN: i0,i1,i2,i3,i4,i53
+  i55 IN: i0,i1,i2,i3,i4,i54
+  i56 IN: i0,i1,i2,i3,i4,i54
+  i57 IN: i0,i1,i2,i3,i4,i54
+  i58 IN: i0,i1,i2,i3,i4,i57
+  i59 IN: i0,i1,i2,i3,i4
+  i60 IN: i0,i1,i2,i3,i4,i59
+  i61 IN: i0,i1,i2,i3,i4,i60
+  i62 IN: i4
+  i63 IN: i4,i62
+  i64 IN: i4,i62,i63
+  i65 IN: i62,i63,i64
+  i66 IN: 
+  i67 IN: i0,i1,i2,i3,i4
+  i68 IN: i0,i1,i2,i3,i4
+  i69 IN: i0,i1,i2,i3,i4
+  i70 IN: i0,i1,i2,i3,i4,i69
+  i71 IN: i0,i1,i2,i3,i4,i69,i70
+  i72 IN: i0,i1,i2,i4,i69,i70,i71
+  i73 IN: i0,i1,i2,i69,i70,i71,i72
+  i74 IN: i0,i1,i2,i73
+  i75 IN: i0,i1,i2,i74
+  i76 IN: i0,i1,i2
+  i77 IN: i0,i1,i2,i76
+  i78 IN: i0,i1,i2,i76,i77
+  i79 IN: i1,i2,i76,i77,i78
+  i80 IN: i1,i2,i76,i77,i79
+  i81 IN: i1,i2,i76,i77,i80
+  i82 IN: i2,i76,i77,i80,i81
+  i83 IN: i2
+  i84 IN: i83
+  i85 IN: 
+  i86 IN: 
+FUNC fileno_to_name
+  [client:liveness]
+  i0 IN: arg0
+  i1 IN: arg0,i0
+  i2 IN: arg0,i0,i1
+  i3 IN: i0,i1
+  i4 IN: i0,i1
+  i5 IN: i0,i1
+  i6 IN: i0,i1
+  i7 IN: i1,i6
+  i8 IN: i1
+  i9 IN: i1
+  i10 IN: i1
+  i11 IN: i1
+  i12 IN: i1
+  i13 IN: i1
+  i14 IN: i1
+  i15 IN: i1
+  i16 IN: i1
+  i17 IN: i16
+[summary] skipped_functions=0
+[mem] peak_rss_kb=17052
