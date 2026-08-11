@@ -20,4 +20,6 @@ add_lotus_test_suite(apa_tests
     EAN/InterWiringTest.cpp
     EAN/AffineEanTest.cpp
     EAN/EvalExportTest.cpp
+    Baseline/TranslAPAGenKillTest.cpp
+    Baseline/TranslAPADriverTest.cpp
   LINK_LIBS APADataFlow LotusEGraph)

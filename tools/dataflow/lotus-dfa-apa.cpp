@@ -158,6 +158,12 @@ static cl::opt<bool> MemoInterpOpt(
     cl::desc("Affine client only: memoizing transformer interpreter "
              "(eval cost proportional to unique DAG nodes, not tree size)"),
     cl::init(false));
+static cl::opt<std::string> InterpOpt(
+    "interp",
+    cl::desc("Path-expression interpreter: generic (framework eval) | translapa "
+             "(closed-form Gen/Kill semiring baseline). Applies to the reachable "
+             "and reachdef clients."),
+    cl::init("generic"));
 
 namespace {
 
@@ -899,10 +905,17 @@ void runLiveness(raw_ostream &OS, const FunctionView &View,
 
 void runReachingDefinitions(raw_ostream &OS, const FunctionView &View,
                             const elimination::EliminationOptions &ElimOpts) {
+  const bool TranslApa = (InterpOpt == "translapa");
+  OS << "  [interp] mode=" << (TranslApa ? "translapa" : "generic") << "\n";
   runSetIntraAnalysis(
       OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimReachingDefinitions(&F, nullptr, Opts);
+      [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
+        return TranslApa
+                   ? elimination::runIntraTranslApaReachingDefinitions(&F,
+                                                                       nullptr,
+                                                                       Opts)
+                   : elimination::runIntraElimReachingDefinitions(&F, nullptr,
+                                                                  Opts);
       });
 }
 
@@ -1002,10 +1015,13 @@ void runAvailableExpressions(raw_ostream &OS, const FunctionView &View,
 
 void runReachable(raw_ostream &OS, const FunctionView &View,
                   const elimination::EliminationOptions &ElimOpts) {
+  const bool TranslApa = (InterpOpt == "translapa");
+  OS << "  [interp] mode=" << (TranslApa ? "translapa" : "generic") << "\n";
   runBoolIntraAnalysis(
       OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimReachable(&F, Opts);
+      [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
+        return TranslApa ? elimination::runIntraTranslApaReachable(&F, Opts)
+                         : elimination::runIntraElimReachable(&F, Opts);
       });
 }
 
