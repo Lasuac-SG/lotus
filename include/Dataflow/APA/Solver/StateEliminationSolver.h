@@ -1,10 +1,37 @@
 #ifndef DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 #define DATAFLOW_APA_ENGINES_STATEELIMINATIONSOLVER_H_
 
+#include "Dataflow/APA/EAN/DagStats.h"
+#include "Dataflow/APA/Solver/EliminationOrder.h"
 #include "Dataflow/APA/Solver/SolverContext.h"
+
+#include <chrono>
 
 namespace elimination {
 namespace detail {
+
+// Build the boolean elimination graph from the current matrix's off-diagonal
+// nonzeros (direct CFG edges at this point). Self-loops are the diagonal
+// (always one()) and are intentionally excluded — they do not affect the
+// predecessor–successor product.
+template <typename AnalysisDomainTy>
+order::EliminationGraph buildEliminationGraph(
+    const IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
+  using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
+  const auto N = Ctx.Nodes.size();
+  order::EliminationGraph G(N);
+  for (std::size_t i = 0; i < N; ++i) {
+    for (std::size_t j = 0; j < N; ++j) {
+      if (i == j) {
+        continue;
+      }
+      if (!Context::expr_factory_t::isZero(Ctx.Matrix[i][j])) {
+        G.addEdge(i, j);
+      }
+    }
+  }
+  return G;
+}
 
 // Generic Floyd-Warshall-style elimination over the full CFG. This engine
 // makes no reducibility assumptions and therefore serves as the baseline
@@ -14,6 +41,14 @@ std::vector<std::size_t> getStateEliminationOrder(
     const IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
   using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
   const auto N = Ctx.Nodes.size();
+
+  // Cost-aware policy: greedy minimum-product order over the elimination graph.
+  // Fully replaces the baseline order (including the reducible reverse-topo
+  // path). The final all-pairs result is invariant to pivot order.
+  if (Ctx.Opts.Ordering == OrderingPolicy::CostAware) {
+    return order::computeCostAwareOrder(buildEliminationGraph(Ctx));
+  }
+
   std::vector<std::size_t> Order(N);
   const auto *R =
       dynamic_cast<const typename Context::ReducibleProblemTy *>(&Ctx.Problem);
@@ -79,11 +114,34 @@ template <typename AnalysisDomainTy>
 void eliminateStateIntermediates(
     IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
   using Context = IntraEliminationSolverContext<AnalysisDomainTy>;
+  using transfer_t = typename Context::transfer_t;
   const auto N = Ctx.Nodes.size();
   std::vector<typename Context::expr_ref_t> ColK(N);
   std::vector<typename Context::expr_ref_t> RowK(N);
 
+  // Opt-in RQ3 instrumentation: peak unique DAG nodes across the whole matrix.
+  const bool Measure = Ctx.Opts.MeasurePeakNodes;
+  auto measurePeak = [&]() {
+    if (!Measure) {
+      return;
+    }
+    std::vector<typename Context::expr_ref_t> Live;
+    Live.reserve(N * N);
+    for (std::size_t i = 0; i < N; ++i) {
+      for (std::size_t j = 0; j < N; ++j) {
+        if (!Context::expr_factory_t::isZero(Ctx.Matrix[i][j])) {
+          Live.push_back(Ctx.Matrix[i][j]);
+        }
+      }
+    }
+    const std::size_t nodes = ean::computeDagStats<transfer_t>(Live).uniqueNodes;
+    if (nodes > Ctx.Diagnostics.peak_matrix_nodes) {
+      Ctx.Diagnostics.peak_matrix_nodes = nodes;
+    }
+  };
+
   const auto Order = getStateEliminationOrder(Ctx);
+  measurePeak(); // initial (direct-edge) matrix
   for (std::size_t ki = 0; ki < N; ++ki) {
     const std::size_t k = Order[ki];
     // Snapshot row/column k before mutating the matrix. This mirrors the
@@ -110,6 +168,7 @@ void eliminateStateIntermediates(
         Ctx.Matrix[i][j] = Ctx.Exprs.unite(Ctx.Matrix[i][j], Via);
       }
     }
+    measurePeak(); // after eliminating k
   }
 }
 
@@ -129,21 +188,41 @@ bool materializeStateResults(
   const auto EntryIdx = EntryIt->second;
 
   const auto Init = Ctx.Problem.initialFact();
+  const std::size_t Reps = Ctx.Opts.InterpRepeat ? Ctx.Opts.InterpRepeat : 1;
+  const auto InterpStart = std::chrono::steady_clock::now();
   for (std::size_t j = 0; j < Ctx.Nodes.size(); ++j) {
     const auto &N = Ctx.Nodes[j];
     // Each remaining matrix entry summarizes all paths from entry to N.
     auto E = Ctx.Matrix[EntryIdx][j];
     Ctx.Results.ExprTo(N) = E;
-    Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    // Skip the interpretation when EAN or Greedy will re-optimize and
+    // re-evaluate the whole batch afterwards (avoids a wasted eval), or when a
+    // memoizing client interpreter (InterpMemo) will fill IN facts itself.
+    if (!Ctx.Opts.EnableEAN && !Ctx.Opts.EnableGreedy && !Ctx.Opts.InterpMemo) {
+      typename Context::fact_t V = Ctx.eval(E, Init);
+      for (std::size_t r = 1; r < Reps; ++r) {
+        V = Ctx.eval(E, Init); // amortization measurement (RQ2)
+      }
+      Ctx.Results.IN(N) = std::move(V);
+    }
   }
+  Ctx.Diagnostics.interp_time_us += static_cast<std::size_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - InterpStart)
+          .count());
   return true;
 }
 
 template <typename AnalysisDomainTy>
 bool solveStateElimination(
     IntraEliminationSolverContext<AnalysisDomainTy> &Ctx) {
+  const auto GenStart = std::chrono::steady_clock::now();
   buildStateEliminationMatrix(Ctx);
   eliminateStateIntermediates(Ctx);
+  Ctx.Diagnostics.gen_time_us += static_cast<std::size_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - GenStart)
+          .count());
   return materializeStateResults(Ctx);
 }
 

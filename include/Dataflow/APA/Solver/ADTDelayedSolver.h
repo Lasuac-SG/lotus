@@ -139,7 +139,9 @@ bool solveADTDelayedWith(IntraEliminationSolverContext<AnalysisDomainTy> &Ctx,
     auto *Leaf = It->second;
     auto E = Ctx.evalUF(Leaf);
     Ctx.Results.ExprTo(N) = E;
-    Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    if (!Ctx.Opts.EnableEAN) {
+      Ctx.Results.IN(N) = Ctx.eval(E, Init);
+    }
   }
   return true;
 }

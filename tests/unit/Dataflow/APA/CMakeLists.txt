@@ -7,4 +7,19 @@ add_lotus_test_suite(apa_tests
     InterAffineEqualitiesTest.cpp
     InterSummaryTransferTest.cpp
     PathSummaryEquationSolverTest.cpp
-  LINK_LIBS APADataFlow)
+    OrderTest.cpp
+    EAN/RoundtripTest.cpp
+    EAN/FactorizeTest.cpp
+    EAN/SaturateTest.cpp
+    EAN/BatchExtractTest.cpp
+    EAN/StarTest.cpp
+    EAN/SolverWiringTest.cpp
+    EAN/EvalRq1Test.cpp
+    EAN/EvalRq3Test.cpp
+    EAN/GreedyTest.cpp
+    EAN/InterWiringTest.cpp
+    EAN/AffineEanTest.cpp
+    EAN/EvalExportTest.cpp
+    Baseline/TranslAPAGenKillTest.cpp
+    Baseline/TranslAPADriverTest.cpp
+  LINK_LIBS APADataFlow LotusEGraph)

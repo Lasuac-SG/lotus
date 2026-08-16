@@ -163,9 +163,17 @@ bool componentIsBottom(const AffineRelationComponent &component) {
 AffineRelationComponent normalizeComponent(AffineRelationComponent component) {
   component.constraints =
       howellize(std::move(component.constraints), component.bitWidth);
-  const unsigned vars = numVarsFor(component.bitWidth);
   for (const Row &row : component.constraints) {
-    if (leadingIndex(row) == static_cast<int>(2 * vars) && row.back().isOne()) {
+    // A genuine contradiction is a row [0 … 0 | c] whose only nonzero entry is
+    // the augmented (constant) term — the LAST column. Using a fixed 2*vars
+    // index here mis-fires when normalizeComponent runs on the wider
+    // intermediate matrices built by composeComponent (3*vars+1) / joinComponent
+    // (4*vars+2), where column 2*vars is a middle variable, not the constant —
+    // turning a satisfiable inhomogeneous relation (e.g. v' = u + 1) into a
+    // false bottom. Anchor on the row's own last column instead.
+    if (!row.empty() &&
+        leadingIndex(row) == static_cast<int>(row.size()) - 1 &&
+        row.back().isOne()) {
       return bottomComponent(component.bitWidth);
     }
   }

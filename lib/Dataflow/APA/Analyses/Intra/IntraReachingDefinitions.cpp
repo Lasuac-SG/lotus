@@ -1,5 +1,8 @@
 #include "Dataflow/APA/Analyses/Intra/IntraReachingDefinitions.h"
 
+#include "Dataflow/APA/Baseline/TranslAPA/AtomTranslator.h"
+#include "Dataflow/APA/Baseline/TranslAPA/Driver.h"
+
 #include "llvm/Analysis/MemoryLocation.h"
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/IR/Instructions.h"
@@ -199,6 +202,71 @@ runIntraElimReachingDefinitions(llvm::Function *F, llvm::AAResults *AA,
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   Out.setSolveMetadata(Status, Solver.getDiagnostics());
+  return Out;
+}
+
+ReachingDefinitionsResult
+runIntraTranslApaReachingDefinitions(llvm::Function *F, llvm::AAResults *AA,
+                                     EliminationOptions Opts) {
+  if (F == nullptr || F->isDeclaration()) {
+    return ReachingDefinitionsResult{};
+  }
+
+  // Composition (EAN/Greedy ⊕ TranslAPA): those post-passes rewrite
+  // Results.ExprTo(N) to the optimized DAG in place. Enabling InterpMemo makes
+  // the solver's post-pass (and the base materialization) skip their generic
+  // eval, since we fill IN by folding the (now optimized) DAG ourselves. Without
+  // this the run would waste — and possibly time out on — a full generic
+  // interpretation of the graph we are about to fold instead. This is what turns
+  // "--ean --interp=translapa" into a genuine measurement of folding the
+  // EAN-reduced DAG. The EAN/Greedy normalization time is already accumulated in
+  // norm_time_us by the post-pass; we add the mechanical extraction below.
+  if (Opts.EnableEAN || Opts.EnableGreedy) {
+    Opts.InterpMemo = true;
+  }
+
+  ElimReachingDefinitionsProblem Problem(F, AA, nullptr);
+  IntraEliminationSolver<LLVMEliminationDomain<ReachingDefinitionsFact>> Solver(
+      Problem, Opts);
+  auto Status = Solver.solve();
+  auto Out = Solver.getResults();
+  auto Diag = Solver.getDiagnostics();
+
+  // The finite fact universe: every value the transfer can put in a fact set —
+  // function arguments (initial fact), store instructions, and non-void
+  // instructions (see applyTransfer above).
+  std::vector<const llvm::Value *> Universe;
+  for (auto &Arg : F->args()) {
+    Universe.push_back(&Arg);
+  }
+  for (auto &BB : *F) {
+    for (auto &I : BB) {
+      if (llvm::isa<llvm::StoreInst>(&I)) {
+        Universe.push_back(&I);
+      } else if (!I.getType()->isVoidTy()) {
+        Universe.push_back(&I);
+      }
+    }
+  }
+
+  translapa::GenKillAtomTranslator<llvm::Instruction *, ReachingDefinitionsFact>
+      Tr(std::move(Universe),
+         [&Problem](const llvm::Instruction *const &T,
+                    const ReachingDefinitionsFact &In) {
+           return Problem.applyTransfer(const_cast<llvm::Instruction *>(T), In);
+         },
+         /*Separable=*/true);
+
+  auto TT =
+      translapa::foldFillGenKillTimed<LLVMEliminationDomain<
+          ReachingDefinitionsFact>>(Problem, Out, Tr);
+  // Extraction is the one-time IDA->APA translation cost (paper's construction);
+  // the closed-form fold is the per-query evaluation cost. Under EAN/Greedy the
+  // post-pass has already put its saturation time into norm_time_us, so we add
+  // (not overwrite) the extraction to report total construction = EAN + extract.
+  Diag.norm_time_us += TT.extract_us;
+  Diag.interp_time_us = TT.fold_us;
+  Out.setSolveMetadata(Status, Diag);
   return Out;
 }
 
