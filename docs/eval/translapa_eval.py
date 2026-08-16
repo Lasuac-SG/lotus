@@ -35,7 +35,7 @@ CLIENTS = ["reaching_defs", "reachable"]
 CAP = 300
 TIMEOUT = 180
 REPEAT = 3
-CONFIGS = ["td_default", "td_ean", "td_translapa"]
+CONFIGS = ["td_default", "td_ean", "td_translapa", "td_ean_translapa"]
 
 
 def invoke(bc, client, config, outpath):
@@ -48,6 +48,11 @@ def invoke(bc, client, config, outpath):
         cmd += ["--ean", "--ean-laws=safe"] + RE.EAN_BUDGET
     elif config == "td_translapa":
         cmd += ["--interp=translapa"]
+    elif config == "td_ean_translapa":
+        # Composition: EAN shrinks the DAG (safe laws), then the closed-form
+        # semiring folds the reduced DAG. The client sets InterpMemo internally
+        # so the post-pass skips its discarded generic eval.
+        cmd += ["--ean", "--ean-laws=safe", "--interp=translapa"] + RE.EAN_BUDGET
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT)
         txt = r.stdout
@@ -103,41 +108,59 @@ def client_funcs(res, client):
 def agg(args):
     progs = RE.programs(args.suite)
     rows = []  # summary rows
+    compose_rows = []  # 4-way composition rows (EAN ⊕ TranslAPA)
     for client in CLIENTS:
         # per-function ratios vs td_default
-        r = {c: {"nodes": [], "interp": [], "end2end": []} for c in
-             ["td_ean", "td_translapa"]}
-        oneshot = {"td_ean_norm": [], "td_translapa_extract": []}
+        variants = ["td_ean", "td_translapa", "td_ean_translapa"]
+        r = {c: {"nodes": [], "interp": [], "end2end": []} for c in variants}
+        oneshot = {"td_ean_norm": [], "td_translapa_extract": [],
+                   "td_ean_translapa_norm": []}
         base_interp, ta_interp = [], []  # absolute medians (us)
+        # Multiplicativity: fold-on-EAN-DAG / fold-on-raw-DAG, per function.
+        # If TranslAPA's fold cost is ∝ unique nodes (memoized fold), this ratio
+        # should track the EAN node-reduction ratio — the two levers multiply.
+        mult_fold = []          # ean_translapa.interp / translapa.interp
+        ean_node_ratio = []     # ean.nodes / default.nodes (paired w/ mult_fold)
         unequal_total = compared_total = nfun = 0
         for suite, prog, bc in progs:
             P = {c: RE.parse(RE.raw_path(suite, prog, f"{c}_{client}"))
                  for c in CONFIGS}
             base = client_funcs(P["td_default"], client)
-            ean = client_funcs(P["td_ean"], client)
-            ta = client_funcs(P["td_translapa"], client)
+            cf = {c: client_funcs(P[c], client) for c in variants}
             for fn, b in base.items():
                 if b.get("nodes", 0) <= 0:
                     continue
                 nfun += 1
                 if "interp" in b:
                     base_interp.append(b["interp"])
-                for c, cd in [("td_ean", ean.get(fn)), ("td_translapa", ta.get(fn))]:
+                for c in variants:
+                    cd = cf[c].get(fn)
                     if not cd or "nodes" not in cd:
                         continue
                     for k in ["nodes", "interp", "end2end"]:
                         bv, cv = b.get(k, 0), cd.get(k, 0)
                         if bv > 0 and cv > 0:
                             r[c][k].append(cv / bv)
-                if fn in ta and "interp" in ta[fn]:
-                    ta_interp.append(ta[fn]["interp"])
-                if fn in ean and ean[fn].get("norm", 0) > 0:
-                    oneshot["td_ean_norm"].append(ean[fn]["norm"])
-                if fn in ta and ta[fn].get("norm", 0) > 0:
-                    oneshot["td_translapa_extract"].append(ta[fn]["norm"])
-            # correctness: default vs translapa IN facts
+                ta = cf["td_translapa"].get(fn)
+                et = cf["td_ean_translapa"].get(fn)
+                ea = cf["td_ean"].get(fn)
+                if ta and "interp" in ta:
+                    ta_interp.append(ta["interp"])
+                # paired fold-on-ean vs fold-on-raw + the node ratio it should track
+                if (ta and et and ta.get("interp", 0) > 0
+                        and et.get("interp", 0) > 0):
+                    mult_fold.append(et["interp"] / ta["interp"])
+                    if ea and ea.get("nodes", 0) > 0 and b.get("nodes", 0) > 0:
+                        ean_node_ratio.append(ea["nodes"] / b["nodes"])
+                if ea and ea.get("norm", 0) > 0:
+                    oneshot["td_ean_norm"].append(ea["norm"])
+                if ta and ta.get("norm", 0) > 0:
+                    oneshot["td_translapa_extract"].append(ta["norm"])
+                if et and et.get("norm", 0) > 0:
+                    oneshot["td_ean_translapa_norm"].append(et["norm"])
+            # correctness: default vs {translapa, ean_translapa} IN facts
             dp = RE.raw_path(suite, prog, f"td_default_{client}")
-            tp = RE.raw_path(suite, prog, f"td_translapa_{client}")
+            tp = RE.raw_path(suite, prog, f"td_ean_translapa_{client}")
             if not (os.path.exists(dp) and os.path.exists(tp)):
                 continue
             if RE.is_incomplete(dp) or RE.is_incomplete(tp):
@@ -166,6 +189,23 @@ def agg(args):
             ean_norm_us=statistics.median(oneshot["td_ean_norm"]) if oneshot["td_ean_norm"] else 0,
             translapa_extract_us=statistics.median(oneshot["td_translapa_extract"]) if oneshot["td_translapa_extract"] else 0,
             compared=compared_total, unequal=unequal_total))
+        compose_rows.append(dict(
+            client=client,
+            # nodes: EAN and EAN+TranslAPA share the reduced DAG (≈ equal);
+            # TranslAPA alone keeps the raw DAG (≈ 1.00).
+            ean_nodes=RE.geomean(r["td_ean"]["nodes"]),
+            translapa_nodes=RE.geomean(r["td_translapa"]["nodes"]),
+            ean_translapa_nodes=RE.geomean(r["td_ean_translapa"]["nodes"]),
+            # evaluation time vs Default (lower is better).
+            ean_interp=RE.geomean(r["td_ean"]["interp"]),
+            translapa_interp=RE.geomean(r["td_translapa"]["interp"]),
+            ean_translapa_interp=RE.geomean(r["td_ean_translapa"]["interp"]),
+            # the multiplicativity check.
+            fold_ean_over_raw=RE.geomean(mult_fold),
+            ean_node_ratio=RE.geomean(ean_node_ratio),
+            n_mult=len(mult_fold),
+            ean_translapa_norm_us=statistics.median(oneshot["td_ean_translapa_norm"]) if oneshot["td_ean_translapa_norm"] else 0,
+            unequal=unequal_total, compared=compared_total))
 
     out = os.path.join(RE.OUT, "translapa_compare.csv")
     with open(out, "w") as f:
@@ -182,6 +222,26 @@ def agg(args):
                     f"{r['translapa_interp_us']:.0f},{r['ean_norm_us']:.0f},"
                     f"{r['translapa_extract_us']:.0f},{r['compared']},{r['unequal']}\n")
     sys.stderr.write(f"[translapa] wrote {out}\n")
+
+    # 4-way composition table (EAN ⊕ TranslAPA), including the multiplicativity
+    # check: fold_ean_over_raw should track ean_node_ratio if EAN's smaller DAG
+    # transfers linearly into the closed-form fold time.
+    compose = os.path.join(RE.OUT, "translapa_compose.csv")
+    with open(compose, "w") as f:
+        f.write("client,ean_nodes_ratio,translapa_nodes_ratio,"
+                "ean_translapa_nodes_ratio,ean_interp_ratio,"
+                "translapa_interp_ratio,ean_translapa_interp_ratio,"
+                "fold_ean_over_raw_ratio,ean_node_ratio_paired,n_paired,"
+                "ean_translapa_norm_us_median,unequal_lines,in_lines_compared\n")
+        for c in compose_rows:
+            f.write(f"{c['client']},{c['ean_nodes']:.4f},"
+                    f"{c['translapa_nodes']:.4f},{c['ean_translapa_nodes']:.4f},"
+                    f"{c['ean_interp']:.4f},{c['translapa_interp']:.4f},"
+                    f"{c['ean_translapa_interp']:.4f},"
+                    f"{c['fold_ean_over_raw']:.4f},{c['ean_node_ratio']:.4f},"
+                    f"{c['n_mult']},{c['ean_translapa_norm_us']:.0f},"
+                    f"{c['unequal']},{c['compared']}\n")
+    sys.stderr.write(f"[translapa] wrote {compose}\n")
     # human-readable echo
     for r in rows:
         sys.stderr.write(
@@ -189,6 +249,14 @@ def agg(args):
             f"nodes(ean={r['ean_nodes']:.3f},ta={r['translapa_nodes']:.3f}) "
             f"interp(ean={r['ean_interp']:.3f},ta={r['translapa_interp']:.3f}) "
             f"unequal={r['unequal']}/{r['compared']}\n")
+    for c in compose_rows:
+        sys.stderr.write(
+            f"  [compose] {c['client']}: "
+            f"interp(ean={c['ean_interp']:.3f},ta={c['translapa_interp']:.3f},"
+            f"ean+ta={c['ean_translapa_interp']:.3f}) "
+            f"fold_ean/raw={c['fold_ean_over_raw']:.3f} "
+            f"vs node_ratio={c['ean_node_ratio']:.3f} (n={c['n_mult']}) "
+            f"unequal={c['unequal']}/{c['compared']}\n")
 
 
 if __name__ == "__main__":

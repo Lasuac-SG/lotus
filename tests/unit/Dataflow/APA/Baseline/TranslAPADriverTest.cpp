@@ -127,4 +127,67 @@ TEST(TranslAPADriver, NestedLoopMatchesGeneric) {
                                     {5, {}}});
 }
 
+// Composition (EAN ⊕ TranslAPA): run the solver with EAN enabled so the
+// front-end rewrites Results.ExprTo(N) to the equality-saturated (reduced) DAG,
+// then fold THAT DAG with the closed-form Gen/Kill semiring. The result must
+// still match the generic interpreter on the raw DAG — this is the correctness
+// half of the "two orthogonal levers compose" experiment: EAN shrinks the graph
+// (safe-minimal laws preserve semantics) and TranslAPA folds it in closed form,
+// so folding the smaller graph yields the same facts.
+void expectComposedMatchesGeneric(
+    int Entry, std::unordered_map<int, std::vector<int>> Succs) {
+  GenProblem Problem(Entry, Succs);
+
+  // Reference: generic interpreter on the raw DAG (no EAN).
+  elimination::IntraEliminationSolver<TestDomain> Generic(Problem);
+  Generic.solve();
+  auto GenericRes = Generic.getResults();
+
+  // Composed: EAN rewrites ExprTo to the reduced DAG; InterpMemo makes the
+  // post-pass skip its (discarded) generic eval. We then fold the reduced DAG.
+  elimination::EliminationOptions Opts;
+  Opts.EnableEAN = true;      // default EANLaws = safe-minimal (universally sound)
+  Opts.InterpMemo = true;     // fill IN by folding, not by the generic eval
+  elimination::IntraEliminationSolver<TestDomain> EanSolver(Problem, Opts);
+  EanSolver.solve();
+  auto Composed = EanSolver.getResults();
+
+  std::vector<int> Universe;
+  for (const auto &It : Succs) {
+    Universe.push_back(It.first);
+  }
+  elimination::translapa::GenKillAtomTranslator<int, std::set<int>> Tr(
+      Universe,
+      [&Problem](const int &T, const std::set<int> &In) {
+        return Problem.applyTransfer(T, In);
+      });
+  elimination::translapa::foldFillGenKill<TestDomain>(Problem, Composed, Tr);
+
+  for (const int N : Universe) {
+    const auto *G = GenericRes.tryIN(N);
+    const auto *C = Composed.tryIN(N);
+    ASSERT_EQ(G != nullptr, C != nullptr) << "node " << N;
+    if (G != nullptr) {
+      EXPECT_EQ(*G, *C) << "composed mismatch at node " << N;
+    }
+  }
+}
+
+TEST(TranslAPADriver, ComposedLoopMatchesGeneric) {
+  expectComposedMatchesGeneric(0, {{0, {1}}, {1, {2}}, {2, {1, 3}}, {3, {}}});
+}
+
+TEST(TranslAPADriver, ComposedBranchMatchesGeneric) {
+  expectComposedMatchesGeneric(0, {{0, {1, 2}}, {1, {3}}, {2, {3}}, {3, {}}});
+}
+
+TEST(TranslAPADriver, ComposedNestedLoopMatchesGeneric) {
+  expectComposedMatchesGeneric(0, {{0, {1}},
+                                   {1, {2}},
+                                   {2, {3}},
+                                   {3, {2, 4}},
+                                   {4, {1, 5}},
+                                   {5, {}}});
+}
+
 } // namespace

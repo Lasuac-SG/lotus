@@ -68,6 +68,13 @@ ReachableResult runIntraTranslApaReachable(llvm::Function *F,
     return ReachableResult{};
   }
 
+  // See IntraReachingDefinitions.cpp for the rationale: under EAN/Greedy the
+  // post-pass rewrites Results.ExprTo in place, so InterpMemo lets us fold the
+  // optimized DAG instead of paying a discarded generic eval.
+  if (Opts.EnableEAN || Opts.EnableGreedy) {
+    Opts.InterpMemo = true;
+  }
+
   ElimReachableProblem Problem(F);
   IntraEliminationSolver<LLVMEliminationDomain<ReachableFact>> Solver(Problem,
                                                                       Opts);
@@ -79,7 +86,7 @@ ReachableResult runIntraTranslApaReachable(llvm::Function *F,
   auto TT =
       translapa::foldFillGenKillTimed<LLVMEliminationDomain<ReachableFact>>(
           Problem, Out, Tr);
-  Diag.norm_time_us = TT.extract_us;
+  Diag.norm_time_us += TT.extract_us;
   Diag.interp_time_us = TT.fold_us;
   Out.setSolveMetadata(Status, Diag);
   return Out;
