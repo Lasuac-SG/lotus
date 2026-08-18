@@ -20,6 +20,7 @@
 //    optimality).
 
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <limits>
 #include <unordered_map>
@@ -60,37 +61,79 @@ struct RelaxState {
 // Cycle-safe per-class cheapest-node relaxation. `wNode(node)` is the node's own
 // weight; `disc(childClassId)` scales a child's cost when a parent consumes it
 // (used to reward reuse; 1.0 = no discount).
+//
+// Uses a parent-pointer work queue (egg-style) instead of a whole-graph
+// rescan-to-fixpoint: a class is (re)relaxed only when it is first seeded or
+// when one of its children's cost improved. Node costs are monotonically
+// non-increasing, so the queue converges to the same least fixpoint the naive
+// `for pass: for all classes` relaxation reached with a sufficient pass count
+// (the sole caller uses numberOfClasses()+1, which always suffices) — the chosen
+// representative and cost are byte-for-byte identical. `passes` is retained for
+// API compatibility and now bounds only pathological non-convergence.
 template <typename WNodeFn, typename DiscFn>
 RelaxState cycleSafeExtract(Graph &g, WNodeFn wNode, DiscFn disc,
                             std::size_t passes) {
   RelaxState st;
   const auto ids = g.classIds();
-  for (std::size_t pass = 0; pass < passes; ++pass) {
-    bool changed = false;
-    for (Id c0 : ids) {
-      const std::uint32_t cid = g.find(c0).value();
-      const auto &cls = g[c0];
-      for (const PathLang &n : cls.nodes) {
-        double cost = wNode(n);
-        bool eligible = true;
-        for (Id q : n.children()) {
-          const std::uint32_t qid = g.find(q).value();
-          const double cc = st.at(qid);
-          if (cc == kInf) {
-            eligible = false;
-            break;
-          }
-          cost += cc * disc(qid);
+
+  std::deque<Id> worklist;
+  std::unordered_set<std::uint32_t> queued;
+  for (Id c : ids) {
+    worklist.push_back(c);
+    queued.insert(g.find(c).value());
+  }
+
+  // Generous safety cap on total relaxations so a pathological input cannot spin
+  // forever; under the auto pass count this is never reached, so output is
+  // unchanged. passes==0 would mean "no bound" but the caller never passes 0.
+  const std::size_t nclasses = ids.size() + 1;
+  const std::size_t cap =
+      passes == 0
+          ? std::numeric_limits<std::size_t>::max()
+          : (passes > std::numeric_limits<std::size_t>::max() / nclasses
+                 ? std::numeric_limits<std::size_t>::max()
+                 : passes * nclasses);
+  std::size_t steps = 0;
+
+  while (!worklist.empty()) {
+    if (++steps > cap) {
+      break;
+    }
+    Id c0 = worklist.front();
+    worklist.pop_front();
+    const std::uint32_t cid = g.find(c0).value();
+    queued.erase(cid);
+
+    const auto &cls = g[c0];
+    bool improved = false;
+    for (const PathLang &n : cls.nodes) {
+      double cost = wNode(n);
+      bool eligible = true;
+      for (Id q : n.children()) {
+        const std::uint32_t qid = g.find(q).value();
+        const double cc = st.at(qid);
+        if (cc == kInf) {
+          eligible = false;
+          break;
         }
-        if (eligible && cost < st.at(cid)) {
-          st.cost[cid] = cost;
-          st.chosen[cid] = n;
-          changed = true;
-        }
+        cost += cc * disc(qid);
+      }
+      if (eligible && cost < st.at(cid)) {
+        st.cost[cid] = cost;
+        st.chosen[cid] = n;
+        improved = true;
       }
     }
-    if (!changed) {
-      break;
+
+    if (improved) {
+      // This class's cost improved (or became finite): re-relax every class that
+      // references it as a child.
+      for (Id p : cls.parents) {
+        const std::uint32_t pc = g.find(p).value();
+        if (queued.insert(pc).second) {
+          worklist.push_back(g.find(p));
+        }
+      }
     }
   }
   return st;

@@ -31,6 +31,23 @@ struct ExtractOptions {
   // preservation, so EAN never degrades an already-compact input (e.g. one
   // produced by cost-aware elimination ordering). Off by default.
   bool monotoneGuard = false;
+
+  // Explore phase — guarded expansion (paper §III.C, Table III). Distributes a
+  // JOIN sitting inside a SEQ (the reverse of factorization) to expose sharing:
+  //   P·(r1 ⊕ … ⊕ rk)·S  ->  (P·r1·S) ⊕ … ⊕ (P·rk·S)
+  // Admitted only when it aligns with structure already in the e-graph — at
+  // least `expandMinAligned` produced branches must ALREADY exist as e-classes
+  // (0 disables the alignment requirement) — and it adds at most
+  // `expandGrowthCap` new e-nodes to the class. This opportunity guard keeps
+  // expansion from blindly undoing factorization or exploding the e-graph.
+  std::size_t expandMinAligned = 1;
+  std::size_t expandGrowthCap = 64;
+
+  // Phase scheduling. true (default) runs the phases Cleanup→Factor→Star→Explore
+  // in order, each to local saturation before advancing (paper Algorithm 1).
+  // false applies every rewrite family together each round (the "No phase
+  // schedule" ablation for Table VIII / RQ4).
+  bool scheduled = true;
 };
 
 } // namespace ean

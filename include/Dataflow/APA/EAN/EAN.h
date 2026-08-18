@@ -52,12 +52,12 @@ ean(const std::vector<typename PathExprFactory<TransferT>::Ref> &R,
     PathCostFn tree_fn(C);
     SaturationStats st;
     if (opts.plateauMode == ExtractOptions::PlateauCost::Dag) {
-      st = saturate(imp.g, imp.roots, L, B,
+      st = saturate(imp.g, imp.roots, L, B, opts,
                     [&](Graph &g, const std::vector<Id> &roots) {
                       return reuseAwareCost(g, roots, C, opts);
                     });
     } else {
-      st = saturate(imp.g, imp.roots, L, B,
+      st = saturate(imp.g, imp.roots, L, B, opts,
                     [&](Graph &g, const std::vector<Id> &roots) {
                       return extractCost(g, roots, tree_fn);
                     });

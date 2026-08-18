@@ -42,7 +42,7 @@ Mat evalNode(Graph &g, const ean::AtomTable<int> &atoms, const PathLang &n,
              std::unordered_map<std::uint32_t, Mat> &memo) {
   if (ean::isZero(n)) return zeroM();
   if (ean::isOne(n)) return oneM();
-  if (ean::isAtom(n)) return gen(*atoms.atom(ean::parseAtomId(n.op()))->Transfer);
+  if (ean::isAtom(n)) return gen(*atoms.atom(ean::parseAtomId(n))->Transfer);
   if (ean::isStar(n)) return closureM(evalClass(g, atoms, n.children()[0], memo));
   if (ean::isJoin(n)) {
     Mat m = zeroM();

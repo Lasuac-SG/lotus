@@ -2,10 +2,12 @@
 
 #include "Solvers/EGraph/EGraph.h"
 
+#include <deque>
 #include <functional>
 #include <limits>
 #include <optional>
 #include <type_traits>
+#include <unordered_set>
 
 namespace lotus::egraph {
 
@@ -126,38 +128,58 @@ private:
   };
 
   void compute() {
-    bool changed = true;
-    while (changed) {
-      changed = false;
-      for (Id id : egraph_.classIds()) {
-        const auto &klass = egraph_[id];
-        std::optional<Entry> best_entry;
-        for (const auto &node : klass.nodes) {
-          auto child_cost = [&](Id child) -> std::optional<Cost> {
-            auto it = best_.find(egraph_.find(child));
-            if (it == best_.end()) {
-              return std::nullopt;
-            }
-            return it->second.cost;
-          };
+    // Parent-pointer work queue (egg-style), replacing the previous
+    // repeated whole-graph rescan-to-fixpoint. Node costs are monotonically
+    // non-increasing, so the queue converges to the same least fixpoint the
+    // naive `while (changed) { for all classes }` loop reached — the extracted
+    // representative and cost are identical, only the work performed is
+    // proportional to actual cost propagation instead of #classes per pass.
+    std::deque<Id> worklist;
+    std::unordered_set<Id> queued;
+    for (Id id : egraph_.classIds()) {
+      worklist.push_back(id);
+      queued.insert(id);
+    }
 
-          auto total_cost = nodeTotalCost(node, child_cost);
-          if (!total_cost) {
-            continue;
-          }
-          if (!best_entry || total_cost.value() < best_entry->cost) {
-            best_entry = Entry{total_cost.value(), node};
-          }
-        }
+    while (!worklist.empty()) {
+      Id id = worklist.front();
+      worklist.pop_front();
+      queued.erase(id);
 
-        if (!best_entry) {
+      const auto &klass = egraph_[id];
+      std::optional<Entry> best_entry;
+      for (const auto &node : klass.nodes) {
+        auto child_cost = [&](Id child) -> std::optional<Cost> {
+          auto it = best_.find(egraph_.find(child));
+          if (it == best_.end()) {
+            return std::nullopt;
+          }
+          return it->second.cost;
+        };
+
+        auto total_cost = nodeTotalCost(node, child_cost);
+        if (!total_cost) {
           continue;
         }
+        if (!best_entry || total_cost.value() < best_entry->cost) {
+          best_entry = Entry{total_cost.value(), node};
+        }
+      }
 
-        auto it = best_.find(id);
-        if (it == best_.end() || best_entry->cost < it->second.cost) {
-          best_[id] = *best_entry;
-          changed = true;
+      if (!best_entry) {
+        continue;
+      }
+
+      auto it = best_.find(id);
+      if (it == best_.end() || best_entry->cost < it->second.cost) {
+        best_[id] = *best_entry;
+        // This class's best cost improved (or became finite): re-examine every
+        // class that references it as a child.
+        for (Id parent : klass.parents) {
+          Id parent_canon = egraph_.find(parent);
+          if (queued.insert(parent_canon).second) {
+            worklist.push_back(parent_canon);
+          }
         }
       }
     }

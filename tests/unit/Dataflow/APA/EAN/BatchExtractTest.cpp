@@ -179,6 +179,85 @@ TEST(EanBatchExtract, EndToEndBothPlateauModes) {
   }
 }
 
+// Decisive byte-identical guard for the work-queue rewrite of cycleSafeExtract:
+// the parent-pointer worklist must compute the SAME least fixpoint (identical
+// chosen node and cost per class) as the previous whole-graph pass relaxation.
+// A local copy of the naive relaxation is the reference oracle.
+namespace {
+ean::detail::RelaxState naiveCycleSafe(ean::Graph &g, std::size_t passes) {
+  ean::PathCostFn wf(CostModel::uniform());
+  auto wNode = [&](const PathLang &n) { return wf.opWeight(n); };
+  auto disc = [](std::uint32_t) { return 1.0; };
+  ean::detail::RelaxState st;
+  const auto ids = g.classIds();
+  for (std::size_t pass = 0; pass < passes; ++pass) {
+    bool changed = false;
+    for (Id c0 : ids) {
+      const std::uint32_t cid = g.find(c0).value();
+      const auto &cls = g[c0];
+      for (const PathLang &n : cls.nodes) {
+        double cost = wNode(n);
+        bool eligible = true;
+        for (Id q : n.children()) {
+          const std::uint32_t qid = g.find(q).value();
+          const double cc = st.at(qid);
+          if (cc == ean::detail::kInf) {
+            eligible = false;
+            break;
+          }
+          cost += cc * disc(qid);
+        }
+        if (eligible && cost < st.at(cid)) {
+          st.cost[cid] = cost;
+          st.chosen[cid] = n;
+          changed = true;
+        }
+      }
+    }
+    if (!changed)
+      break;
+  }
+  return st;
+}
+} // namespace
+
+TEST(EanBatchExtract, WorklistExtractMatchesNaive) {
+  ean::PathCostFn wf(CostModel::uniform());
+  auto wNode = [&](const PathLang &n) { return wf.opWeight(n); };
+  auto disc = [](std::uint32_t) { return 1.0; };
+
+  for (int t = 0; t < 300; ++t) {
+    Factory F;
+    std::vector<Ref> R;
+    const int k = 1 + static_cast<int>(rnd() % 3);
+    for (int i = 0; i < k; ++i)
+      R.push_back(randExpr(F, 4));
+
+    auto imp = ean::importCanonical<int>(R);
+    // Grow alternatives so classes carry multiple nodes (non-trivial extraction).
+    ean::factorizeToFixpoint(imp.g, LawProfile::kleeneAlgebra());
+    imp.g.rebuild();
+
+    const std::size_t passes = imp.g.numberOfClasses() + 1;
+    ean::detail::RelaxState wl =
+        ean::detail::cycleSafeExtract(imp.g, wNode, disc, passes);
+    ean::detail::RelaxState nv = naiveCycleSafe(imp.g, passes);
+
+    ASSERT_EQ(wl.cost.size(), nv.cost.size()) << "trial " << t;
+    for (const auto &kv : nv.cost) {
+      auto it = wl.cost.find(kv.first);
+      ASSERT_NE(it, wl.cost.end()) << "trial " << t << " class " << kv.first;
+      EXPECT_DOUBLE_EQ(it->second, kv.second) << "trial " << t;
+      auto cit = wl.chosen.find(kv.first);
+      auto nit = nv.chosen.find(kv.first);
+      ASSERT_NE(cit, wl.chosen.end());
+      ASSERT_NE(nit, nv.chosen.end());
+      EXPECT_TRUE(cit->second == nit->second)
+          << "trial " << t << " class " << kv.first << ": chosen node differs";
+    }
+  }
+}
+
 TEST(EanBatchExtract, RandomizedDifferential) {
   for (int t = 0; t < 400; ++t) {
     Factory F;

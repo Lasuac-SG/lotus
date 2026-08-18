@@ -19,6 +19,7 @@ add_lotus_test_suite(apa_tests
     EAN/GreedyTest.cpp
     EAN/InterWiringTest.cpp
     EAN/AffineEanTest.cpp
+    EAN/ExpandTest.cpp
     EAN/EvalExportTest.cpp
     Baseline/TranslAPAGenKillTest.cpp
     Baseline/TranslAPADriverTest.cpp

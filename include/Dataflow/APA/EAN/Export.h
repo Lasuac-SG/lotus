@@ -66,7 +66,7 @@ private:
       return f_.one();
     }
     if (isAtom(n)) {
-      return atoms_.atom(parseAtomId(n.op()));
+      return atoms_.atom(parseAtomId(n));
     }
     if (isStar(n)) {
       return f_.star(exportId(n.children().front()));

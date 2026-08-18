@@ -964,20 +964,31 @@ private:
       }
     }
 
+    // Canonicalize + dedup the incrementally-maintained parent lists. This is
+    // now O(sum of parent-list sizes) (see recomputeParents), cheap enough to run
+    // on every rebuild — no need to gate it, and running it also bounds parent
+    // list growth from repeated-child references (e.g. seq(R,R)) and merges.
     recomputeParents();
     return unions;
   }
 
   void recomputeParents() {
+    // Canonicalize and dedup the incrementally-maintained parent lists. Every
+    // class that references another was registered in the child's `parents` at
+    // node creation (makeNewEClass) and carried across merges (uniteImpl merges
+    // the right class's parents into the left), so the lists are always a
+    // superset of the true parents. This pass only resolves ids to their current
+    // representative and drops duplicates — O(sum of parent-list sizes) — instead
+    // of clearing every list and rebuilding it by rescanning all nodes×children
+    // (the previous O(sum of nodes × arity) full graph rescan on every rebuild).
     for (auto &[_, klass] : classes_) {
-      klass.parents.clear();
-    }
-    for (auto &[id, klass] : classes_) {
-      for (const auto &node : klass.nodes) {
-        for (Id child : node.children()) {
-          classes_.at(findMut(child)).parents.push_back(id);
-        }
+      for (Id &p : klass.parents) {
+        p = findMut(p);
       }
+      std::sort(klass.parents.begin(), klass.parents.end());
+      klass.parents.erase(
+          std::unique(klass.parents.begin(), klass.parents.end()),
+          klass.parents.end());
     }
   }
 

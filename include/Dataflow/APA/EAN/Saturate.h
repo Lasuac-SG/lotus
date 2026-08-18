@@ -23,6 +23,8 @@
 
 #include "Dataflow/APA/EAN/Budget.h"
 #include "Dataflow/APA/EAN/Canonical.h"
+#include "Dataflow/APA/EAN/Expand.h"
+#include "Dataflow/APA/EAN/ExtractOptions.h"
 #include "Dataflow/APA/EAN/Factorize.h"
 #include "Dataflow/APA/EAN/LawProfile.h"
 #include "Dataflow/APA/EAN/Star.h"
@@ -35,17 +37,30 @@ namespace ean {
 enum class Phase { Cleanup, Factor, Star, Explore };
 
 // One round of a phase. Returns the number of new equivalent forms added.
-inline std::size_t applyPhaseRound(Phase p, Graph &g, const LawProfile &L) {
+inline std::size_t applyPhaseRound(Phase p, Graph &g, const LawProfile &L,
+                                   const ExtractOptions &opts) {
   switch (p) {
   case Phase::Factor:
     return factorizeRound(g, L);
   case Phase::Star:
     return slideRound(g, L);
+  case Phase::Explore:
+    return expandRound(g, L, opts); // guarded expansion (Explore phase)
   case Phase::Cleanup: // canonical laws enforced at construction (M1)
-  case Phase::Explore: // deferred
     return 0;
   }
   return 0;
+}
+
+// One unscheduled round: apply every rewrite family together (no phase
+// ordering). Used for the "No phase schedule" ablation.
+inline std::size_t applyAllRewrites(Graph &g, const LawProfile &L,
+                                    const ExtractOptions &opts) {
+  std::size_t changed = 0;
+  changed += factorizeRound(g, L);
+  changed += slideRound(g, L);
+  changed += expandRound(g, L, opts);
+  return changed;
 }
 
 // Client-weighted tree cost of the current best extraction, summed over roots.
@@ -67,10 +82,12 @@ double extractCost(const Graph &g, const std::vector<Id> &roots,
 // Run the phased, budgeted saturation in place on `g`. `costEval(g, roots)`
 // returns the current scalar cost (the plateau signal) — inject the tree cost
 // or the reuse-aware Eq. 5 cost to switch plateau modes. Returns metrics.
+// `opts.scheduled` selects the phase-ordered schedule (default) or the
+// unscheduled "apply everything each round" ablation mode.
 template <typename CostEval>
 SaturationStats saturate(Graph &g, const std::vector<Id> &roots,
                          const LawProfile &L, const Budget &B,
-                         CostEval &&costEval) {
+                         const ExtractOptions &opts, CostEval &&costEval) {
   SaturationStats st;
   st.peakNodes = g.totalSize();
   st.initCost = costEval(g, roots);
@@ -78,43 +95,63 @@ SaturationStats saturate(Graph &g, const std::vector<Id> &roots,
   std::size_t plateau = 0;
   const auto start = std::chrono::steady_clock::now();
 
+  // Account for one applied round and test all budget bounds. Returns true when
+  // saturation should stop (and records the stop reason).
+  auto accountAndCheck = [&]() -> bool {
+    ++st.rounds;
+    st.peakNodes = std::max(st.peakNodes, g.totalSize());
+    const double c = costEval(g, roots);
+    if (c < best) {
+      best = c;
+      plateau = 0;
+    } else {
+      ++plateau;
+    }
+    const double elapsed =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
+            .count();
+    if (st.rounds >= B.roundLimit) {
+      st.stop = StopReason::RoundLimit;
+      return true;
+    }
+    if (g.totalSize() >= B.nodeLimit) {
+      st.stop = StopReason::NodeLimit;
+      return true;
+    }
+    if (plateau >= B.plateauLimit) {
+      st.stop = StopReason::Plateau;
+      return true;
+    }
+    if (elapsed >= B.timeLimitSec) {
+      st.stop = StopReason::TimeLimit;
+      return true;
+    }
+    return false;
+  };
+
   bool stop = false;
-  for (Phase p : {Phase::Cleanup, Phase::Factor, Phase::Star, Phase::Explore}) {
-    while (!stop) {
-      const std::size_t changed = applyPhaseRound(p, g, L);
-      if (changed == 0) {
-        break; // this phase has saturated; advance to the next phase
+  if (opts.scheduled) {
+    for (Phase p :
+         {Phase::Cleanup, Phase::Factor, Phase::Star, Phase::Explore}) {
+      while (!stop) {
+        const std::size_t changed = applyPhaseRound(p, g, L, opts);
+        if (changed == 0) {
+          break; // this phase has saturated; advance to the next phase
+        }
+        stop = accountAndCheck();
       }
-      ++st.rounds;
-      st.peakNodes = std::max(st.peakNodes, g.totalSize());
-
-      const double c = costEval(g, roots);
-      if (c < best) {
-        best = c;
-        plateau = 0;
-      } else {
-        ++plateau;
-      }
-
-      const double elapsed =
-          std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
-              .count();
-      if (st.rounds >= B.roundLimit) {
-        st.stop = StopReason::RoundLimit;
-        stop = true;
-      } else if (g.totalSize() >= B.nodeLimit) {
-        st.stop = StopReason::NodeLimit;
-        stop = true;
-      } else if (plateau >= B.plateauLimit) {
-        st.stop = StopReason::Plateau;
-        stop = true;
-      } else if (elapsed >= B.timeLimitSec) {
-        st.stop = StopReason::TimeLimit;
-        stop = true;
+      if (stop) {
+        break;
       }
     }
-    if (stop) {
-      break;
+  } else {
+    // Unscheduled: apply every rewrite family together each round.
+    while (!stop) {
+      const std::size_t changed = applyAllRewrites(g, L, opts);
+      if (changed == 0) {
+        break;
+      }
+      stop = accountAndCheck();
     }
   }
 

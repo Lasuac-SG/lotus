@@ -25,6 +25,7 @@
 #include "BoolKleene.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -409,48 +410,89 @@ TEST(EanEvalExport, WriteAllTables) {
     const CostModel PRO = CostModel::profiled();
     ExtractOptions tree0;
     tree0.reuseIters = 0;
+    const int REPS = 5; // wall-clock is noisy on tiny synthetic subjects
 
-    GeoMean gNoFactor, gNoStar, gUniTree, gProTree, gReuseVsTree;
+    GeoMean gNoFactor, gNoStar, gNoExpand, gNoSched, gUniTree, gProTree,
+        gReuseVsTree;
+    double tFull = 0, tNoFactor = 0, tNoStar = 0, tNoExpand = 0, tNoSched = 0,
+           tUni = 0, tPro = 0;
+
+    // Run a variant REPS times, accumulate wall-clock into `acc`, return the
+    // last RunOut (stats/parity are deterministic across reps).
+    auto timed = [&](const std::vector<Ref> &R, const LawProfile &L,
+                     const CostModel &C, const ExtractOptions &o,
+                     double &acc) -> RunOut {
+      const auto t0 = std::chrono::steady_clock::now();
+      RunOut ro;
+      for (int i = 0; i < REPS; ++i) {
+        ro = runEAN(R, L, C, Budget::unbounded(), o);
+      }
+      acc += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0)
+                 .count();
+      return ro;
+    };
+
     for (auto &s : corpus) {
-      auto full = runEAN(s.roots, FULL, PRO, Budget::unbounded(), REUSE);
+      auto full = timed(s.roots, FULL, PRO, REUSE, tFull);
       const double base = static_cast<double>(full.after.uniqueNodes);
 
       LawProfile noFac = FULL;
       noFac.disable(Law::LeftDistributive).disable(Law::RightDistributive);
-      auto rNoFac = runEAN(s.roots, noFac, PRO, Budget::unbounded(), REUSE);
+      auto rNoFac = timed(s.roots, noFac, PRO, REUSE, tNoFactor);
 
       LawProfile noStar = FULL;
       noStar.disable(Law::Sliding);
-      auto rNoStar = runEAN(s.roots, noStar, PRO, Budget::unbounded(), REUSE);
+      auto rNoStar = timed(s.roots, noStar, PRO, REUSE, tNoStar);
 
-      auto rUni = runEAN(s.roots, FULL, UNI, Budget::unbounded(), tree0);
-      auto rPro = runEAN(s.roots, FULL, PRO, Budget::unbounded(), tree0);
+      // No guarded expansion: Explore phase disabled (growth cap 0 rejects every
+      // expansion) while all other mechanisms stay on.
+      ExtractOptions noExpand = REUSE;
+      noExpand.expandGrowthCap = 0;
+      auto rNoExp = timed(s.roots, FULL, PRO, noExpand, tNoExpand);
+
+      // No phase schedule: apply every rewrite family together each round.
+      ExtractOptions noSched = REUSE;
+      noSched.scheduled = false;
+      auto rNoSch = timed(s.roots, FULL, PRO, noSched, tNoSched);
+
+      auto rUni = timed(s.roots, FULL, UNI, tree0, tUni);
+      auto rPro = timed(s.roots, FULL, PRO, tree0, tPro);
 
       EXPECT_TRUE(full.parity && rNoFac.parity && rNoStar.parity &&
-                  rUni.parity && rPro.parity)
+                  rNoExp.parity && rNoSch.parity && rUni.parity && rPro.parity)
           << s.family << "/" << s.label;
 
       gNoFactor.add(base, rNoFac.after.uniqueNodes);
       gNoStar.add(base, rNoStar.after.uniqueNodes);
+      gNoExpand.add(base, rNoExp.after.uniqueNodes);
+      gNoSched.add(base, rNoSch.after.uniqueNodes);
       gUniTree.add(base, rUni.after.uniqueNodes);
       gProTree.add(base, rPro.after.uniqueNodes);
       // reuse-aware (base) vs profiled tree: ratio base/proTree (≤1 = reuse wins)
       gReuseVsTree.add(rPro.after.uniqueNodes, base);
     }
 
+    // End-to-end time ratio vs full EAN (aggregate wall-clock over the corpus;
+    // >1 = slower than full EAN, <1 = faster). Synthetic-corpus proxy; the real
+    // timing story is Table VII on the LLVM corpus.
+    auto tr = [&](double t) { return tFull > 0 ? t / tFull : 0.0; };
+
     auto os = open("table8_ablation.csv");
-    os << "variant,final_nodes_ratio_vs_fullEAN,note\n";
-    os << "No factorization," << gNoFactor.value()
+    os << "variant,final_nodes_ratio_vs_fullEAN,end2end_ratio_vs_fullEAN,note\n";
+    os << "No factorization," << gNoFactor.value() << "," << tr(tNoFactor)
        << ",disable Left/Right distributivity\n";
-    os << "No star rules," << gNoStar.value() << ",disable sliding\n";
-    os << "No guarded expansion,N/A,Explore phase deferred (not implemented)\n";
-    os << "No phase schedule,N/A,single fixed schedule; no unscheduled mode\n";
-    os << "Uniform tree cost," << gUniTree.value()
+    os << "No star rules," << gNoStar.value() << "," << tr(tNoStar)
+       << ",disable sliding\n";
+    os << "No guarded expansion," << gNoExpand.value() << "," << tr(tNoExpand)
+       << ",disable Explore phase (expandGrowthCap=0)\n";
+    os << "No phase schedule," << gNoSched.value() << "," << tr(tNoSched)
+       << ",unscheduled: all rewrite families each round\n";
+    os << "Uniform tree cost," << gUniTree.value() << "," << tr(tUni)
        << ",uniform weights + tree extraction (reuseIters=0)\n";
-    os << "Profiled tree cost," << gProTree.value()
+    os << "Profiled tree cost," << gProTree.value() << "," << tr(tPro)
        << ",profiled weights + tree extraction (reuseIters=0)\n";
-    os << "Reuse-aware/ProfiledTree," << gReuseVsTree.value()
-       << ",full-EAN nodes / profiled-tree nodes (<=1 reuse wins)\n";
+    os << "Reuse-aware/ProfiledTree," << gReuseVsTree.value() << ",,"
+       << "full-EAN nodes / profiled-tree nodes (<=1 reuse wins)\n";
   }
 
   // ===================== RQ4: budget sweep (the knee) ========================
