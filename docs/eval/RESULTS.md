@@ -45,17 +45,19 @@
 - 「EAN reduces unique nodes by **geo-mean 0.857×**（即 −14.3%）」。
 - **Answer to RQ1**：EAN preserves **all（100%）** client results.
 
-### 4. Table VIII（消融，相对 full EAN 的 final nodes）→ `table8_ablation.csv`
+### 4. Table VIII（消融，相对 full EAN）→ `table8_ablation.csv`
 
-| Variant | Final nodes (vs full EAN) | 说明 |
-|---|---|---|
-| **No factorization** | **1.163**（多 16%）| 关掉左右分配律——**节点缩减的主导机制** |
-| No star rules | 1.00 | 滑动只重结合，不改节点数（其价值在解释时间/RQ2）|
-| No guarded expansion | **N/A** | Explore 阶段已推后，机制未落地 |
-| No phase schedule | **N/A** | 目前单一固定调度，无"无调度"对照模式 |
-| Uniform tree cost | 1.00 | 代价权重只影响等价形选择，不改本族节点数 |
-| Profiled tree cost | 1.00 | 同上（区别体现在解释时间/RQ2）|
-| Reuse-aware / Profiled-tree | 1.00 | 安全网取等号：本族哈希共享已被树抽取捕获 |
+现含 `end2end_ratio_vs_fullEAN` 列(合成语料墙钟,>1=比 full 慢、<1=快;真实计时见 Table VII)。
+
+| Variant | Final nodes | End-to-end | 说明 |
+|---|---|---|---|
+| **No factorization** | **1.163**（多 16%）| 0.554 | 关掉左右分配律——**节点缩减的主导机制**;去掉后更快但更胖 |
+| No star rules | 1.00 | 0.953 | 滑动只重结合,不改节点数 |
+| **No guarded expansion** | **1.00** | **0.930** | Explore 已落地(`Expand.h`);合成语料上展开**不改最终节点**(共享已由 factorization 捕获),但会触发并加工作 → 去掉略快。诚实中性结果 |
+| **No phase schedule** | **1.00** | **1.146** | 无调度模式已落地(`scheduled=false`);**更慢、质量不变** ⇒ 印证论文"无约束搜索在等价形式上白费预算" |
+| Uniform tree cost | 1.00 | 0.874 | 代价权重只影响等价形选择,不改本族节点数 |
+| Profiled tree cost | 1.00 | 0.857 | 同上 |
+| Reuse-aware / Profiled-tree | 1.00 | — | 安全网取等号:本族哈希共享已被树抽取捕获 |
 
 可写入正文：**factorization** accounts for the largest node reduction；star/cost/reuse 在这些族上不改节点数，其价值属 RQ2 的解释时间维度。
 
@@ -146,9 +148,9 @@
 | client | laws | functions | in-lines | unequal |
 |---|---|---|---|---|
 | reachable | safe | 74,511 | 1,651,282 | **0** |
-| reaching_defs | safe | 28,099 | 687,130 | **0** |
+| reaching_defs | safe | 28,646 | 710,715 | **0** |
 | liveness | safe | 43,777 | 1,055,455 | **0** |
-| uninitialized | safe | 72,992 | 1,582,546 | **0** |
+| uninitialized | safe | 74,511 | 1,651,282 | **0** |
 | constant_prop | safe | 6,353 | 160,906 | **0** |
 
 **Answer to RQ1**：safe-minimal EAN 在真实语料上**保持全部 client 结果**（0/5.1M 不一致）。**Greedy 同样 0/5.1M 不一致**（`real_rq1_correctness.csv` 的 `variant=greedy` 行）——因其只用左分配因式分解 + 结合律规范化，无任何分配律假设，故对所有 client sound。
@@ -157,12 +159,15 @@
 用 **full Kleene** 档案（含右分配律+滑动）跑同样对比，在完整数据对上：reachable **435/987k（0.04%）**、reaching_defs **19,050/804k（2.4%）**、liveness **23,009/811k（2.8%）** 出现不一致——即这些 client **不是真正的 Kleene 代数**，右分配律/滑动对其**不 sound**；而 safe-minimal 全 0。这在真实语料上量化验证了论文的 R1（law-gated admissibility）契约。
 
 ## Table VI（最终复杂度，相对 Default 的几何均值）→ `real_table6_complexity.csv`
+
+> **注（e-graph 优化刷新，2026-08-17）**：EAN 内部已升级(typed-DSL 节点 + 增量 rebuild + 父结点工作队列抽取器 + guarded expansion),端到端 EAN 归一化在富客户端(reaching_defs)上实测 **1.72×** 提速(`egraph_speedup.md`);**正确性重验通过**(下方 RQ1 全 0 不一致)。EAN/Order+EAN 行的节点比因 tie-break(atom 数值序 + union-by-size)微移 ≤2%;Greedy/Order 行为非-EAN 路径,数值不变。
+
 | Config | Unique nodes | DAG edges | Tree size | Sequence | Stars | Sharing(before→after) |
 |---|---|---|---|---|---|---|
 | Greedy | 0.397 | 0.257 | 0.998 | 0.247 | 1.000 | 4.39→18.3 |
 | Order | 0.367 | 0.226 | 1.078 | 0.220 | 0.993 | 4.39→115.2 |
-| EAN | 0.394 | 0.255 | 0.999 | 0.244 | 1.000 | 4.39→18.8 |
-| **Order+EAN** | **0.344** | **0.207** | 1.038 | **0.200** | 0.994 | 4.39→121.2 |
+| EAN | 0.395 | 0.256 | 0.999 | 0.245 | 1.000 | 4.39→18.8 |
+| **Order+EAN** | **0.352** | **0.212** | 1.037 | **0.205** | 0.994 | 4.39→111.6 |
 
 - **唯一节点降到 ~0.34–0.40×（几何均值省 60–66%）**；按总节点加权省 **84–91%**（大函数收益更大，见 RQ2 桶）。**Sequence(concat) 降到 ~0.20–0.25×** 是主贡献（因式分解压缩共享前/后缀）。
 - **Greedy(0.397) ≈ EAN(0.394)** —— 两者共享同一规范化（ACI/结合律）与左分配因式分解；差别仅在 EAN 保留竞争形做 reuse-aware 跨根代价抽取，而 Greedy 做逐类最廉树抽取（`reuseIters=0`）。**在逐函数 summary 批次上，保留竞争形几乎无额外收益（<1% 节点）**——共享子表达式在单函数内已被工厂 hash-cons 捕获，跨根重用空间很小。这是一个如实的负面结果：cost-driven 抽取的价值需要更大的跨查询/跨函数批次才能显现。
@@ -174,21 +179,22 @@
 |---|---|---|---|---|---|---|
 | Greedy | 1.301 | 6.03 | 1.499 | 6.609 | 1.316 | 20 |
 | Order | 1.352 | — | 1.051 | 1.333 | 1.118 | 13 |
-| EAN | 1.205 | 6.06 | 1.362 | 6.510 | 1.196 | 20 |
-| Order+EAN | 1.621 | 5.88 | 1.343 | 6.736 | 1.232 | 22 |
+| EAN | 1.312 | 6.66 | 1.549 | 7.171 | 1.334 | 22 |
+| Order+EAN | 1.740 | 5.63 | 1.554 | 6.671 | 1.288 | 19 |
 
-- **诚实结论**：这些 dataflow client 的**解释本身极廉**（µs 级），而 EAN 的饱和是 ms 级，故 **EAN end-to-end 慢 ~6.5×**、峰值 RSS 高 ~1.2×（e-graph 瞬时开销）。即在此语料上 **EAN 是"IR 体积/保留表示"优化，而非速度或峰值内存优化**。
+- **诚实结论**：这些 dataflow client 的**解释本身极廉**（µs 级），而 EAN 的饱和是 ms 级，故 **EAN end-to-end 慢 ~6.7×**、峰值 RSS 高 ~1.3×（e-graph 瞬时开销）。即在此语料上 **EAN 是"IR 体积/保留表示"优化，而非速度或峰值内存优化**。
+- **计时口径**：此表用 `reachable`(退化 1-fact 客户端),其 DAG 结构简单、抽取占比小,故 e-graph 抽取器提速在此**杠杆有限**;富客户端(reaching_defs)上归一化实测 **1.72×**(`egraph_speedup.md`)。计时有 run-to-run 抖动。
 - Order 生成慢 1.35×（min-product 排序 + 略增 fill），但无 EAN 后处理。
-- **Greedy 与 EAN 计时几乎相同**（end-to-end 6.61× vs 6.51×）：同一 e-graph 饱和主导开销，`reuseIters=0` 省下的仅是抽取阶段的极小部分。即 Greedy 相对 EAN **不是更快的近似**，而是**同等开销、同等 IR、缺少 reuse-aware 抽取**的消融点。
+- **Greedy 与 EAN 计时同量级**：同一 e-graph 饱和主导开销,`reuseIters=0` 省下的仅是抽取阶段的极小部分。即 Greedy 相对 EAN **不是更快的近似**,而是**同等开销、同等 IR、缺少 reuse-aware 抽取**的消融点。
 
 ## RQ2 Break-even → `real_rq2_breakeven.csv`
 按 raw DAG 节点数分桶的 (Default vs EAN) end-to-end 中位数比：
 | raw nodes | n | Default µs | EAN µs | EAN/Default |
 |---|---|---|---|---|
-| 0–50 | 44,087 | 32 | 189 | 5.9× |
-| 100–200 | 6,818 | 179 | 1,154 | 6.4× |
-| 1k–5k | 8,126 | 2,187 | 17,796 | 8.1× |
-| >5k | 3,579 | 13,831 | 135,667 | 9.8× |
+| 0–50 | 41,442 | 32 | 208 | 6.5× |
+| 100–200 | 6,295 | 178 | 1,274 | 7.2× |
+| 1k–5k | 7,693 | 2,130 | 20,467 | 9.6× |
+| >5k | 3,420 | 13,666 | 164,880 | 12.1× |
 
 → **在所有规模桶上 EAN 都更慢，且随规模单调加重**（5.9×→9.8×）。故本语料上 EAN 不存在时间盈亏平衡点：其收益在 IR 体积（Table VI）而非端到端时间。这为论文"invocation gate / 仅对大表达式启用"的必要性提供了直接证据。
 

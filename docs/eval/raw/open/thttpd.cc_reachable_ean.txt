@@ -1,8 +1,9 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=1930
 FUNC value_required
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13,6 +14,7 @@ FUNC value_required
   i7 IN: true
 FUNC e_strdup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25,6 +27,7 @@ FUNC e_strdup
   i9 IN: true
 FUNC usage
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32,6 +35,7 @@ FUNC usage
   i4 IN: true
 FUNC handle_term
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -39,6 +43,7 @@ FUNC handle_term
   i4 IN: true
 FUNC handle_chld
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -72,10 +77,12 @@ FUNC handle_chld
   i30 IN: true
 FUNC handle_hup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC handle_usr1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -88,6 +95,7 @@ FUNC handle_usr1
   i9 IN: true
 FUNC handle_usr2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -95,6 +103,7 @@ FUNC handle_usr2
   i4 IN: true
 FUNC handle_alrm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -109,12 +118,14 @@ FUNC handle_alrm
   i11 IN: true
 FUNC occasional
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC idle
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -168,6 +179,7 @@ FUNC idle
   i50 IN: true
 FUNC update_throttles
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -270,10 +282,12 @@ FUNC update_throttles
   i99 IN: true
 FUNC show_stats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC handle_newconnect
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -364,6 +378,7 @@ FUNC handle_newconnect
   i87 IN: true
 FUNC clear_connection
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -425,6 +440,7 @@ FUNC clear_connection
   i58 IN: true
 FUNC wakeup_connection
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -443,6 +459,7 @@ FUNC wakeup_connection
   i15 IN: true
 FUNC really_clear_connection
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -502,6 +519,7 @@ FUNC really_clear_connection
   i56 IN: true
 FUNC shut_down
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -573,6 +591,7 @@ FUNC shut_down
   i68 IN: true
 FUNC logstats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -617,6 +636,7 @@ FUNC logstats
   i41 IN: true
 FUNC linger_clear_connection
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -627,6 +647,7 @@ FUNC httpd_initialize
   [skipped] reason=too_large insts=226
 FUNC initialize_listen_socket
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -752,6 +773,7 @@ FUNC initialize_listen_socket
   i122 IN: true
 FUNC free_httpd_server
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -799,6 +821,7 @@ FUNC free_httpd_server
   i44 IN: true
 FUNC ext_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -807,6 +830,7 @@ FUNC ext_compare
   i5 IN: true
 FUNC httpd_set_logfp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -817,6 +841,7 @@ FUNC httpd_set_logfp
   i7 IN: true
 FUNC httpd_ntoa
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -855,6 +880,7 @@ FUNC httpd_ntoa
   i35 IN: true
 FUNC httpd_terminate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -879,6 +905,7 @@ FUNC httpd_terminate
   i21 IN: true
 FUNC httpd_unlisten
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -896,6 +923,7 @@ FUNC httpd_unlisten
   i14 IN: true
 FUNC httpd_write_response
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -945,6 +973,7 @@ FUNC httpd_write_response
   i46 IN: true
 FUNC httpd_clear_ndelay
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -956,6 +985,7 @@ FUNC httpd_clear_ndelay
   i8 IN: true
 FUNC httpd_write_fully
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -988,6 +1018,7 @@ FUNC httpd_write_fully
   i29 IN: true
 FUNC httpd_set_ndelay
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -999,6 +1030,7 @@ FUNC httpd_set_ndelay
   i8 IN: true
 FUNC httpd_realloc_str
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1044,6 +1076,7 @@ FUNC httpd_realloc_str
   i42 IN: true
 FUNC httpd_send_err
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1072,6 +1105,7 @@ FUNC httpd_send_err
   i25 IN: true
 FUNC my_snprintf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1083,6 +1117,7 @@ FUNC my_snprintf
   i8 IN: true
 FUNC send_err_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1140,6 +1175,7 @@ FUNC send_err_file
   i54 IN: true
 FUNC send_response
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1278,6 +1314,7 @@ FUNC send_mime
   [skipped] reason=too_large insts=235
 FUNC httpd_method_str
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1291,6 +1328,7 @@ FUNC httpd_get_conn
   [skipped] reason=too_large insts=178
 FUNC httpd_got_request
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1354,6 +1392,7 @@ FUNC httpd_close_conn
   [skipped] reason=too_large insts=228
 FUNC httpd_destroy_conn
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1408,6 +1447,7 @@ FUNC check_referrer
   [skipped] reason=too_large insts=157
 FUNC name_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1416,6 +1456,7 @@ FUNC name_compare
   i5 IN: true
 FUNC cgi_kill
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1431,6 +1472,7 @@ FUNC cgi_kill
   i12 IN: true
 FUNC build_env
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1452,6 +1494,7 @@ FUNC build_env
   i18 IN: true
 FUNC cgi_interpose_input
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1582,6 +1625,7 @@ FUNC cgi_interpose_output
   [skipped] reason=too_large insts=243
 FUNC cgi_kill2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1592,6 +1636,7 @@ FUNC cgi_kill2
   i7 IN: true
 FUNC send_authenticate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1612,6 +1657,7 @@ FUNC send_authenticate
   i17 IN: true
 FUNC httpd_read_fully
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1644,6 +1690,7 @@ FUNC httpd_read_fully
   i29 IN: true
 FUNC httpd_logstats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1657,6 +1704,7 @@ FUNC httpd_logstats
   i10 IN: true
 FUNC fdwatch_get_nfiles
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1737,6 +1785,7 @@ FUNC fdwatch_get_nfiles
   i77 IN: true
 FUNC fdwatch_add_fd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1781,6 +1830,7 @@ FUNC fdwatch_add_fd
   i41 IN: true
 FUNC fdwatch_del_fd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1834,6 +1884,7 @@ FUNC fdwatch_del_fd
   i50 IN: true
 FUNC fdwatch
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1876,6 +1927,7 @@ FUNC fdwatch
   i39 IN: true
 FUNC fdwatch_check_fd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1915,6 +1967,7 @@ FUNC fdwatch_check_fd
   i36 IN: true
 FUNC fdwatch_get_next_client_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1948,6 +2001,7 @@ FUNC fdwatch_get_next_client_data
   i30 IN: true
 FUNC fdwatch_logstats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1963,6 +2017,7 @@ FUNC mmc_map
   [skipped] reason=too_large insts=316
 FUNC panic
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2016,6 +2071,7 @@ FUNC panic
   i50 IN: true
 FUNC mmc_unmap
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2127,6 +2183,7 @@ FUNC mmc_unmap
   i108 IN: true
 FUNC mmc_cleanup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2242,6 +2299,7 @@ FUNC mmc_cleanup
   i112 IN: true
 FUNC mmc_term
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2305,6 +2363,7 @@ FUNC mmc_term
   i60 IN: true
 FUNC mmc_logstats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2323,6 +2382,7 @@ FUNC mmc_logstats
   i15 IN: true
 FUNC tmr_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2331,6 +2391,7 @@ FUNC tmr_init
   i5 IN: true
 FUNC tmr_create
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2472,6 +2533,7 @@ FUNC tmr_create
   i138 IN: true
 FUNC tmr_timeout
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2518,6 +2580,7 @@ FUNC tmr_timeout
   i43 IN: true
 FUNC tmr_mstimeout
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2556,6 +2619,7 @@ FUNC tmr_mstimeout
   i35 IN: true
 FUNC tmr_run
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2650,6 +2714,7 @@ FUNC tmr_run
   i91 IN: true
 FUNC l_resort
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2751,6 +2816,7 @@ FUNC l_resort
   i98 IN: true
 FUNC tmr_cancel
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2788,6 +2854,7 @@ FUNC tmr_cancel
   i34 IN: true
 FUNC tmr_reset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2817,6 +2884,7 @@ FUNC tmr_reset
   i26 IN: true
 FUNC tmr_cleanup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2840,6 +2908,7 @@ FUNC tmr_cleanup
   i20 IN: true
 FUNC tmr_term
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2920,6 +2989,7 @@ FUNC tmr_term
   i77 IN: true
 FUNC tmr_logstats
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2935,6 +3005,7 @@ FUNC tmr_logstats
   i12 IN: true
 FUNC match
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2960,6 +3031,7 @@ FUNC match
   i22 IN: true
 FUNC match_one
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3025,6 +3097,7 @@ FUNC tdate_parse
   [skipped] reason=too_large insts=151
 FUNC scan_mon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3084,6 +3157,7 @@ FUNC scan_mon
   i56 IN: true
 FUNC scan_wday
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3143,6 +3217,7 @@ FUNC scan_wday
   i56 IN: true
 FUNC strlong_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3150,4 +3225,4 @@ FUNC strlong_compare
   i4 IN: true
   i5 IN: true
 [summary] skipped_functions=13
-[mem] peak_rss_kb=26668
+[mem] peak_rss_kb=28192

@@ -1,4 +1,4 @@
-[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC _ZN3pov26Initialize_Atmosphere_CodeEv
   [client:constant_prop]
   i0 IN: 
@@ -868,5 +868,13 @@ FUNC _ZN3pov22Destroy_Priority_QueueEPNS_21Priority_Queue_StructE
   i3 IN: i1=overdefined
   i4 IN: i1=overdefined
   i5 IN: i1=overdefined
-  i6 IN: i1=o
+  i6 IN: i1=overdefined,i5=overdefined
+  i7 IN: i1=overdefined,i5=overdefined
+  i8 IN: i1=overdefined,i5=overdefined
+  i9 IN: arg0=const,i1=overdefined,i5=overdefined
+  i10 IN: arg0=const,i1=overdefined,i5=overdefined,i9=const
+  i11 IN: arg0=overdefined,i1=overdefined,i5=overdefined,i9=overdefined
+  i12 IN: arg0=overdefined,i1=overdefined,i5=overdefined,i9=overdefined
+  i13 IN: arg0=overdefined,i1=overdefined,i5=overdefined,i9=overdefined
+FUNC _ZN3pov17Destroy_BBox_TreeEPNS_16BBox_Tree_
 [TIMEOUT] 45s

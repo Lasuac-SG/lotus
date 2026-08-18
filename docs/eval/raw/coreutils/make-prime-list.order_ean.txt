@@ -1,8 +1,9 @@
 [elim] clients=reachable, method=state, ordering=cost-aware, ean=on, ean_laws=safe, repeat=5, ean_min_nodes=0, interp_repeat=1, max_func_insts=300
 FUNC main
   [client:reachable]
-  [cfg] args=2, blocks=22, insts=155, edges=29, branching_blocks=8, max_succs=2, phis=1, calls=24, returns=1, unreachable=0, elapsed_us=143514
-  [timing] gen_us=21550, norm_us=113108, interp_us=1199, end2end_us=143514, runs=5
+  [interp] mode=generic
+  [cfg] args=2, blocks=22, insts=155, edges=29, branching_blocks=8, max_succs=2, phis=1, calls=24, returns=1, unreachable=0, elapsed_us=162166
+  [timing] gen_us=23381, norm_us=132139, interp_us=934, end2end_us=162166, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=322, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=970, edges=1628, tree=7.380700e+04, seq=712, stars=2, unions=101, atoms=154, sharing=7.608969e+01, roots=155
   [expr-profile] with_expr=155, missing_expr=0, total_unique_nodes=29036, total_shared_refs=3481, total_unions=549, total_concats=15546, total_stars=172, max_nodes=357@i154, max_depth=89@i127
@@ -163,8 +164,9 @@ FUNC main
   i154 IN: true
 FUNC xalloc
   [client:reachable]
-  [cfg] args=1, blocks=3, insts=17, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=1025
-  [timing] gen_us=222, norm_us=760, interp_us=13, end2end_us=1025, runs=5
+  [interp] mode=generic
+  [cfg] args=1, blocks=3, insts=17, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=970
+  [timing] gen_us=188, norm_us=699, interp_us=14, end2end_us=970, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=30, edges=28, tree=2.410000e+02, seq=14, stars=0, unions=0, atoms=15, sharing=8.033333e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=241, total_shared_refs=0, total_unions=0, total_concats=112, total_stars=0, max_nodes=27@i16, max_depth=14@i16
@@ -187,8 +189,9 @@ FUNC xalloc
   i16 IN: true
 FUNC process_prime
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=2067
-  [timing] gen_us=550, norm_us=1419, interp_us=23, end2end_us=2067, runs=5
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=2214
+  [timing] gen_us=660, norm_us=1427, interp_us=26, end2end_us=2214, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=52, edges=50, tree=6.770000e+02, seq=25, stars=0, unions=0, atoms=26, sharing=1.301923e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=677, total_shared_refs=0, total_unions=0, total_concats=325, total_stars=0, max_nodes=51@i26, max_depth=26@i26
@@ -221,8 +224,9 @@ FUNC process_prime
   i26 IN: true
 FUNC output_primes
   [client:reachable]
-  [cfg] args=2, blocks=25, insts=168, edges=31, branching_blocks=8, max_succs=2, phis=1, calls=16, returns=1, unreachable=1, elapsed_us=146786
-  [timing] gen_us=30252, norm_us=105323, interp_us=1343, end2end_us=146786, runs=5
+  [interp] mode=generic
+  [cfg] args=2, blocks=25, insts=168, edges=31, branching_blocks=8, max_succs=2, phis=1, calls=16, returns=1, unreachable=1, elapsed_us=200054
+  [timing] gen_us=41802, norm_us=143990, interp_us=1510, end2end_us=200054, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=653, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=698, edges=1058, tree=8.943500e+04, seq=458, stars=4, unions=69, atoms=166, sharing=1.281304e+02, roots=168
   [expr-profile] with_expr=168, missing_expr=0, total_unique_nodes=38718, total_shared_refs=2477, total_unions=703, total_concats=19614, total_stars=393, max_nodes=367@i117, max_depth=77@i161
@@ -396,8 +400,9 @@ FUNC output_primes
   i167 IN: true
 FUNC print_wide_uint
   [client:reachable]
-  [cfg] args=3, blocks=10, insts=84, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=13014
-  [timing] gen_us=4239, norm_us=8014, interp_us=146, end2end_us=13014, runs=5
+  [interp] mode=generic
+  [cfg] args=3, blocks=10, insts=84, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=14178
+  [timing] gen_us=5598, norm_us=7660, interp_us=198, end2end_us=14178, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=182, edges=196, tree=1.020800e+04, seq=91, stars=0, unions=7, atoms=83, sharing=5.608791e+01, roots=84
   [expr-profile] with_expr=84, missing_expr=0, total_unique_nodes=6047, total_shared_refs=41, total_unions=38, total_concats=2964, total_stars=0, max_nodes=170@i83, max_depth=65@i81
@@ -487,8 +492,9 @@ FUNC print_wide_uint
   i83 IN: true
 FUNC binvert
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=34, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=9156
-  [timing] gen_us=1066, norm_us=7626, interp_us=54, end2end_us=9156, runs=5
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=34, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=11184
+  [timing] gen_us=1626, norm_us=9203, interp_us=73, end2end_us=11184, runs=5
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=19, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=122, edges=175, tree=3.329000e+03, seq=68, stars=1, unions=19, atoms=33, sharing=2.728689e+01, roots=34
   [expr-profile] with_expr=34, missing_expr=0, total_unique_nodes=1797, total_shared_refs=344, total_unions=38, total_concats=1006, total_stars=19, max_nodes=88@i30, max_depth=32@i33
@@ -527,4 +533,4 @@ FUNC binvert
   i32 IN: true
   i33 IN: true
 [summary] skipped_functions=0
-[mem] peak_rss_kb=23040
+[mem] peak_rss_kb=23932

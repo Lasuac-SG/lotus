@@ -1,8 +1,8 @@
-variant,final_nodes_ratio_vs_fullEAN,note
-No factorization,1.16308,disable Left/Right distributivity
-No star rules,1,disable sliding
-No guarded expansion,N/A,Explore phase deferred (not implemented)
-No phase schedule,N/A,single fixed schedule; no unscheduled mode
-Uniform tree cost,1,uniform weights + tree extraction (reuseIters=0)
-Profiled tree cost,1,profiled weights + tree extraction (reuseIters=0)
-Reuse-aware/ProfiledTree,1,full-EAN nodes / profiled-tree nodes (<=1 reuse wins)
+variant,final_nodes_ratio_vs_fullEAN,end2end_ratio_vs_fullEAN,note
+No factorization,1.16308,0.554414,disable Left/Right distributivity
+No star rules,1,0.952916,disable sliding
+No guarded expansion,1,0.929625,disable Explore phase (expandGrowthCap=0)
+No phase schedule,1,1.14574,unscheduled: all rewrite families each round
+Uniform tree cost,1,0.873801,uniform weights + tree extraction (reuseIters=0)
+Profiled tree cost,1,0.857311,profiled weights + tree extraction (reuseIters=0)
+Reuse-aware/ProfiledTree,1,,full-EAN nodes / profiled-tree nodes (<=1 reuse wins)

@@ -1,8 +1,9 @@
 [elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=50, max_func_insts=300
 FUNC usage
   [client:reachable]
-  [cfg] args=1, blocks=6, insts=36, edges=6, branching_blocks=1, max_succs=2, phis=0, calls=17, returns=0, unreachable=1, elapsed_us=3557
-  [timing] gen_us=477, norm_us=2469, interp_us=523, end2end_us=3557, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=6, insts=36, edges=6, branching_blocks=1, max_succs=2, phis=0, calls=17, returns=0, unreachable=1, elapsed_us=3921
+  [timing] gen_us=495, norm_us=2542, interp_us=744, end2end_us=3921, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=103, edges=134, tree=9.580000e+02, seq=64, stars=0, unions=3, atoms=35, sharing=9.300971e+00, roots=36
   [expr-profile] with_expr=36, missing_expr=0, total_unique_nodes=952, total_shared_refs=6, total_unions=3, total_concats=458, total_stars=0, max_nodes=72@i35, max_depth=25@i32
@@ -44,8 +45,9 @@ FUNC usage
   i35 IN: true
 FUNC emit_ancillary_info
   [client:reachable]
-  [cfg] args=1, blocks=14, insts=85, edges=19, branching_blocks=6, max_succs=2, phis=2, calls=19, returns=1, unreachable=0, elapsed_us=57076
-  [timing] gen_us=3367, norm_us=37868, interp_us=14578, end2end_us=57076, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=14, insts=85, edges=19, branching_blocks=6, max_succs=2, phis=2, calls=19, returns=1, unreachable=0, elapsed_us=71471
+  [timing] gen_us=4667, norm_us=50370, interp_us=14602, end2end_us=71471, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=3350, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=654, edges=1137, tree=2.243800e+04, seq=420, stars=1, unions=148, atoms=84, sharing=3.430887e+01, roots=85
   [expr-profile] with_expr=85, missing_expr=0, total_unique_nodes=9422, total_shared_refs=1788, total_unions=285, total_concats=5244, total_stars=67, max_nodes=223@i84, max_depth=32@i30
@@ -138,16 +140,18 @@ FUNC main
   [skipped] reason=too_large insts=404
 FUNC is_smack_enabled
   [client:reachable]
-  [cfg] args=0, blocks=1, insts=1, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=101
-  [timing] gen_us=23, norm_us=62, interp_us=3, end2end_us=101, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=1, insts=1, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=127
+  [timing] gen_us=36, norm_us=69, interp_us=4, end2end_us=127, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1, edges=0, tree=1.000000e+00, seq=0, stars=0, unions=0, atoms=0, sharing=1.000000e+00, roots=1
   [expr-profile] with_expr=1, missing_expr=0, total_unique_nodes=1, total_shared_refs=0, total_unions=0, total_concats=0, total_stars=0, max_nodes=1@i0, max_depth=1@i0
   i0 IN: true
 FUNC smack_new_label_from_self
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=199
-  [timing] gen_us=35, norm_us=144, interp_us=10, end2end_us=199, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=216
+  [timing] gen_us=45, norm_us=148, interp_us=10, end2end_us=216, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=6, edges=4, tree=1.000000e+01, seq=2, stars=0, unions=0, atoms=3, sharing=1.666667e+00, roots=4
   [expr-profile] with_expr=4, missing_expr=0, total_unique_nodes=10, total_shared_refs=0, total_unions=0, total_concats=3, total_stars=0, max_nodes=5@i3, max_depth=3@i3
@@ -157,8 +161,9 @@ FUNC smack_new_label_from_self
   i3 IN: true
 FUNC print_stuff
   [client:reachable]
-  [cfg] args=1, blocks=24, insts=95, edges=32, branching_blocks=9, max_succs=2, phis=2, calls=9, returns=1, unreachable=0, elapsed_us=51033
-  [timing] gen_us=3200, norm_us=41742, interp_us=5506, end2end_us=51033, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=24, insts=95, edges=32, branching_blocks=9, max_succs=2, phis=2, calls=9, returns=1, unreachable=0, elapsed_us=63273
+  [timing] gen_us=2922, norm_us=53430, interp_us=6166, end2end_us=63273, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=692, edges=1194, tree=9.609000e+03, seq=445, stars=0, unions=152, atoms=94, sharing=1.388584e+01, roots=95
   [expr-profile] with_expr=95, missing_expr=0, total_unique_nodes=6908, total_shared_refs=1249, total_unions=152, total_concats=3879, total_stars=0, max_nodes=268@i87, max_depth=41@i87
@@ -259,8 +264,9 @@ FUNC print_stuff
   i94 IN: true
 FUNC print_user
   [client:reachable]
-  [cfg] args=1, blocks=8, insts=44, edges=10, branching_blocks=3, max_succs=2, phis=1, calls=9, returns=1, unreachable=0, elapsed_us=10860
-  [timing] gen_us=735, norm_us=8634, interp_us=1352, end2end_us=10860, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=8, insts=44, edges=10, branching_blocks=3, max_succs=2, phis=1, calls=9, returns=1, unreachable=0, elapsed_us=12026
+  [timing] gen_us=791, norm_us=9689, interp_us=1347, end2end_us=12026, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=230, edges=372, tree=2.502000e+03, seq=149, stars=0, unions=37, atoms=43, sharing=1.087826e+01, roots=44
   [expr-profile] with_expr=44, missing_expr=0, total_unique_nodes=2024, total_shared_refs=190, total_unions=39, total_concats=1046, total_stars=0, max_nodes=102@i43, max_depth=26@i26
@@ -310,8 +316,9 @@ FUNC print_user
   i43 IN: true
 FUNC print_full_info
   [client:reachable]
-  [cfg] args=1, blocks=36, insts=184, edges=50, branching_blocks=15, max_succs=2, phis=1, calls=45, returns=1, unreachable=0, elapsed_us=1973277
-  [timing] gen_us=14747, norm_us=231608, interp_us=1722052, end2end_us=1973277, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=36, insts=184, edges=50, branching_blocks=15, max_succs=2, phis=1, calls=45, returns=1, unreachable=0, elapsed_us=2279934
+  [timing] gen_us=15845, norm_us=271789, interp_us=1978301, end2end_us=2279934, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=507600, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=3515, edges=6661, tree=2.720712e+06, seq=2319, stars=1, unions=1011, atoms=183, sharing=7.740290e+02, roots=184
   [expr-profile] with_expr=184, missing_expr=0, total_unique_nodes=41999, total_shared_refs=9756, total_unions=1186, total_concats=24576, total_stars=47, max_nodes=482@i183, max_depth=50@i182
@@ -501,8 +508,9 @@ FUNC print_full_info
   i183 IN: true
 FUNC uidtostr_ptr
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=496
-  [timing] gen_us=87, norm_us=345, interp_us=44, end2end_us=496, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=526
+  [timing] gen_us=129, norm_us=314, interp_us=52, end2end_us=526, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -516,8 +524,9 @@ FUNC uidtostr_ptr
   i7 IN: true
 FUNC gidtostr_ptr
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=411
-  [timing] gen_us=62, norm_us=292, interp_us=43, end2end_us=411, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=492
+  [timing] gen_us=120, norm_us=299, interp_us=43, end2end_us=492, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -531,8 +540,9 @@ FUNC gidtostr_ptr
   i7 IN: true
 FUNC print_group_list
   [client:reachable]
-  [cfg] args=6, blocks=29, insts=150, edges=40, branching_blocks=12, max_succs=2, phis=1, calls=26, returns=1, unreachable=0, elapsed_us=403600
-  [timing] gen_us=10153, norm_us=133487, interp_us=256910, end2end_us=403600, runs=1
+  [interp] mode=generic
+  [cfg] args=6, blocks=29, insts=150, edges=40, branching_blocks=12, max_succs=2, phis=1, calls=26, returns=1, unreachable=0, elapsed_us=539510
+  [timing] gen_us=18437, norm_us=223218, interp_us=292654, end2end_us=539510, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=88200, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2131, edges=3961, tree=4.083060e+05, seq=1405, stars=1, unions=575, atoms=149, sharing=1.916030e+02, roots=150
   [expr-profile] with_expr=150, missing_expr=0, total_unique_nodes=28573, total_shared_refs=6370, total_unions=790, total_concats=16582, total_stars=49, max_nodes=379@i134, max_depth=61@i134
@@ -688,8 +698,9 @@ FUNC print_group_list
   i149 IN: true
 FUNC print_group
   [client:reachable]
-  [cfg] args=2, blocks=8, insts=48, edges=10, branching_blocks=3, max_succs=2, phis=1, calls=10, returns=1, unreachable=0, elapsed_us=12998
-  [timing] gen_us=877, norm_us=9422, interp_us=2489, end2end_us=12998, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=8, insts=48, edges=10, branching_blocks=3, max_succs=2, phis=1, calls=10, returns=1, unreachable=0, elapsed_us=19070
+  [timing] gen_us=1140, norm_us=15196, interp_us=2389, end2end_us=19070, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=246, edges=396, tree=3.096000e+03, seq=155, stars=0, unions=43, atoms=47, sharing=1.258537e+01, roots=48
   [expr-profile] with_expr=48, missing_expr=0, total_unique_nodes=2421, total_shared_refs=227, total_unions=45, total_concats=1255, total_stars=0, max_nodes=112@i47, max_depth=28@i28
@@ -743,8 +754,9 @@ FUNC print_group
   i47 IN: true
 FUNC gidtostr_ptr.65
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=358
-  [timing] gen_us=61, norm_us=255, interp_us=29, end2end_us=358, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=470
+  [timing] gen_us=114, norm_us=289, interp_us=43, end2end_us=470, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -758,8 +770,9 @@ FUNC gidtostr_ptr.65
   i7 IN: true
 FUNC close_stdout_set_file_name
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=208
-  [timing] gen_us=37, norm_us=146, interp_us=15, end2end_us=208, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=298
+  [timing] gen_us=55, norm_us=203, interp_us=24, end2end_us=298, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -771,8 +784,9 @@ FUNC close_stdout_set_file_name
   i5 IN: true
 FUNC close_stdout_set_ignore_EPIPE
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=365
-  [timing] gen_us=69, norm_us=240, interp_us=35, end2end_us=365, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=805
+  [timing] gen_us=83, norm_us=619, interp_us=54, end2end_us=805, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -787,8 +801,9 @@ FUNC close_stdout_set_ignore_EPIPE
   i8 IN: true
 FUNC close_stdout
   [client:reachable]
-  [cfg] args=0, blocks=10, insts=41, edges=12, branching_blocks=5, max_succs=2, phis=0, calls=12, returns=1, unreachable=2, elapsed_us=8294
-  [timing] gen_us=518, norm_us=6761, interp_us=909, end2end_us=8294, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=10, insts=41, edges=12, branching_blocks=5, max_succs=2, phis=0, calls=12, returns=1, unreachable=2, elapsed_us=11556
+  [timing] gen_us=611, norm_us=9489, interp_us=1325, end2end_us=11556, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=196, edges=314, tree=1.667000e+03, seq=127, stars=0, unions=30, atoms=38, sharing=8.505102e+00, roots=41
   [expr-profile] with_expr=41, missing_expr=0, total_unique_nodes=1383, total_shared_refs=194, total_unions=32, total_concats=736, total_stars=0, max_nodes=73@i32, max_depth=19@i24
@@ -835,8 +850,9 @@ FUNC close_stdout
   i40 IN: true
 FUNC umaxtostr
   [client:reachable]
-  [cfg] args=2, blocks=10, insts=54, edges=12, branching_blocks=3, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=7862
-  [timing] gen_us=1196, norm_us=4546, interp_us=1884, end2end_us=7862, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=10, insts=54, edges=12, branching_blocks=3, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=9812
+  [timing] gen_us=1692, norm_us=4968, interp_us=2665, end2end_us=9812, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=1900, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=187, edges=264, tree=3.418000e+03, seq=125, stars=2, unions=6, atoms=53, sharing=1.827807e+01, roots=54
   [expr-profile] with_expr=54, missing_expr=0, total_unique_nodes=3031, total_shared_refs=331, total_unions=42, total_concats=1593, total_stars=38, max_nodes=140@i53, max_depth=39@i53
@@ -896,8 +912,9 @@ FUNC umaxtostr
   i53 IN: true
 FUNC set_program_name
   [client:reachable]
-  [cfg] args=1, blocks=11, insts=57, edges=14, branching_blocks=5, max_succs=2, phis=1, calls=8, returns=1, unreachable=1, elapsed_us=18951
-  [timing] gen_us=1409, norm_us=14990, interp_us=2294, end2end_us=18951, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=11, insts=57, edges=14, branching_blocks=5, max_succs=2, phis=1, calls=8, returns=1, unreachable=1, elapsed_us=28814
+  [timing] gen_us=1449, norm_us=23656, interp_us=3261, end2end_us=28814, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=283, edges=454, tree=4.029000e+03, seq=179, stars=0, unions=48, atoms=55, sharing=1.423675e+01, roots=57
   [expr-profile] with_expr=57, missing_expr=0, total_unique_nodes=3251, total_shared_refs=470, total_unions=48, total_concats=1784, total_stars=0, max_nodes=129@i56, max_depth=31@i50
@@ -960,8 +977,9 @@ FUNC set_program_name
   i56 IN: true
 FUNC clone_quoting_options
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=26, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=6, returns=1, unreachable=0, elapsed_us=3486
-  [timing] gen_us=303, norm_us=2635, interp_us=492, end2end_us=3486, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=26, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=6, returns=1, unreachable=0, elapsed_us=4503
+  [timing] gen_us=429, norm_us=3400, interp_us=586, end2end_us=4503, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=82, edges=112, tree=7.300000e+02, seq=46, stars=0, unions=10, atoms=25, sharing=8.902439e+00, roots=26
   [expr-profile] with_expr=26, missing_expr=0, total_unique_nodes=676, total_shared_refs=54, total_unions=10, total_concats=342, total_stars=0, max_nodes=59@i25, max_depth=14@i14
@@ -993,8 +1011,9 @@ FUNC clone_quoting_options
   i25 IN: true
 FUNC get_quoting_style
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=1224
-  [timing] gen_us=116, norm_us=998, interp_us=88, end2end_us=1224, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=1386
+  [timing] gen_us=165, norm_us=1066, interp_us=126, end2end_us=1386, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=38, edges=50, tree=1.590000e+02, seq=21, stars=0, unions=4, atoms=12, sharing=4.184211e+00, roots=13
   [expr-profile] with_expr=13, missing_expr=0, total_unique_nodes=150, total_shared_refs=9, total_unions=4, total_concats=69, total_stars=0, max_nodes=27@i12, max_depth=8@i12
@@ -1013,8 +1032,9 @@ FUNC get_quoting_style
   i12 IN: true
 FUNC set_quoting_style
   [client:reachable]
-  [cfg] args=2, blocks=4, insts=17, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=2, returns=1, unreachable=0, elapsed_us=1529
-  [timing] gen_us=146, norm_us=1191, interp_us=150, end2end_us=1529, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=4, insts=17, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=2, returns=1, unreachable=0, elapsed_us=1966
+  [timing] gen_us=211, norm_us=1530, interp_us=173, end2end_us=1966, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=46, edges=58, tree=2.710000e+02, seq=25, stars=0, unions=4, atoms=16, sharing=5.891304e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=262, total_shared_refs=9, total_unions=4, total_concats=123, total_stars=0, max_nodes=35@i16, max_depth=11@i11
@@ -1037,8 +1057,9 @@ FUNC set_quoting_style
   i16 IN: true
 FUNC set_char_quoting
   [client:reachable]
-  [cfg] args=3, blocks=4, insts=56, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=7, returns=1, unreachable=0, elapsed_us=16182
-  [timing] gen_us=1090, norm_us=12680, interp_us=2175, end2end_us=16182, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=4, insts=56, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=7, returns=1, unreachable=0, elapsed_us=17249
+  [timing] gen_us=1622, norm_us=11980, interp_us=3309, end2end_us=17249, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=211, edges=310, tree=4.142000e+03, seq=122, stars=0, unions=33, atoms=55, sharing=1.963033e+01, roots=56
   [expr-profile] with_expr=56, missing_expr=0, total_unique_nodes=3582, total_shared_refs=560, total_unions=33, total_concats=2010, total_stars=0, max_nodes=142@i55, max_depth=37@i55
@@ -1100,8 +1121,9 @@ FUNC set_char_quoting
   i55 IN: true
 FUNC set_quoting_flags
   [client:reachable]
-  [cfg] args=2, blocks=3, insts=23, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=4055
-  [timing] gen_us=356, norm_us=3169, interp_us=467, end2end_us=4055, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=3, insts=23, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=4653
+  [timing] gen_us=354, norm_us=3636, interp_us=589, end2end_us=4653, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=77, edges=108, tree=5.930000e+02, seq=44, stars=0, unions=10, atoms=22, sharing=7.701299e+00, roots=23
   [expr-profile] with_expr=23, missing_expr=0, total_unique_nodes=539, total_shared_refs=54, total_unions=10, total_concats=275, total_stars=0, max_nodes=53@i22, max_depth=14@i22
@@ -1130,8 +1152,9 @@ FUNC set_quoting_flags
   i22 IN: true
 FUNC set_custom_quoting
   [client:reachable]
-  [cfg] args=3, blocks=6, insts=34, edges=7, branching_blocks=3, max_succs=2, phis=0, calls=4, returns=1, unreachable=1, elapsed_us=6842
-  [timing] gen_us=585, norm_us=5423, interp_us=753, end2end_us=6842, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=6, insts=34, edges=7, branching_blocks=3, max_succs=2, phis=0, calls=4, returns=1, unreachable=1, elapsed_us=9503
+  [timing] gen_us=655, norm_us=7550, interp_us=1157, end2end_us=9503, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=137, edges=208, tree=1.444000e+03, seq=82, stars=0, unions=22, atoms=32, sharing=1.054015e+01, roots=34
   [expr-profile] with_expr=34, missing_expr=0, total_unique_nodes=1240, total_shared_refs=186, total_unions=22, total_concats=674, total_stars=0, max_nodes=79@i33, max_depth=22@i33
@@ -1171,8 +1194,9 @@ FUNC set_custom_quoting
   i33 IN: true
 FUNC quotearg_buffer
   [client:reachable]
-  [cfg] args=5, blocks=4, insts=58, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=11, returns=1, unreachable=0, elapsed_us=16398
-  [timing] gen_us=1236, norm_us=11463, interp_us=3392, end2end_us=16398, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=4, insts=58, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=11, returns=1, unreachable=0, elapsed_us=17349
+  [timing] gen_us=1786, norm_us=11735, interp_us=3342, end2end_us=17349, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=215, edges=314, tree=4.366000e+03, seq=124, stars=0, unions=33, atoms=57, sharing=2.030698e+01, roots=58
   [expr-profile] with_expr=58, missing_expr=0, total_unique_nodes=3806, total_shared_refs=560, total_unions=33, total_concats=2121, total_stars=0, max_nodes=146@i57, max_depth=37@i57
@@ -1238,8 +1262,9 @@ FUNC quotearg_buffer_restyled
   [skipped] reason=too_large insts=1308
 FUNC gettext_quote
   [client:reachable]
-  [cfg] args=2, blocks=8, insts=57, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=9101
-  [timing] gen_us=1240, norm_us=5682, interp_us=1944, end2end_us=9101, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=8, insts=57, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=8631
+  [timing] gen_us=1411, norm_us=5109, interp_us=1889, end2end_us=8631, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=158, edges=202, tree=2.501000e+03, seq=95, stars=0, unions=6, atoms=56, sharing=1.582911e+01, roots=57
   [expr-profile] with_expr=57, missing_expr=0, total_unique_nodes=2492, total_shared_refs=9, total_unions=6, total_concats=1216, total_stars=0, max_nodes=117@i56, max_depth=36@i48
@@ -1302,8 +1327,9 @@ FUNC gettext_quote
   i56 IN: true
 FUNC quotearg_alloc
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=969
-  [timing] gen_us=149, norm_us=577, interp_us=211, end2end_us=969, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=672
+  [timing] gen_us=128, norm_us=412, interp_us=109, end2end_us=672, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -1323,8 +1349,9 @@ FUNC quotearg_alloc
   i13 IN: true
 FUNC quotearg_alloc_mem
   [client:reachable]
-  [cfg] args=4, blocks=6, insts=94, edges=7, branching_blocks=2, max_succs=2, phis=1, calls=14, returns=1, unreachable=0, elapsed_us=47169
-  [timing] gen_us=3982, norm_us=32769, interp_us=9734, end2end_us=47169, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=6, insts=94, edges=7, branching_blocks=2, max_succs=2, phis=1, calls=14, returns=1, unreachable=0, elapsed_us=59614
+  [timing] gen_us=3027, norm_us=43639, interp_us=11226, end2end_us=59614, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=411, edges=634, tree=1.362200e+04, seq=245, stars=0, unions=72, atoms=93, sharing=3.314355e+01, roots=94
   [expr-profile] with_expr=94, missing_expr=0, total_unique_nodes=11121, total_shared_refs=2475, total_unions=72, total_concats=6679, total_stars=0, max_nodes=250@i93, max_depth=72@i91
@@ -1424,8 +1451,9 @@ FUNC quotearg_alloc_mem
   i93 IN: true
 FUNC quotearg_free
   [client:reachable]
-  [cfg] args=0, blocks=9, insts=48, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=8734
-  [timing] gen_us=1453, norm_us=5330, interp_us=1741, end2end_us=8734, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=9, insts=48, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=11139
+  [timing] gen_us=1302, norm_us=6945, interp_us=2501, end2end_us=11139, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=2000, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=173, edges=249, tree=3.186000e+03, seq=110, stars=1, unions=14, atoms=47, sharing=1.841618e+01, roots=48
   [expr-profile] with_expr=48, missing_expr=0, total_unique_nodes=2865, total_shared_refs=263, total_unions=53, total_concats=1467, total_stars=40, max_nodes=105@i47, max_depth=36@i37
@@ -1479,8 +1507,9 @@ FUNC quotearg_free
   i47 IN: true
 FUNC quotearg_n
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=470
-  [timing] gen_us=78, norm_us=330, interp_us=45, end2end_us=470, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=613
+  [timing] gen_us=131, norm_us=385, interp_us=68, end2end_us=613, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1496,8 +1525,9 @@ FUNC quotearg_n
   i9 IN: true
 FUNC quotearg_n_options
   [client:reachable]
-  [cfg] args=4, blocks=15, insts=187, edges=20, branching_blocks=7, max_succs=2, phis=1, calls=23, returns=1, unreachable=1, elapsed_us=225773
-  [timing] gen_us=13163, norm_us=154057, interp_us=54310, end2end_us=225773, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=15, insts=187, edges=20, branching_blocks=7, max_succs=2, phis=1, calls=23, returns=1, unreachable=1, elapsed_us=293837
+  [timing] gen_us=15136, norm_us=199658, interp_us=70370, end2end_us=293837, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1548, edges=2724, tree=8.941700e+04, seq=990, stars=0, unions=372, atoms=185, sharing=5.776292e+01, roots=187
   [expr-profile] with_expr=187, missing_expr=0, total_unique_nodes=45723, total_shared_refs=11722, total_unions=372, total_concats=28257, total_stars=0, max_nodes=535@i181, max_depth=86@i153
@@ -1690,8 +1720,9 @@ FUNC quotearg_n_options
   i186 IN: true
 FUNC quotearg_n_mem
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=853
-  [timing] gen_us=122, norm_us=532, interp_us=162, end2end_us=853, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1310
+  [timing] gen_us=252, norm_us=575, interp_us=154, end2end_us=1310, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -1711,8 +1742,9 @@ FUNC quotearg_n_mem
   i13 IN: true
 FUNC quotearg
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=275
-  [timing] gen_us=52, norm_us=194, interp_us=17, end2end_us=275, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=541
+  [timing] gen_us=101, norm_us=385, interp_us=29, end2end_us=541, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -1724,8 +1756,9 @@ FUNC quotearg
   i5 IN: true
 FUNC quotearg_mem
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=408
-  [timing] gen_us=68, norm_us=280, interp_us=45, end2end_us=408, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1784
+  [timing] gen_us=128, norm_us=1515, interp_us=108, end2end_us=1784, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1741,8 +1774,9 @@ FUNC quotearg_mem
   i9 IN: true
 FUNC quotearg_n_style
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=17, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=950
-  [timing] gen_us=192, norm_us=587, interp_us=142, end2end_us=950, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=17, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=1443
+  [timing] gen_us=202, norm_us=995, interp_us=197, end2end_us=1443, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=32, edges=30, tree=2.570000e+02, seq=15, stars=0, unions=0, atoms=16, sharing=8.031250e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=257, total_shared_refs=0, total_unions=0, total_concats=120, total_stars=0, max_nodes=31@i16, max_depth=16@i16
@@ -1765,8 +1799,9 @@ FUNC quotearg_n_style
   i16 IN: true
 FUNC quoting_options_from_style
   [client:reachable]
-  [cfg] args=2, blocks=3, insts=15, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=1, elapsed_us=653
-  [timing] gen_us=112, norm_us=424, interp_us=98, end2end_us=653, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=3, insts=15, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=1, elapsed_us=862
+  [timing] gen_us=174, norm_us=508, interp_us=142, end2end_us=862, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.810000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.961538e+00, roots=15
   [expr-profile] with_expr=15, missing_expr=0, total_unique_nodes=181, total_shared_refs=0, total_unions=0, total_concats=83, total_stars=0, max_nodes=23@i14, max_depth=12@i14
@@ -1787,8 +1822,9 @@ FUNC quoting_options_from_style
   i14 IN: true
 FUNC quotearg_n_style_mem
   [client:reachable]
-  [cfg] args=4, blocks=1, insts=21, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=1174
-  [timing] gen_us=190, norm_us=744, interp_us=207, end2end_us=1174, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=1, insts=21, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=2509
+  [timing] gen_us=305, norm_us=1793, interp_us=348, end2end_us=2509, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=40, edges=38, tree=4.010000e+02, seq=19, stars=0, unions=0, atoms=20, sharing=1.002500e+01, roots=21
   [expr-profile] with_expr=21, missing_expr=0, total_unique_nodes=401, total_shared_refs=0, total_unions=0, total_concats=190, total_stars=0, max_nodes=39@i20, max_depth=20@i20
@@ -1815,8 +1851,9 @@ FUNC quotearg_n_style_mem
   i20 IN: true
 FUNC quotearg_style
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=399
-  [timing] gen_us=66, norm_us=275, interp_us=45, end2end_us=399, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=571
+  [timing] gen_us=106, norm_us=376, interp_us=67, end2end_us=571, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1832,8 +1869,9 @@ FUNC quotearg_style
   i9 IN: true
 FUNC quotearg_style_mem
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=641
-  [timing] gen_us=97, norm_us=429, interp_us=94, end2end_us=641, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=854
+  [timing] gen_us=145, norm_us=542, interp_us=138, end2end_us=854, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -1853,8 +1891,9 @@ FUNC quotearg_style_mem
   i13 IN: true
 FUNC quotearg_char_mem
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=19, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=1481
-  [timing] gen_us=274, norm_us=898, interp_us=259, end2end_us=1481, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=19, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=1295
+  [timing] gen_us=234, norm_us=771, interp_us=248, end2end_us=1295, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=36, edges=34, tree=3.250000e+02, seq=17, stars=0, unions=0, atoms=18, sharing=9.027778e+00, roots=19
   [expr-profile] with_expr=19, missing_expr=0, total_unique_nodes=325, total_shared_refs=0, total_unions=0, total_concats=153, total_stars=0, max_nodes=35@i18, max_depth=18@i18
@@ -1879,8 +1918,9 @@ FUNC quotearg_char_mem
   i18 IN: true
 FUNC quotearg_char
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=569
-  [timing] gen_us=98, norm_us=383, interp_us=69, end2end_us=569, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=549
+  [timing] gen_us=127, norm_us=334, interp_us=67, end2end_us=549, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1896,8 +1936,9 @@ FUNC quotearg_char
   i9 IN: true
 FUNC quotearg_colon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=265
-  [timing] gen_us=46, norm_us=185, interp_us=23, end2end_us=265, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=276
+  [timing] gen_us=54, norm_us=182, interp_us=25, end2end_us=276, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -1909,8 +1950,9 @@ FUNC quotearg_colon
   i5 IN: true
 FUNC quotearg_colon_mem
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=528
-  [timing] gen_us=79, norm_us=365, interp_us=68, end2end_us=528, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=737
+  [timing] gen_us=145, norm_us=495, interp_us=68, end2end_us=737, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1926,8 +1968,9 @@ FUNC quotearg_colon_mem
   i9 IN: true
 FUNC quotearg_n_style_colon
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=22, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=1395
-  [timing] gen_us=293, norm_us=828, interp_us=232, end2end_us=1395, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=22, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=1682
+  [timing] gen_us=308, norm_us=937, interp_us=377, end2end_us=1682, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=42, edges=40, tree=4.420000e+02, seq=20, stars=0, unions=0, atoms=21, sharing=1.052381e+01, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=442, total_shared_refs=0, total_unions=0, total_concats=210, total_stars=0, max_nodes=41@i21, max_depth=21@i21
@@ -1955,8 +1998,9 @@ FUNC quotearg_n_style_colon
   i21 IN: true
 FUNC quotearg_n_custom
   [client:reachable]
-  [cfg] args=4, blocks=1, insts=18, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1055
-  [timing] gen_us=156, norm_us=598, interp_us=257, end2end_us=1055, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=1, insts=18, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1408
+  [timing] gen_us=279, norm_us=870, interp_us=208, end2end_us=1408, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=34, edges=32, tree=2.900000e+02, seq=16, stars=0, unions=0, atoms=17, sharing=8.529412e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=290, total_shared_refs=0, total_unions=0, total_concats=136, total_stars=0, max_nodes=33@i17, max_depth=17@i17
@@ -1980,8 +2024,9 @@ FUNC quotearg_n_custom
   i17 IN: true
 FUNC quotearg_n_custom_mem
   [client:reachable]
-  [cfg] args=5, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=1822
-  [timing] gen_us=303, norm_us=1104, interp_us=361, end2end_us=1822, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=2396
+  [timing] gen_us=404, norm_us=1411, interp_us=496, end2end_us=2396, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=52, edges=50, tree=6.770000e+02, seq=25, stars=0, unions=0, atoms=26, sharing=1.301923e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=677, total_shared_refs=0, total_unions=0, total_concats=325, total_stars=0, max_nodes=51@i26, max_depth=26@i26
@@ -2014,8 +2059,9 @@ FUNC quotearg_n_custom_mem
   i26 IN: true
 FUNC quotearg_custom
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=644
-  [timing] gen_us=107, norm_us=425, interp_us=92, end2end_us=644, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=811
+  [timing] gen_us=121, norm_us=527, interp_us=133, end2end_us=811, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -2035,8 +2081,9 @@ FUNC quotearg_custom
   i13 IN: true
 FUNC quotearg_custom_mem
   [client:reachable]
-  [cfg] args=4, blocks=1, insts=18, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=936
-  [timing] gen_us=163, norm_us=591, interp_us=154, end2end_us=936, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=1, insts=18, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1200
+  [timing] gen_us=211, norm_us=730, interp_us=218, end2end_us=1200, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=34, edges=32, tree=2.900000e+02, seq=16, stars=0, unions=0, atoms=17, sharing=8.529412e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=290, total_shared_refs=0, total_unions=0, total_concats=136, total_stars=0, max_nodes=33@i17, max_depth=17@i17
@@ -2060,8 +2107,9 @@ FUNC quotearg_custom_mem
   i17 IN: true
 FUNC quote_n_mem
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=690
-  [timing] gen_us=133, norm_us=440, interp_us=93, end2end_us=690, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=819
+  [timing] gen_us=143, norm_us=515, interp_us=133, end2end_us=819, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -2081,8 +2129,9 @@ FUNC quote_n_mem
   i13 IN: true
 FUNC quote_mem
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=413
-  [timing] gen_us=64, norm_us=290, interp_us=45, end2end_us=413, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=605
+  [timing] gen_us=164, norm_us=352, interp_us=67, end2end_us=605, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -2098,8 +2147,9 @@ FUNC quote_mem
   i9 IN: true
 FUNC quote_n
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=657
-  [timing] gen_us=64, norm_us=445, interp_us=104, end2end_us=657, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=689
+  [timing] gen_us=91, norm_us=507, interp_us=66, end2end_us=689, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -2115,8 +2165,9 @@ FUNC quote_n
   i9 IN: true
 FUNC quote
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=257
-  [timing] gen_us=49, norm_us=180, interp_us=16, end2end_us=257, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=335
+  [timing] gen_us=62, norm_us=229, interp_us=25, end2end_us=335, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2128,8 +2179,9 @@ FUNC quote
   i5 IN: true
 FUNC getcon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=207
-  [timing] gen_us=37, norm_us=146, interp_us=15, end2end_us=207, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=263
+  [timing] gen_us=55, norm_us=174, interp_us=19, end2end_us=263, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2141,8 +2193,9 @@ FUNC getcon
   i5 IN: true
 FUNC freecon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=124
-  [timing] gen_us=23, norm_us=87, interp_us=6, end2end_us=124, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=143
+  [timing] gen_us=32, norm_us=95, interp_us=7, end2end_us=143, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=6, edges=4, tree=1.000000e+01, seq=2, stars=0, unions=0, atoms=3, sharing=1.666667e+00, roots=4
   [expr-profile] with_expr=4, missing_expr=0, total_unique_nodes=10, total_shared_refs=0, total_unions=0, total_concats=3, total_stars=0, max_nodes=5@i3, max_depth=3@i3
@@ -2152,8 +2205,9 @@ FUNC freecon
   i3 IN: true
 FUNC getfscreatecon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=241
-  [timing] gen_us=31, norm_us=180, interp_us=17, end2end_us=241, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=253
+  [timing] gen_us=38, norm_us=177, interp_us=24, end2end_us=253, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2165,8 +2219,9 @@ FUNC getfscreatecon
   i5 IN: true
 FUNC setfscreatecon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=255
-  [timing] gen_us=48, norm_us=163, interp_us=15, end2end_us=255, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=491
+  [timing] gen_us=68, norm_us=360, interp_us=27, end2end_us=491, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2178,8 +2233,9 @@ FUNC setfscreatecon
   i5 IN: true
 FUNC matchpathcon
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=519
-  [timing] gen_us=81, norm_us=356, interp_us=65, end2end_us=519, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=710
+  [timing] gen_us=150, norm_us=435, interp_us=98, end2end_us=710, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=22, edges=20, tree=1.220000e+02, seq=10, stars=0, unions=0, atoms=11, sharing=5.545455e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=122, total_shared_refs=0, total_unions=0, total_concats=55, total_stars=0, max_nodes=21@i11, max_depth=11@i11
@@ -2197,8 +2253,9 @@ FUNC matchpathcon
   i11 IN: true
 FUNC getfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=361
-  [timing] gen_us=56, norm_us=240, interp_us=35, end2end_us=361, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=466
+  [timing] gen_us=86, norm_us=306, interp_us=53, end2end_us=466, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2213,8 +2270,9 @@ FUNC getfilecon
   i8 IN: true
 FUNC lgetfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=341
-  [timing] gen_us=56, norm_us=238, interp_us=35, end2end_us=341, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=448
+  [timing] gen_us=81, norm_us=295, interp_us=53, end2end_us=448, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2229,8 +2287,9 @@ FUNC lgetfilecon
   i8 IN: true
 FUNC fgetfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=331
-  [timing] gen_us=53, norm_us=232, interp_us=34, end2end_us=331, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=453
+  [timing] gen_us=79, norm_us=303, interp_us=53, end2end_us=453, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2245,8 +2304,9 @@ FUNC fgetfilecon
   i8 IN: true
 FUNC setfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=349
-  [timing] gen_us=52, norm_us=250, interp_us=35, end2end_us=349, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=456
+  [timing] gen_us=80, norm_us=304, interp_us=53, end2end_us=456, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2261,8 +2321,9 @@ FUNC setfilecon
   i8 IN: true
 FUNC lsetfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=356
-  [timing] gen_us=57, norm_us=241, interp_us=36, end2end_us=356, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=768
+  [timing] gen_us=80, norm_us=612, interp_us=54, end2end_us=768, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2277,8 +2338,9 @@ FUNC lsetfilecon
   i8 IN: true
 FUNC fsetfilecon
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=367
-  [timing] gen_us=53, norm_us=249, interp_us=35, end2end_us=367, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=629
+  [timing] gen_us=94, norm_us=459, interp_us=53, end2end_us=629, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2293,8 +2355,9 @@ FUNC fsetfilecon
   i8 IN: true
 FUNC security_check_context
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=211
-  [timing] gen_us=38, norm_us=148, interp_us=15, end2end_us=211, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=287
+  [timing] gen_us=61, norm_us=186, interp_us=25, end2end_us=287, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2306,8 +2369,9 @@ FUNC security_check_context
   i5 IN: true
 FUNC security_check_context_raw
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=197
-  [timing] gen_us=33, norm_us=141, interp_us=15, end2end_us=197, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=283
+  [timing] gen_us=50, norm_us=195, interp_us=25, end2end_us=283, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2319,8 +2383,9 @@ FUNC security_check_context_raw
   i5 IN: true
 FUNC setexeccon
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=309
-  [timing] gen_us=32, norm_us=240, interp_us=22, end2end_us=309, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=259
+  [timing] gen_us=48, norm_us=169, interp_us=30, end2end_us=259, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2332,8 +2397,9 @@ FUNC setexeccon
   i5 IN: true
 FUNC security_compute_create
   [client:reachable]
-  [cfg] args=4, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=795
-  [timing] gen_us=127, norm_us=534, interp_us=106, end2end_us=795, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=893
+  [timing] gen_us=157, norm_us=552, interp_us=153, end2end_us=893, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=28, edges=26, tree=1.970000e+02, seq=13, stars=0, unions=0, atoms=14, sharing=7.035714e+00, roots=15
   [expr-profile] with_expr=15, missing_expr=0, total_unique_nodes=197, total_shared_refs=0, total_unions=0, total_concats=91, total_stars=0, max_nodes=27@i14, max_depth=14@i14
@@ -2354,8 +2420,9 @@ FUNC security_compute_create
   i14 IN: true
 FUNC string_to_security_class
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=234
-  [timing] gen_us=46, norm_us=162, interp_us=15, end2end_us=234, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=262
+  [timing] gen_us=49, norm_us=175, interp_us=24, end2end_us=262, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -2367,8 +2434,9 @@ FUNC string_to_security_class
   i5 IN: true
 FUNC matchpathcon_init_prefix
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=356
-  [timing] gen_us=54, norm_us=250, interp_us=36, end2end_us=356, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=452
+  [timing] gen_us=80, norm_us=303, interp_us=53, end2end_us=452, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -2383,8 +2451,9 @@ FUNC matchpathcon_init_prefix
   i8 IN: true
 FUNC parse_user_spec_warn
   [client:reachable]
-  [cfg] args=6, blocks=13, insts=87, edges=19, branching_blocks=7, max_succs=2, phis=1, calls=14, returns=1, unreachable=0, elapsed_us=56602
-  [timing] gen_us=2893, norm_us=43368, interp_us=9428, end2end_us=56602, runs=1
+  [interp] mode=generic
+  [cfg] args=6, blocks=13, insts=87, edges=19, branching_blocks=7, max_succs=2, phis=1, calls=14, returns=1, unreachable=0, elapsed_us=93562
+  [timing] gen_us=4895, norm_us=77361, interp_us=10069, end2end_us=93562, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=578, edges=982, tree=1.213900e+04, seq=375, stars=0, unions=116, atoms=86, sharing=2.100173e+01, roots=87
   [expr-profile] with_expr=87, missing_expr=0, total_unique_nodes=8928, total_shared_refs=1537, total_unions=116, total_concats=5073, total_stars=0, max_nodes=231@i84, max_depth=50@i74
@@ -2477,8 +2546,9 @@ FUNC parse_user_spec_warn
   i86 IN: true
 FUNC parse_with_separator
   [client:reachable]
-  [cfg] args=6, blocks=68, insts=298, edges=98, branching_blocks=31, max_succs=2, phis=7, calls=35, returns=1, unreachable=0, elapsed_us=150735792
-  [timing] gen_us=39448, norm_us=882072, interp_us=149797865, end2end_us=150735792, runs=1
+  [interp] mode=generic
+  [cfg] args=6, blocks=68, insts=298, edges=98, branching_blocks=31, max_succs=2, phis=7, calls=35, returns=1, unreachable=0, elapsed_us=165858842
+  [timing] gen_us=54976, norm_us=1438031, interp_us=164342721, end2end_us=165858842, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10387, edges=20178, tree=2.124800e+08, seq=6894, stars=0, unions=3195, atoms=297, sharing=2.045633e+04, roots=298
   [expr-profile] with_expr=298, missing_expr=0, total_unique_nodes=111607, total_shared_refs=26745, total_unions=3303, total_concats=65724, total_stars=0, max_nodes=804@i297, max_depth=51@i219
@@ -2782,8 +2852,9 @@ FUNC parse_with_separator
   i297 IN: true
 FUNC parse_user_spec
   [client:reachable]
-  [cfg] args=5, blocks=1, insts=22, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=1887
-  [timing] gen_us=320, norm_us=1123, interp_us=377, end2end_us=1887, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=1, insts=22, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=1764
+  [timing] gen_us=352, norm_us=1008, interp_us=330, end2end_us=1764, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=42, edges=40, tree=4.420000e+02, seq=20, stars=0, unions=0, atoms=21, sharing=1.052381e+01, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=442, total_shared_refs=0, total_unions=0, total_concats=210, total_stars=0, max_nodes=41@i21, max_depth=21@i21
@@ -2811,8 +2882,9 @@ FUNC parse_user_spec
   i21 IN: true
 FUNC version_etc_arn
   [client:reachable]
-  [cfg] args=6, blocks=16, insts=248, edges=26, branching_blocks=2, max_succs=11, phis=0, calls=34, returns=1, unreachable=0, elapsed_us=151642
-  [timing] gen_us=13500, norm_us=107401, interp_us=26290, end2end_us=151642, runs=1
+  [interp] mode=generic
+  [cfg] args=6, blocks=16, insts=248, edges=26, branching_blocks=2, max_succs=11, phis=0, calls=34, returns=1, unreachable=0, elapsed_us=148618
+  [timing] gen_us=17665, norm_us=99305, interp_us=26742, end2end_us=148618, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1313, edges=2130, tree=3.490600e+04, seq=849, stars=0, unions=216, atoms=247, sharing=2.658492e+01, roots=248
   [expr-profile] with_expr=248, missing_expr=0, total_unique_nodes=29496, total_shared_refs=5004, total_unions=226, total_concats=16900, total_stars=0, max_nodes=506@i247, max_depth=51@i215
@@ -3066,8 +3138,9 @@ FUNC version_etc_arn
   i247 IN: true
 FUNC version_etc_ar
   [client:reachable]
-  [cfg] args=5, blocks=5, insts=38, edges=5, branching_blocks=1, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=5017
-  [timing] gen_us=914, norm_us=2555, interp_us=1372, end2end_us=5017, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=5, insts=38, edges=5, branching_blocks=1, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=4896
+  [timing] gen_us=1019, norm_us=2274, interp_us=1346, end2end_us=4896, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=950, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=90, edges=103, tree=1.791000e+03, seq=49, stars=1, unions=2, atoms=37, sharing=1.990000e+01, roots=38
   [expr-profile] with_expr=38, missing_expr=0, total_unique_nodes=1664, total_shared_refs=105, total_unions=20, total_concats=836, total_stars=19, max_nodes=82@i37, max_depth=33@i37
@@ -3111,8 +3184,9 @@ FUNC version_etc_ar
   i37 IN: true
 FUNC version_etc_va
   [client:reachable]
-  [cfg] args=5, blocks=10, insts=64, edges=12, branching_blocks=3, max_succs=2, phis=2, calls=8, returns=1, unreachable=0, elapsed_us=24459
-  [timing] gen_us=3057, norm_us=15357, interp_us=5289, end2end_us=24459, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=10, insts=64, edges=12, branching_blocks=3, max_succs=2, phis=2, calls=8, returns=1, unreachable=0, elapsed_us=26621
+  [timing] gen_us=3120, norm_us=14725, interp_us=7686, end2end_us=26621, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=2150, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=262, edges=395, tree=9.627000e+03, seq=158, stars=1, unions=39, atoms=63, sharing=3.674427e+01, roots=64
   [expr-profile] with_expr=64, missing_expr=0, total_unique_nodes=6731, total_shared_refs=1372, total_unions=167, total_concats=3831, total_stars=43, max_nodes=171@i63, max_depth=43@i35
@@ -3182,8 +3256,9 @@ FUNC version_etc_va
   i63 IN: true
 FUNC version_etc
   [client:reachable]
-  [cfg] args=4, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=2400
-  [timing] gen_us=399, norm_us=1404, interp_us=527, end2end_us=2400, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=2911
+  [timing] gen_us=435, norm_us=1508, interp_us=791, end2end_us=2911, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=52, edges=50, tree=6.770000e+02, seq=25, stars=0, unions=0, atoms=26, sharing=1.301923e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=677, total_shared_refs=0, total_unions=0, total_concats=325, total_stars=0, max_nodes=51@i26, max_depth=26@i26
@@ -3216,8 +3291,9 @@ FUNC version_etc
   i26 IN: true
 FUNC emit_bug_reporting_address
   [client:reachable]
-  [cfg] args=0, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=457
-  [timing] gen_us=75, norm_us=311, interp_us=54, end2end_us=457, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=557
+  [timing] gen_us=94, norm_us=374, interp_us=54, end2end_us=557, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -3232,8 +3308,9 @@ FUNC emit_bug_reporting_address
   i8 IN: true
 FUNC xnrealloc
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=898
-  [timing] gen_us=218, norm_us=553, interp_us=97, end2end_us=898, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1005
+  [timing] gen_us=202, norm_us=605, interp_us=137, end2end_us=1005, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -3253,8 +3330,9 @@ FUNC xnrealloc
   i13 IN: true
 FUNC xreallocarray
   [client:reachable]
-  [cfg] args=3, blocks=6, insts=32, edges=8, branching_blocks=4, max_succs=2, phis=0, calls=6, returns=1, unreachable=1, elapsed_us=3877
-  [timing] gen_us=453, norm_us=2817, interp_us=531, end2end_us=3877, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=6, insts=32, edges=8, branching_blocks=4, max_succs=2, phis=0, calls=6, returns=1, unreachable=1, elapsed_us=5366
+  [timing] gen_us=591, norm_us=3928, interp_us=742, end2end_us=5366, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=99, edges=136, tree=9.660000e+02, seq=62, stars=0, unions=6, atoms=30, sharing=9.757576e+00, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=960, total_shared_refs=6, total_unions=6, total_concats=461, total_stars=0, max_nodes=59@i31, max_depth=27@i27
@@ -3292,8 +3370,9 @@ FUNC xreallocarray
   i31 IN: true
 FUNC xmalloc
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=272
-  [timing] gen_us=53, norm_us=185, interp_us=22, end2end_us=272, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=349
+  [timing] gen_us=72, norm_us=223, interp_us=35, end2end_us=349, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=12, edges=10, tree=3.700000e+01, seq=5, stars=0, unions=0, atoms=6, sharing=3.083333e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=37, total_shared_refs=0, total_unions=0, total_concats=15, total_stars=0, max_nodes=11@i6, max_depth=6@i6
@@ -3306,8 +3385,9 @@ FUNC xmalloc
   i6 IN: true
 FUNC nonnull
   [client:reachable]
-  [cfg] args=1, blocks=3, insts=10, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=1, elapsed_us=519
-  [timing] gen_us=62, norm_us=396, interp_us=42, end2end_us=519, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=3, insts=10, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=1, elapsed_us=482
+  [timing] gen_us=96, norm_us=288, interp_us=78, end2end_us=482, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=7.400000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.625000e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=74, total_shared_refs=0, total_unions=0, total_concats=32, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -3323,8 +3403,9 @@ FUNC nonnull
   i9 IN: true
 FUNC ximalloc
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=299
-  [timing] gen_us=57, norm_us=205, interp_us=22, end2end_us=299, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=321
+  [timing] gen_us=62, norm_us=209, interp_us=33, end2end_us=321, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=12, edges=10, tree=3.700000e+01, seq=5, stars=0, unions=0, atoms=6, sharing=3.083333e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=37, total_shared_refs=0, total_unions=0, total_concats=15, total_stars=0, max_nodes=11@i6, max_depth=6@i6
@@ -3337,8 +3418,9 @@ FUNC ximalloc
   i6 IN: true
 FUNC xcharalloc
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=216
-  [timing] gen_us=40, norm_us=151, interp_us=15, end2end_us=216, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=258
+  [timing] gen_us=50, norm_us=171, interp_us=24, end2end_us=258, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -3350,8 +3432,9 @@ FUNC xcharalloc
   i5 IN: true
 FUNC xrealloc
   [client:reachable]
-  [cfg] args=2, blocks=5, insts=25, edges=6, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=2223
-  [timing] gen_us=271, norm_us=1602, interp_us=306, end2end_us=2223, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=5, insts=25, edges=6, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=3112
+  [timing] gen_us=387, norm_us=2207, interp_us=448, end2end_us=3112, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=71, edges=94, tree=5.770000e+02, seq=43, stars=0, unions=4, atoms=23, sharing=8.126761e+00, roots=25
   [expr-profile] with_expr=25, missing_expr=0, total_unique_nodes=573, total_shared_refs=4, total_unions=4, total_concats=272, total_stars=0, max_nodes=44@i22, max_depth=20@i20
@@ -3382,8 +3465,9 @@ FUNC xrealloc
   i24 IN: true
 FUNC xirealloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=463
-  [timing] gen_us=77, norm_us=316, interp_us=54, end2end_us=463, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=538
+  [timing] gen_us=103, norm_us=333, interp_us=80, end2end_us=538, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=20, edges=18, tree=1.010000e+02, seq=9, stars=0, unions=0, atoms=10, sharing=5.050000e+00, roots=11
   [expr-profile] with_expr=11, missing_expr=0, total_unique_nodes=101, total_shared_refs=0, total_unions=0, total_concats=45, total_stars=0, max_nodes=19@i10, max_depth=10@i10
@@ -3400,8 +3484,9 @@ FUNC xirealloc
   i10 IN: true
 FUNC xireallocarray
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=706
-  [timing] gen_us=107, norm_us=469, interp_us=104, end2end_us=706, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=970
+  [timing] gen_us=149, norm_us=607, interp_us=179, end2end_us=970, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=28, edges=26, tree=1.970000e+02, seq=13, stars=0, unions=0, atoms=14, sharing=7.035714e+00, roots=15
   [expr-profile] with_expr=15, missing_expr=0, total_unique_nodes=197, total_shared_refs=0, total_unions=0, total_concats=91, total_stars=0, max_nodes=27@i14, max_depth=14@i14
@@ -3422,8 +3507,9 @@ FUNC xireallocarray
   i14 IN: true
 FUNC xnmalloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=420
-  [timing] gen_us=64, norm_us=282, interp_us=59, end2end_us=420, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=606
+  [timing] gen_us=107, norm_us=407, interp_us=68, end2end_us=606, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -3439,8 +3525,9 @@ FUNC xnmalloc
   i9 IN: true
 FUNC xinmalloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=538
-  [timing] gen_us=64, norm_us=385, interp_us=67, end2end_us=538, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1148
+  [timing] gen_us=99, norm_us=330, interp_us=693, end2end_us=1148, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -3456,8 +3543,9 @@ FUNC xinmalloc
   i9 IN: true
 FUNC x2realloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=495
-  [timing] gen_us=101, norm_us=327, interp_us=47, end2end_us=495, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=570
+  [timing] gen_us=101, norm_us=374, interp_us=69, end2end_us=570, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -3473,8 +3561,9 @@ FUNC x2realloc
   i9 IN: true
 FUNC x2nrealloc
   [client:reachable]
-  [cfg] args=3, blocks=8, insts=55, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=7, returns=1, unreachable=1, elapsed_us=12944
-  [timing] gen_us=1044, norm_us=9573, interp_us=2102, end2end_us=12944, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=8, insts=55, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=7, returns=1, unreachable=1, elapsed_us=16163
+  [timing] gen_us=1373, norm_us=10229, interp_us=2797, end2end_us=16163, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=202, edges=296, tree=2.729000e+03, seq=127, stars=0, unions=21, atoms=53, sharing=1.350990e+01, roots=55
   [expr-profile] with_expr=55, missing_expr=0, total_unique_nodes=2609, total_shared_refs=120, total_unions=21, total_concats=1316, total_stars=0, max_nodes=124@i54, max_depth=31@i31
@@ -3535,8 +3624,9 @@ FUNC x2nrealloc
   i54 IN: true
 FUNC xpalloc
   [client:reachable]
-  [cfg] args=5, blocks=19, insts=120, edges=28, branching_blocks=11, max_succs=2, phis=1, calls=15, returns=1, unreachable=1, elapsed_us=212738
-  [timing] gen_us=5785, norm_us=106440, interp_us=98508, end2end_us=212738, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=19, insts=120, edges=28, branching_blocks=11, max_succs=2, phis=1, calls=15, returns=1, unreachable=1, elapsed_us=312440
+  [timing] gen_us=7277, norm_us=192878, interp_us=109390, end2end_us=312440, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1546, edges=2854, tree=1.436460e+05, seq=1019, stars=0, unions=408, atoms=118, sharing=9.291462e+01, roots=120
   [expr-profile] with_expr=120, missing_expr=0, total_unique_nodes=17120, total_shared_refs=3006, total_unions=411, total_concats=9592, total_stars=0, max_nodes=299@i119, max_depth=34@i119
@@ -3662,8 +3752,9 @@ FUNC xpalloc
   i119 IN: true
 FUNC xzalloc
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=304
-  [timing] gen_us=56, norm_us=216, interp_us=17, end2end_us=304, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=454
+  [timing] gen_us=97, norm_us=295, interp_us=27, end2end_us=454, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -3675,8 +3766,9 @@ FUNC xzalloc
   i5 IN: true
 FUNC xcalloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=480
-  [timing] gen_us=76, norm_us=334, interp_us=56, end2end_us=480, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=673
+  [timing] gen_us=147, norm_us=412, interp_us=83, end2end_us=673, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=20, edges=18, tree=1.010000e+02, seq=9, stars=0, unions=0, atoms=10, sharing=5.050000e+00, roots=11
   [expr-profile] with_expr=11, missing_expr=0, total_unique_nodes=101, total_shared_refs=0, total_unions=0, total_concats=45, total_stars=0, max_nodes=19@i10, max_depth=10@i10
@@ -3693,8 +3785,9 @@ FUNC xcalloc
   i10 IN: true
 FUNC xizalloc
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=259
-  [timing] gen_us=50, norm_us=179, interp_us=17, end2end_us=259, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=310
+  [timing] gen_us=63, norm_us=207, interp_us=25, end2end_us=310, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -3706,8 +3799,9 @@ FUNC xizalloc
   i5 IN: true
 FUNC xicalloc
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=470
-  [timing] gen_us=71, norm_us=314, interp_us=54, end2end_us=470, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=11, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=569
+  [timing] gen_us=103, norm_us=365, interp_us=81, end2end_us=569, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=20, edges=18, tree=1.010000e+02, seq=9, stars=0, unions=0, atoms=10, sharing=5.050000e+00, roots=11
   [expr-profile] with_expr=11, missing_expr=0, total_unique_nodes=101, total_shared_refs=0, total_unions=0, total_concats=45, total_stars=0, max_nodes=19@i10, max_depth=10@i10
@@ -3724,8 +3818,9 @@ FUNC xicalloc
   i10 IN: true
 FUNC xmemdup
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=704
-  [timing] gen_us=124, norm_us=472, interp_us=83, end2end_us=704, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=714
+  [timing] gen_us=133, norm_us=453, interp_us=98, end2end_us=714, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=22, edges=20, tree=1.220000e+02, seq=10, stars=0, unions=0, atoms=11, sharing=5.545455e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=122, total_shared_refs=0, total_unions=0, total_concats=55, total_stars=0, max_nodes=21@i11, max_depth=11@i11
@@ -3743,8 +3838,9 @@ FUNC xmemdup
   i11 IN: true
 FUNC ximemdup
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=526
-  [timing] gen_us=89, norm_us=353, interp_us=66, end2end_us=526, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=12, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=680
+  [timing] gen_us=125, norm_us=432, interp_us=98, end2end_us=680, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=22, edges=20, tree=1.220000e+02, seq=10, stars=0, unions=0, atoms=11, sharing=5.545455e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=122, total_shared_refs=0, total_unions=0, total_concats=55, total_stars=0, max_nodes=21@i11, max_depth=11@i11
@@ -3762,8 +3858,9 @@ FUNC ximemdup
   i11 IN: true
 FUNC ximemdup0
   [client:reachable]
-  [cfg] args=2, blocks=1, insts=21, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1181
-  [timing] gen_us=183, norm_us=754, interp_us=211, end2end_us=1181, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=1, insts=21, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1558
+  [timing] gen_us=284, norm_us=905, interp_us=318, end2end_us=1558, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=40, edges=38, tree=4.010000e+02, seq=19, stars=0, unions=0, atoms=20, sharing=1.002500e+01, roots=21
   [expr-profile] with_expr=21, missing_expr=0, total_unique_nodes=401, total_shared_refs=0, total_unions=0, total_concats=190, total_stars=0, max_nodes=39@i20, max_depth=20@i20
@@ -3790,8 +3887,9 @@ FUNC ximemdup0
   i20 IN: true
 FUNC xstrdup
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=360
-  [timing] gen_us=63, norm_us=248, interp_us=36, end2end_us=360, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=9, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=445
+  [timing] gen_us=83, norm_us=290, interp_us=54, end2end_us=445, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=14, tree=6.500000e+01, seq=7, stars=0, unions=0, atoms=8, sharing=4.062500e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=65, total_shared_refs=0, total_unions=0, total_concats=28, total_stars=0, max_nodes=15@i8, max_depth=8@i8
@@ -3806,8 +3904,9 @@ FUNC xstrdup
   i8 IN: true
 FUNC xalloc_die
   [client:reachable]
-  [cfg] args=0, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=0, unreachable=1, elapsed_us=163
-  [timing] gen_us=29, norm_us=115, interp_us=11, end2end_us=163, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=0, unreachable=1, elapsed_us=219
+  [timing] gen_us=41, norm_us=149, interp_us=16, end2end_us=219, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -3818,8 +3917,9 @@ FUNC xalloc_die
   i4 IN: true
 FUNC xgetgroups
   [client:reachable]
-  [cfg] args=3, blocks=4, insts=27, edges=4, branching_blocks=2, max_succs=2, phis=0, calls=7, returns=1, unreachable=1, elapsed_us=2662
-  [timing] gen_us=293, norm_us=1611, interp_us=686, end2end_us=2662, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=4, insts=27, edges=4, branching_blocks=2, max_succs=2, phis=0, calls=7, returns=1, unreachable=1, elapsed_us=3196
+  [timing] gen_us=428, norm_us=2165, interp_us=498, end2end_us=3196, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=62, edges=72, tree=6.730000e+02, seq=34, stars=0, unions=2, atoms=25, sharing=1.085484e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=671, total_shared_refs=2, total_unions=2, total_concats=321, total_stars=0, max_nodes=48@i26, max_depth=24@i24
@@ -3852,8 +3952,9 @@ FUNC xgetgroups
   i26 IN: true
 FUNC xstrtoul
   [client:reachable]
-  [cfg] args=5, blocks=59, insts=287, edges=109, branching_blocks=20, max_succs=19, phis=1, calls=36, returns=1, unreachable=1, elapsed_us=1146132
-  [timing] gen_us=30609, norm_us=564169, interp_us=537516, end2end_us=1146132, runs=1
+  [interp] mode=generic
+  [cfg] args=5, blocks=59, insts=287, edges=109, branching_blocks=20, max_succs=19, phis=1, calls=36, returns=1, unreachable=1, elapsed_us=1638726
+  [timing] gen_us=44945, norm_us=964696, interp_us=614144, end2end_us=1638726, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=23000, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=4313, edges=8053, tree=7.899250e+05, seq=2716, stars=1, unions=1310, atoms=285, sharing=1.831498e+02, roots=287
   [expr-profile] with_expr=287, missing_expr=0, total_unique_nodes=100162, total_shared_refs=28245, total_unions=1664, total_concats=62281, total_stars=230, max_nodes=902@i286, max_depth=74@i187
@@ -4146,11 +4247,12 @@ FUNC xstrtoul
   i286 IN: true
 FUNC bkm_scale
   [client:reachable]
-  [cfg] args=2, blocks=37, insts=160, edges=68, branching_blocks=32, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=396442
-  [timing] gen_us=9835, norm_us=332368, interp_us=50890, end2end_us=396442, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=37, insts=160, edges=68, branching_blocks=32, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=464225
+  [timing] gen_us=11462, norm_us=388593, interp_us=60171, end2end_us=464225, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
-  [dagstats] nodes=4129, edges=7938, tree=7.623200e+04, seq=2789, stars=0, unions=1180, atoms=159, sharing=1.846258e+01, roots=160
-  [expr-profile] with_expr=160, missing_expr=0, total_unique_nodes=32740, total_shared_refs=15268, total_unions=1224, total_concats=22700, total_stars=0, max_nodes=892@i152, max_depth=45@i152
+  [dagstats] nodes=4081, edges=7842, tree=7.633200e+04, seq=2741, stars=0, unions=1180, atoms=159, sharing=1.870424e+01, roots=160
+  [expr-profile] with_expr=160, missing_expr=0, total_unique_nodes=32790, total_shared_refs=15318, total_unions=1224, total_concats=22750, total_stars=0, max_nodes=893@i152, max_depth=44@i152
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4313,8 +4415,9 @@ FUNC bkm_scale
   i159 IN: true
 FUNC bkm_scale_by_power
   [client:reachable]
-  [cfg] args=3, blocks=4, insts=27, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=3115
-  [timing] gen_us=566, norm_us=1587, interp_us=835, end2end_us=3115, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=4, insts=27, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=3069
+  [timing] gen_us=632, norm_us=1417, interp_us=877, end2end_us=3069, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=700, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=69, edges=83, tree=1.055000e+03, seq=39, stars=1, unions=2, atoms=26, sharing=1.528986e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=953, total_shared_refs=78, total_unions=15, total_concats=480, total_stars=14, max_nodes=63@i24, max_depth=26@i24
@@ -4347,8 +4450,9 @@ FUNC bkm_scale_by_power
   i26 IN: true
 FUNC c_strcasecmp
   [client:reachable]
-  [cfg] args=2, blocks=9, insts=65, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=19741
-  [timing] gen_us=2929, norm_us=10829, interp_us=5168, end2end_us=19741, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=9, insts=65, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=18851
+  [timing] gen_us=3232, norm_us=9513, interp_us=5069, end2end_us=18851, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=1950, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=237, edges=343, tree=6.454000e+03, seq=158, stars=1, unions=13, atoms=64, sharing=2.723207e+01, roots=65
   [expr-profile] with_expr=65, missing_expr=0, total_unique_nodes=5664, total_shared_refs=732, total_unions=51, total_concats=3095, total_stars=39, max_nodes=170@i64, max_depth=60@i55
@@ -4419,8 +4523,9 @@ FUNC c_strcasecmp
   i64 IN: true
 FUNC close_stream
   [client:reachable]
-  [cfg] args=1, blocks=9, insts=50, edges=13, branching_blocks=5, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=13400
-  [timing] gen_us=1240, norm_us=10548, interp_us=1417, end2end_us=13400, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=9, insts=50, edges=13, branching_blocks=5, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=19757
+  [timing] gen_us=2600, norm_us=13364, interp_us=3361, end2end_us=19757, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=224, edges=348, tree=2.664000e+03, seq=144, stars=0, unions=30, atoms=49, sharing=1.189286e+01, roots=50
   [expr-profile] with_expr=50, missing_expr=0, total_unique_nodes=2463, total_shared_refs=93, total_unions=30, total_concats=1223, total_stars=0, max_nodes=115@i49, max_depth=37@i37
@@ -4476,8 +4581,9 @@ FUNC close_stream
   i49 IN: true
 FUNC rpl_fclose
   [client:reachable]
-  [cfg] args=1, blocks=10, insts=55, edges=14, branching_blocks=5, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=21290
-  [timing] gen_us=991, norm_us=17345, interp_us=2753, end2end_us=21290, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=10, insts=55, edges=14, branching_blocks=5, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=28554
+  [timing] gen_us=1626, norm_us=23155, interp_us=3249, end2end_us=28554, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=332, edges=554, tree=4.223000e+03, seq=214, stars=0, unions=63, atoms=54, sharing=1.271988e+01, roots=55
   [expr-profile] with_expr=55, missing_expr=0, total_unique_nodes=3001, total_shared_refs=332, total_unions=63, total_concats=1576, total_stars=0, max_nodes=133@i54, max_depth=26@i30
@@ -4538,8 +4644,9 @@ FUNC rpl_fclose
   i54 IN: true
 FUNC rpl_fflush
   [client:reachable]
-  [cfg] args=1, blocks=5, insts=23, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=2912
-  [timing] gen_us=229, norm_us=2247, interp_us=380, end2end_us=2912, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=5, insts=23, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=4258
+  [timing] gen_us=737, norm_us=3052, interp_us=388, end2end_us=4258, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=83, edges=120, tree=4.830000e+02, seq=52, stars=0, unions=8, atoms=22, sharing=5.819277e+00, roots=23
   [expr-profile] with_expr=23, missing_expr=0, total_unique_nodes=460, total_shared_refs=23, total_unions=8, total_concats=222, total_stars=0, max_nodes=51@i22, max_depth=16@i20
@@ -4568,8 +4675,9 @@ FUNC rpl_fflush
   i22 IN: true
 FUNC clear_ungetc_buffer_preserving_position
   [client:reachable]
-  [cfg] args=1, blocks=3, insts=13, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=897
-  [timing] gen_us=157, norm_us=595, interp_us=117, end2end_us=897, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=3, insts=13, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1011
+  [timing] gen_us=165, norm_us=693, interp_us=121, end2end_us=1011, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=28, edges=30, tree=1.470000e+02, seq=14, stars=0, unions=1, atoms=12, sharing=5.250000e+00, roots=13
   [expr-profile] with_expr=13, missing_expr=0, total_unique_nodes=146, total_shared_refs=1, total_unions=1, total_concats=66, total_stars=0, max_nodes=24@i12, max_depth=11@i11
@@ -4588,8 +4696,9 @@ FUNC clear_ungetc_buffer_preserving_position
   i12 IN: true
 FUNC rpl_fseeko
   [client:reachable]
-  [cfg] args=3, blocks=8, insts=63, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=15256
-  [timing] gen_us=1780, norm_us=10246, interp_us=2851, end2end_us=15256, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=8, insts=63, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=19467
+  [timing] gen_us=1599, norm_us=14523, interp_us=2855, end2end_us=19467, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=230, edges=334, tree=3.677000e+03, seq=147, stars=0, unions=20, atoms=62, sharing=1.598696e+01, roots=63
   [expr-profile] with_expr=63, missing_expr=0, total_unique_nodes=3601, total_shared_refs=76, total_unions=20, total_concats=1787, total_stars=0, max_nodes=143@i62, max_depth=52@i54
@@ -4658,8 +4767,9 @@ FUNC rpl_fseeko
   i62 IN: true
 FUNC _gl_alloc_nomem
   [client:reachable]
-  [cfg] args=0, blocks=1, insts=3, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=149
-  [timing] gen_us=33, norm_us=100, interp_us=5, end2end_us=149, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=1, insts=3, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=205
+  [timing] gen_us=69, norm_us=114, interp_us=7, end2end_us=205, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=4, edges=2, tree=5.000000e+00, seq=1, stars=0, unions=0, atoms=2, sharing=1.250000e+00, roots=3
   [expr-profile] with_expr=3, missing_expr=0, total_unique_nodes=5, total_shared_refs=0, total_unions=0, total_concats=1, total_stars=0, max_nodes=3@i2, max_depth=2@i2
@@ -4668,8 +4778,9 @@ FUNC _gl_alloc_nomem
   i2 IN: true
 FUNC imalloc
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=3, returns=1, unreachable=0, elapsed_us=859
-  [timing] gen_us=97, norm_us=670, interp_us=74, end2end_us=859, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=3, returns=1, unreachable=0, elapsed_us=985
+  [timing] gen_us=128, norm_us=722, interp_us=109, end2end_us=985, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=32, edges=38, tree=1.390000e+02, seq=17, stars=0, unions=2, atoms=12, sharing=4.343750e+00, roots=13
   [expr-profile] with_expr=13, missing_expr=0, total_unique_nodes=136, total_shared_refs=3, total_unions=2, total_concats=61, total_stars=0, max_nodes=25@i12, max_depth=8@i8
@@ -4688,8 +4799,9 @@ FUNC imalloc
   i12 IN: true
 FUNC irealloc
   [client:reachable]
-  [cfg] args=2, blocks=4, insts=23, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=4, returns=1, unreachable=0, elapsed_us=1695
-  [timing] gen_us=214, norm_us=1196, interp_us=235, end2end_us=1695, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=4, insts=23, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=4, returns=1, unreachable=0, elapsed_us=2004
+  [timing] gen_us=283, norm_us=1328, interp_us=323, end2end_us=2004, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=59, edges=72, tree=4.510000e+02, seq=34, stars=0, unions=2, atoms=22, sharing=7.644068e+00, roots=23
   [expr-profile] with_expr=23, missing_expr=0, total_unique_nodes=448, total_shared_refs=3, total_unions=2, total_concats=212, total_stars=0, max_nodes=45@i22, max_depth=18@i18
@@ -4718,8 +4830,9 @@ FUNC irealloc
   i22 IN: true
 FUNC icalloc
   [client:reachable]
-  [cfg] args=2, blocks=10, insts=36, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=8815
-  [timing] gen_us=466, norm_us=7069, interp_us=1173, end2end_us=8815, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=10, insts=36, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=10246
+  [timing] gen_us=704, norm_us=8454, interp_us=942, end2end_us=10246, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=184, edges=296, tree=1.500000e+03, seq=120, stars=0, unions=28, atoms=35, sharing=8.152174e+00, roots=36
   [expr-profile] with_expr=36, missing_expr=0, total_unique_nodes=1196, total_shared_refs=120, total_unions=29, total_concats=611, total_stars=0, max_nodes=84@i35, max_depth=16@i26
@@ -4761,8 +4874,9 @@ FUNC icalloc
   i35 IN: true
 FUNC ireallocarray
   [client:reachable]
-  [cfg] args=3, blocks=8, insts=33, edges=11, branching_blocks=4, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=10501
-  [timing] gen_us=582, norm_us=8594, interp_us=1204, end2end_us=10501, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=8, insts=33, edges=11, branching_blocks=4, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=11893
+  [timing] gen_us=664, norm_us=9642, interp_us=1420, end2end_us=11893, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=200, edges=334, tree=1.615000e+03, seq=128, stars=0, unions=39, atoms=32, sharing=8.075000e+00, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=1230, total_shared_refs=225, total_unions=39, total_concats=672, total_stars=0, max_nodes=80@i28, max_depth=18@i28
@@ -4801,8 +4915,9 @@ FUNC ireallocarray
   i32 IN: true
 FUNC locale_charset
   [client:reachable]
-  [cfg] args=0, blocks=5, insts=19, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3321
-  [timing] gen_us=232, norm_us=2642, interp_us=355, end2end_us=3321, runs=1
+  [interp] mode=generic
+  [cfg] args=0, blocks=5, insts=19, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=4335
+  [timing] gen_us=336, norm_us=3525, interp_us=343, end2end_us=4335, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=76, edges=114, tree=4.410000e+02, seq=45, stars=0, unions=12, atoms=18, sharing=5.802632e+00, roots=19
   [expr-profile] with_expr=19, missing_expr=0, total_unique_nodes=376, total_shared_refs=51, total_unions=12, total_concats=192, total_stars=0, max_nodes=43@i18, max_depth=12@i16
@@ -4827,8 +4942,9 @@ FUNC locale_charset
   i18 IN: true
 FUNC rpl_mbrtowc
   [client:reachable]
-  [cfg] args=4, blocks=8, insts=52, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=18524
-  [timing] gen_us=1294, norm_us=15151, interp_us=1895, end2end_us=18524, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=8, insts=52, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=24473
+  [timing] gen_us=1463, norm_us=19939, interp_us=2656, end2end_us=24473, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=245, edges=386, tree=3.474000e+03, seq=152, stars=0, unions=41, atoms=51, sharing=1.417959e+01, roots=52
   [expr-profile] with_expr=52, missing_expr=0, total_unique_nodes=2922, total_shared_refs=380, total_unions=41, total_concats=1584, total_stars=0, max_nodes=123@i51, max_depth=28@i46
@@ -4886,8 +5002,9 @@ FUNC rpl_mbrtowc
   i51 IN: true
 FUNC mgetgroups
   [client:reachable]
-  [cfg] args=3, blocks=46, insts=239, edges=67, branching_blocks=22, max_succs=2, phis=2, calls=23, returns=1, unreachable=0, elapsed_us=561215
-  [timing] gen_us=19387, norm_us=220832, interp_us=315278, end2end_us=561215, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=46, insts=239, edges=67, branching_blocks=22, max_succs=2, phis=2, calls=23, returns=1, unreachable=0, elapsed_us=740309
+  [timing] gen_us=25752, norm_us=355732, interp_us=349922, end2end_us=740309, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=91100, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2970, edges=5460, tree=4.492590e+05, seq=1969, stars=2, unions=760, atoms=238, sharing=1.512657e+02, roots=239
   [expr-profile] with_expr=239, missing_expr=0, total_unique_nodes=46901, total_shared_refs=11993, total_unions=1028, total_concats=28258, total_stars=83, max_nodes=628@i238, max_depth=61@i227
@@ -5132,8 +5249,9 @@ FUNC mgetgroups
   i238 IN: true
 FUNC realloc_groupbuf
   [client:reachable]
-  [cfg] args=2, blocks=4, insts=24, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=2459
-  [timing] gen_us=328, norm_us=1826, interp_us=255, end2end_us=2459, runs=1
+  [interp] mode=generic
+  [cfg] args=2, blocks=4, insts=24, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=2204
+  [timing] gen_us=339, norm_us=1406, interp_us=375, end2end_us=2204, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=61, edges=74, tree=4.720000e+02, seq=35, stars=0, unions=2, atoms=23, sharing=7.737705e+00, roots=24
   [expr-profile] with_expr=24, missing_expr=0, total_unique_nodes=469, total_shared_refs=3, total_unions=2, total_concats=222, total_stars=0, max_nodes=47@i23, max_depth=17@i21
@@ -5163,8 +5281,9 @@ FUNC realloc_groupbuf
   i23 IN: true
 FUNC c_isalnum
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=65, branching_blocks=1, max_succs=63, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=876
-  [timing] gen_us=159, norm_us=632, interp_us=64, end2end_us=876, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=65, branching_blocks=1, max_succs=63, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1001
+  [timing] gen_us=201, norm_us=704, interp_us=68, end2end_us=1001, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5182,8 +5301,9 @@ FUNC c_isalnum
   i11 IN: true
 FUNC c_isalpha
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=55, branching_blocks=1, max_succs=53, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=821
-  [timing] gen_us=137, norm_us=603, interp_us=64, end2end_us=821, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=55, branching_blocks=1, max_succs=53, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=782
+  [timing] gen_us=126, norm_us=570, interp_us=66, end2end_us=782, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5201,8 +5321,9 @@ FUNC c_isalpha
   i11 IN: true
 FUNC c_isascii
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=131, branching_blocks=1, max_succs=129, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=837
-  [timing] gen_us=148, norm_us=607, interp_us=65, end2end_us=837, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=131, branching_blocks=1, max_succs=129, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=882
+  [timing] gen_us=154, norm_us=610, interp_us=95, end2end_us=882, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5220,8 +5341,9 @@ FUNC c_isascii
   i11 IN: true
 FUNC c_isblank
   [client:reachable]
-  [cfg] args=1, blocks=3, insts=11, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=726
-  [timing] gen_us=79, norm_us=574, interp_us=56, end2end_us=726, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=3, insts=11, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=1004
+  [timing] gen_us=124, norm_us=772, interp_us=84, end2end_us=1004, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=36, tree=1.050000e+02, seq=16, stars=0, unions=2, atoms=10, sharing=3.620690e+00, roots=11
   [expr-profile] with_expr=11, missing_expr=0, total_unique_nodes=103, total_shared_refs=2, total_unions=2, total_concats=45, total_stars=0, max_nodes=20@i10, max_depth=8@i8
@@ -5238,8 +5360,9 @@ FUNC c_isblank
   i10 IN: true
 FUNC c_iscntrl
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=36, branching_blocks=1, max_succs=34, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=794
-  [timing] gen_us=105, norm_us=608, interp_us=65, end2end_us=794, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=36, branching_blocks=1, max_succs=34, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=978
+  [timing] gen_us=147, norm_us=708, interp_us=99, end2end_us=978, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5257,8 +5380,9 @@ FUNC c_iscntrl
   i11 IN: true
 FUNC c_isdigit
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=13, branching_blocks=1, max_succs=11, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=999
-  [timing] gen_us=90, norm_us=819, interp_us=71, end2end_us=999, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=13, branching_blocks=1, max_succs=11, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=950
+  [timing] gen_us=126, norm_us=707, interp_us=95, end2end_us=950, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5276,8 +5400,9 @@ FUNC c_isdigit
   i11 IN: true
 FUNC c_isgraph
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=97, branching_blocks=1, max_succs=95, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1120
-  [timing] gen_us=191, norm_us=806, interp_us=97, end2end_us=1120, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=97, branching_blocks=1, max_succs=95, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=920
+  [timing] gen_us=191, norm_us=643, interp_us=67, end2end_us=920, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5295,8 +5420,9 @@ FUNC c_isgraph
   i11 IN: true
 FUNC c_islower
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1085
-  [timing] gen_us=131, norm_us=829, interp_us=100, end2end_us=1085, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=969
+  [timing] gen_us=145, norm_us=706, interp_us=95, end2end_us=969, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5314,8 +5440,9 @@ FUNC c_islower
   i11 IN: true
 FUNC c_isprint
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=98, branching_blocks=1, max_succs=96, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1096
-  [timing] gen_us=190, norm_us=784, interp_us=99, end2end_us=1096, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=98, branching_blocks=1, max_succs=96, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1021
+  [timing] gen_us=180, norm_us=715, interp_us=89, end2end_us=1021, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5333,8 +5460,9 @@ FUNC c_isprint
   i11 IN: true
 FUNC c_ispunct
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=35, branching_blocks=1, max_succs=33, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1118
-  [timing] gen_us=132, norm_us=778, interp_us=179, end2end_us=1118, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=35, branching_blocks=1, max_succs=33, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2201
+  [timing] gen_us=181, norm_us=1852, interp_us=112, end2end_us=2201, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5352,8 +5480,9 @@ FUNC c_ispunct
   i11 IN: true
 FUNC c_isspace
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=9, branching_blocks=1, max_succs=7, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1074
-  [timing] gen_us=129, norm_us=823, interp_us=97, end2end_us=1074, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=9, branching_blocks=1, max_succs=7, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1011
+  [timing] gen_us=111, norm_us=786, interp_us=89, end2end_us=1011, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5371,8 +5500,9 @@ FUNC c_isspace
   i11 IN: true
 FUNC c_isupper
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1022
-  [timing] gen_us=147, norm_us=759, interp_us=96, end2end_us=1022, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1099
+  [timing] gen_us=146, norm_us=863, interp_us=67, end2end_us=1099, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5390,8 +5520,9 @@ FUNC c_isupper
   i11 IN: true
 FUNC c_isxdigit
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=12, edges=25, branching_blocks=1, max_succs=23, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1005
-  [timing] gen_us=125, norm_us=751, interp_us=107, end2end_us=1005, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=12, edges=25, branching_blocks=1, max_succs=23, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=906
+  [timing] gen_us=109, norm_us=657, interp_us=116, end2end_us=906, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=29, edges=34, tree=1.200000e+02, seq=15, stars=0, unions=2, atoms=11, sharing=4.137931e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=117, total_shared_refs=3, total_unions=2, total_concats=52, total_stars=0, max_nodes=23@i11, max_depth=7@i7
@@ -5409,8 +5540,9 @@ FUNC c_isxdigit
   i11 IN: true
 FUNC c_tolower
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=16, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1385
-  [timing] gen_us=176, norm_us=1022, interp_us=160, end2end_us=1385, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=16, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1354
+  [timing] gen_us=194, norm_us=958, interp_us=166, end2end_us=1354, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=41, edges=50, tree=2.020000e+02, seq=23, stars=0, unions=2, atoms=15, sharing=4.926829e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=199, total_shared_refs=3, total_unions=2, total_concats=91, total_stars=0, max_nodes=31@i15, max_depth=10@i10
@@ -5432,8 +5564,9 @@ FUNC c_tolower
   i15 IN: true
 FUNC c_toupper
   [client:reachable]
-  [cfg] args=1, blocks=4, insts=16, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1619
-  [timing] gen_us=173, norm_us=1253, interp_us=161, end2end_us=1619, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=4, insts=16, edges=29, branching_blocks=1, max_succs=27, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1400
+  [timing] gen_us=192, norm_us=1006, interp_us=169, end2end_us=1400, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=41, edges=50, tree=2.020000e+02, seq=23, stars=0, unions=2, atoms=15, sharing=4.926829e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=199, total_shared_refs=3, total_unions=2, total_concats=91, total_stars=0, max_nodes=31@i15, max_depth=10@i10
@@ -5455,8 +5588,9 @@ FUNC c_toupper
   i15 IN: true
 FUNC getugroups
   [client:reachable]
-  [cfg] args=4, blocks=33, insts=145, edges=45, branching_blocks=13, max_succs=2, phis=0, calls=19, returns=1, unreachable=0, elapsed_us=367302
-  [timing] gen_us=23474, norm_us=139961, interp_us=193970, end2end_us=367302, runs=1
+  [interp] mode=generic
+  [cfg] args=4, blocks=33, insts=145, edges=45, branching_blocks=13, max_succs=2, phis=0, calls=19, returns=1, unreachable=0, elapsed_us=418778
+  [timing] gen_us=31814, norm_us=155515, interp_us=217219, end2end_us=418778, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=84600, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1517, edges=2741, tree=2.739830e+05, seq=1028, stars=3, unions=341, atoms=144, sharing=1.806084e+02, roots=145
   [expr-profile] with_expr=145, missing_expr=0, total_unique_nodes=45007, total_shared_refs=16665, total_unions=1202, total_concats=29401, total_stars=321, max_nodes=483@i144, max_depth=93@i84
@@ -5607,8 +5741,9 @@ FUNC getugroups
   i144 IN: true
 FUNC hard_locale
   [client:reachable]
-  [cfg] args=1, blocks=7, insts=27, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=3889
-  [timing] gen_us=329, norm_us=2959, interp_us=519, end2end_us=3889, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=7, insts=27, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=4084
+  [timing] gen_us=452, norm_us=3021, interp_us=507, end2end_us=4084, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=87, edges=120, tree=6.510000e+02, seq=52, stars=0, unions=8, atoms=26, sharing=7.482759e+00, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=636, total_shared_refs=15, total_unions=8, total_concats=304, total_stars=0, max_nodes=59@i26, max_depth=20@i22
@@ -5641,8 +5776,9 @@ FUNC hard_locale
   i26 IN: true
 FUNC setlocale_null_r
   [client:reachable]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1003
-  [timing] gen_us=146, norm_us=695, interp_us=115, end2end_us=1003, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=868
+  [timing] gen_us=170, norm_us=523, interp_us=135, end2end_us=868, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -5662,8 +5798,9 @@ FUNC setlocale_null_r
   i13 IN: true
 FUNC setlocale_null_unlocked
   [client:reachable]
-  [cfg] args=3, blocks=10, insts=61, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=10348
-  [timing] gen_us=1071, norm_us=6768, interp_us=2261, end2end_us=10348, runs=1
+  [interp] mode=generic
+  [cfg] args=3, blocks=10, insts=61, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=13775
+  [timing] gen_us=1598, norm_us=9038, interp_us=2556, end2end_us=13775, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=199, edges=276, tree=2.867000e+03, seq=126, stars=0, unions=12, atoms=60, sharing=1.440704e+01, roots=61
   [expr-profile] with_expr=61, missing_expr=0, total_unique_nodes=2843, total_shared_refs=24, total_unions=12, total_concats=1391, total_stars=0, max_nodes=131@i60, max_depth=40@i56
@@ -5730,8 +5867,9 @@ FUNC setlocale_null_unlocked
   i60 IN: true
 FUNC setlocale_null_androidfix
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=607
-  [timing] gen_us=111, norm_us=404, interp_us=69, end2end_us=607, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=588
+  [timing] gen_us=116, norm_us=367, interp_us=80, end2end_us=588, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -5747,8 +5885,9 @@ FUNC setlocale_null_androidfix
   i9 IN: true
 FUNC setlocale_null
   [client:reachable]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=272
-  [timing] gen_us=47, norm_us=190, interp_us=23, end2end_us=272, runs=1
+  [interp] mode=generic
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=273
+  [timing] gen_us=54, norm_us=180, interp_us=26, end2end_us=273, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -5759,4 +5898,4 @@ FUNC setlocale_null
   i4 IN: true
   i5 IN: true
 [summary] skipped_functions=2
-[mem] peak_rss_kb=44536
+[mem] peak_rss_kb=44880

@@ -1,6 +1,7 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC x264_plane_copy_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -46,6 +47,7 @@ FUNC x264_frame_init_lowres
   [skipped] reason=too_large insts=216
 FUNC x264_mc_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -167,6 +169,7 @@ FUNC x264_mc_init
   i118 IN: true
 FUNC mc_luma
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -309,6 +312,7 @@ FUNC mc_luma
   i139 IN: true
 FUNC get_ref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -460,6 +464,7 @@ FUNC mc_chroma
   [skipped] reason=too_large insts=164
 FUNC pixel_avg_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -504,6 +509,7 @@ FUNC pixel_avg_16x16
   i41 IN: true
 FUNC pixel_avg_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -548,6 +554,7 @@ FUNC pixel_avg_16x8
   i41 IN: true
 FUNC pixel_avg_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -592,6 +599,7 @@ FUNC pixel_avg_8x16
   i41 IN: true
 FUNC pixel_avg_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -636,6 +644,7 @@ FUNC pixel_avg_8x8
   i41 IN: true
 FUNC pixel_avg_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -680,6 +689,7 @@ FUNC pixel_avg_8x4
   i41 IN: true
 FUNC pixel_avg_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -724,6 +734,7 @@ FUNC pixel_avg_4x8
   i41 IN: true
 FUNC pixel_avg_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -768,6 +779,7 @@ FUNC pixel_avg_4x4
   i41 IN: true
 FUNC pixel_avg_4x2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -812,6 +824,7 @@ FUNC pixel_avg_4x2
   i41 IN: true
 FUNC pixel_avg_2x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -856,6 +869,7 @@ FUNC pixel_avg_2x4
   i41 IN: true
 FUNC pixel_avg_2x2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -900,6 +914,7 @@ FUNC pixel_avg_2x2
   i41 IN: true
 FUNC x264_weight_cache
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -916,6 +931,7 @@ FUNC x264_weight_cache
   i13 IN: true
 FUNC mc_copy_w16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -940,6 +956,7 @@ FUNC mc_copy_w16
   i21 IN: true
 FUNC mc_copy_w8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -964,6 +981,7 @@ FUNC mc_copy_w8
   i21 IN: true
 FUNC mc_copy_w4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -990,6 +1008,7 @@ FUNC hpel_filter
   [skipped] reason=too_large insts=292
 FUNC prefetch_fenc_null
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1008,6 +1027,7 @@ FUNC prefetch_fenc_null
   i15 IN: true
 FUNC prefetch_ref_null
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1020,6 +1040,7 @@ FUNC prefetch_ref_null
   i9 IN: true
 FUNC memzero_aligned
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1035,6 +1056,7 @@ FUNC frame_init_lowres_core
   [skipped] reason=too_large insts=278
 FUNC integral_init4h
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1116,6 +1138,7 @@ FUNC integral_init4h
   i78 IN: true
 FUNC integral_init8h
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1217,6 +1240,7 @@ FUNC integral_init8h
   i98 IN: true
 FUNC integral_init4v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1320,6 +1344,7 @@ FUNC integral_init4v
   i100 IN: true
 FUNC integral_init8v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1365,6 +1390,7 @@ FUNC integral_init8v
   i42 IN: true
 FUNC mbtree_propagate_cost
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1455,6 +1481,7 @@ FUNC mbtree_propagate_cost
   i87 IN: true
 FUNC x264_clip_uint8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1473,6 +1500,7 @@ FUNC x264_clip_uint8
   i15 IN: true
 FUNC mc_copy
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1522,6 +1550,7 @@ FUNC mc_copy
   i46 IN: true
 FUNC mc_weight_w2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1670,6 +1699,7 @@ FUNC mc_weight_w2
   i145 IN: true
 FUNC mc_weight_w4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1818,6 +1848,7 @@ FUNC mc_weight_w4
   i145 IN: true
 FUNC mc_weight_w8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1966,6 +1997,7 @@ FUNC mc_weight_w8
   i145 IN: true
 FUNC mc_weight_w12
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2114,6 +2146,7 @@ FUNC mc_weight_w12
   i145 IN: true
 FUNC mc_weight_w16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2262,6 +2295,7 @@ FUNC mc_weight_w16
   i145 IN: true
 FUNC mc_weight_w20
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2410,6 +2444,7 @@ FUNC mc_weight_w20
   i145 IN: true
 FUNC pixel_avg_wxh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2501,6 +2536,7 @@ FUNC pixel_avg_weight_wxh
   [skipped] reason=too_large insts=377
 FUNC pixel_avg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2594,6 +2630,7 @@ FUNC x264_frame_filter
   [skipped] reason=too_large insts=282
 FUNC x264_predict_16x16_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2624,6 +2661,7 @@ FUNC x264_predict_16x16_init
   i27 IN: true
 FUNC predict_16x16_v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2701,6 +2739,7 @@ FUNC predict_16x16_v
   i74 IN: true
 FUNC predict_16x16_h
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2754,6 +2793,7 @@ FUNC predict_16x16_h
   i50 IN: true
 FUNC predict_16x16_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2842,6 +2882,7 @@ FUNC predict_16x16_p
   [skipped] reason=too_large insts=155
 FUNC predict_16x16_dc_left
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2918,6 +2959,7 @@ FUNC predict_16x16_dc_left
   i73 IN: true
 FUNC predict_16x16_dc_top
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2993,6 +3035,7 @@ FUNC predict_16x16_dc_top
   i72 IN: true
 FUNC predict_16x16_dc_128
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3034,6 +3077,7 @@ FUNC predict_16x16_dc_128
   i38 IN: true
 FUNC x264_clip_uint8.1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3052,6 +3096,7 @@ FUNC x264_clip_uint8.1
   i15 IN: true
 FUNC x264_predict_8x8c_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3082,6 +3127,7 @@ FUNC x264_predict_8x8c_init
   i27 IN: true
 FUNC predict_8x8c_v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3133,6 +3179,7 @@ FUNC predict_8x8c_v
   i48 IN: true
 FUNC predict_8x8c_h
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3178,6 +3225,7 @@ FUNC predict_8x8c_p
   [skipped] reason=too_large insts=155
 FUNC predict_8x8c_dc_left
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3289,6 +3337,7 @@ FUNC predict_8x8c_dc_left
   i108 IN: true
 FUNC predict_8x8c_dc_top
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3371,6 +3420,7 @@ FUNC predict_8x8c_dc_top
   i79 IN: true
 FUNC predict_8x8c_dc_128
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3402,6 +3452,7 @@ FUNC predict_8x8c_dc_128
   i28 IN: true
 FUNC x264_predict_8x8_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3452,6 +3503,7 @@ FUNC x264_predict_8x8_init
   i47 IN: true
 FUNC predict_8x8_v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3506,6 +3558,7 @@ FUNC predict_8x8_hu
   [skipped] reason=too_large insts=292
 FUNC predict_8x8_dc_left
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3619,6 +3672,7 @@ FUNC predict_8x8_dc_left
   i110 IN: true
 FUNC predict_8x8_dc_top
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3732,6 +3786,7 @@ FUNC predict_8x8_dc_top
   i110 IN: true
 FUNC predict_8x8_dc_128
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3768,6 +3823,7 @@ FUNC predict_8x8_filter
   [skipped] reason=too_large insts=607
 FUNC pack8to16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3781,6 +3837,7 @@ FUNC pack8to16
   i10 IN: true
 FUNC pack16to32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3794,6 +3851,7 @@ FUNC pack16to32
   i10 IN: true
 FUNC x264_predict_4x4_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3839,6 +3897,7 @@ FUNC x264_predict_4x4_init
   i42 IN: true
 FUNC predict_4x4_v
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3870,6 +3929,7 @@ FUNC predict_4x4_v
   i28 IN: true
 FUNC predict_4x4_h
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3916,6 +3976,7 @@ FUNC predict_4x4_h
   i43 IN: true
 FUNC predict_4x4_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3998,6 +4059,7 @@ FUNC predict_4x4_vl
   [skipped] reason=too_large insts=183
 FUNC predict_4x4_hu
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4127,6 +4189,7 @@ FUNC predict_4x4_hu
   i126 IN: true
 FUNC predict_4x4_dc_left
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4179,6 +4242,7 @@ FUNC predict_4x4_dc_left
   i49 IN: true
 FUNC predict_4x4_dc_top
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4231,6 +4295,7 @@ FUNC predict_4x4_dc_top
   i49 IN: true
 FUNC predict_4x4_dc_128
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4263,6 +4328,7 @@ FUNC x264_pixel_init
   [skipped] reason=too_large insts=311
 FUNC x264_pixel_sad_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4333,6 +4399,7 @@ FUNC x264_pixel_sad_16x16
   i67 IN: true
 FUNC x264_pixel_sad_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4403,6 +4470,7 @@ FUNC x264_pixel_sad_16x8
   i67 IN: true
 FUNC x264_pixel_sad_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4473,6 +4541,7 @@ FUNC x264_pixel_sad_8x16
   i67 IN: true
 FUNC x264_pixel_sad_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4543,6 +4612,7 @@ FUNC x264_pixel_sad_8x8
   i67 IN: true
 FUNC x264_pixel_sad_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4613,6 +4683,7 @@ FUNC x264_pixel_sad_8x4
   i67 IN: true
 FUNC x264_pixel_sad_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4683,6 +4754,7 @@ FUNC x264_pixel_sad_4x8
   i67 IN: true
 FUNC x264_pixel_sad_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4753,6 +4825,7 @@ FUNC x264_pixel_sad_4x4
   i67 IN: true
 FUNC x264_pixel_sad_x3_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4795,6 +4868,7 @@ FUNC x264_pixel_sad_x3_16x16
   i39 IN: true
 FUNC x264_pixel_sad_x3_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4837,6 +4911,7 @@ FUNC x264_pixel_sad_x3_16x8
   i39 IN: true
 FUNC x264_pixel_sad_x3_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4879,6 +4954,7 @@ FUNC x264_pixel_sad_x3_8x16
   i39 IN: true
 FUNC x264_pixel_sad_x3_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4921,6 +4997,7 @@ FUNC x264_pixel_sad_x3_8x8
   i39 IN: true
 FUNC x264_pixel_sad_x3_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4963,6 +5040,7 @@ FUNC x264_pixel_sad_x3_8x4
   i39 IN: true
 FUNC x264_pixel_sad_x3_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5005,6 +5083,7 @@ FUNC x264_pixel_sad_x3_4x8
   i39 IN: true
 FUNC x264_pixel_sad_x3_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5047,6 +5126,7 @@ FUNC x264_pixel_sad_x3_4x4
   i39 IN: true
 FUNC x264_pixel_sad_x4_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5099,6 +5179,7 @@ FUNC x264_pixel_sad_x4_16x16
   i49 IN: true
 FUNC x264_pixel_sad_x4_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5151,6 +5232,7 @@ FUNC x264_pixel_sad_x4_16x8
   i49 IN: true
 FUNC x264_pixel_sad_x4_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5203,6 +5285,7 @@ FUNC x264_pixel_sad_x4_8x16
   i49 IN: true
 FUNC x264_pixel_sad_x4_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5255,6 +5338,7 @@ FUNC x264_pixel_sad_x4_8x8
   i49 IN: true
 FUNC x264_pixel_sad_x4_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5307,6 +5391,7 @@ FUNC x264_pixel_sad_x4_8x4
   i49 IN: true
 FUNC x264_pixel_sad_x4_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5359,6 +5444,7 @@ FUNC x264_pixel_sad_x4_4x8
   i49 IN: true
 FUNC x264_pixel_sad_x4_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5411,6 +5497,7 @@ FUNC x264_pixel_sad_x4_4x4
   i49 IN: true
 FUNC x264_pixel_ssd_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5486,6 +5573,7 @@ FUNC x264_pixel_ssd_16x16
   i72 IN: true
 FUNC x264_pixel_ssd_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5561,6 +5649,7 @@ FUNC x264_pixel_ssd_16x8
   i72 IN: true
 FUNC x264_pixel_ssd_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5636,6 +5725,7 @@ FUNC x264_pixel_ssd_8x16
   i72 IN: true
 FUNC x264_pixel_ssd_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5711,6 +5801,7 @@ FUNC x264_pixel_ssd_8x8
   i72 IN: true
 FUNC x264_pixel_ssd_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5786,6 +5877,7 @@ FUNC x264_pixel_ssd_8x4
   i72 IN: true
 FUNC x264_pixel_ssd_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5861,6 +5953,7 @@ FUNC x264_pixel_ssd_4x8
   i72 IN: true
 FUNC x264_pixel_ssd_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5936,6 +6029,7 @@ FUNC x264_pixel_ssd_4x4
   i72 IN: true
 FUNC x264_pixel_satd_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6064,6 +6158,7 @@ FUNC x264_pixel_satd_16x16
   i125 IN: true
 FUNC x264_pixel_satd_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6128,6 +6223,7 @@ FUNC x264_pixel_satd_16x8
   i61 IN: true
 FUNC x264_pixel_satd_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6196,6 +6292,7 @@ FUNC x264_pixel_satd_8x16
   i65 IN: true
 FUNC x264_pixel_satd_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6236,6 +6333,7 @@ FUNC x264_pixel_satd_8x4
   [skipped] reason=too_large insts=293
 FUNC x264_pixel_satd_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6276,6 +6374,7 @@ FUNC x264_pixel_satd_4x4
   [skipped] reason=too_large insts=233
 FUNC x264_pixel_satd_x3_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6318,6 +6417,7 @@ FUNC x264_pixel_satd_x3_16x16
   i39 IN: true
 FUNC x264_pixel_satd_x3_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6360,6 +6460,7 @@ FUNC x264_pixel_satd_x3_16x8
   i39 IN: true
 FUNC x264_pixel_satd_x3_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6402,6 +6503,7 @@ FUNC x264_pixel_satd_x3_8x16
   i39 IN: true
 FUNC x264_pixel_satd_x3_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6444,6 +6546,7 @@ FUNC x264_pixel_satd_x3_8x8
   i39 IN: true
 FUNC x264_pixel_satd_x3_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6486,6 +6589,7 @@ FUNC x264_pixel_satd_x3_8x4
   i39 IN: true
 FUNC x264_pixel_satd_x3_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6528,6 +6632,7 @@ FUNC x264_pixel_satd_x3_4x8
   i39 IN: true
 FUNC x264_pixel_satd_x3_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6570,6 +6675,7 @@ FUNC x264_pixel_satd_x3_4x4
   i39 IN: true
 FUNC x264_pixel_satd_x4_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6622,6 +6728,7 @@ FUNC x264_pixel_satd_x4_16x16
   i49 IN: true
 FUNC x264_pixel_satd_x4_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6674,6 +6781,7 @@ FUNC x264_pixel_satd_x4_16x8
   i49 IN: true
 FUNC x264_pixel_satd_x4_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6726,6 +6834,7 @@ FUNC x264_pixel_satd_x4_8x16
   i49 IN: true
 FUNC x264_pixel_satd_x4_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6778,6 +6887,7 @@ FUNC x264_pixel_satd_x4_8x8
   i49 IN: true
 FUNC x264_pixel_satd_x4_8x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6830,6 +6940,7 @@ FUNC x264_pixel_satd_x4_8x4
   i49 IN: true
 FUNC x264_pixel_satd_x4_4x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6882,6 +6993,7 @@ FUNC x264_pixel_satd_x4_4x8
   i49 IN: true
 FUNC x264_pixel_satd_x4_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6934,6 +7046,7 @@ FUNC x264_pixel_satd_x4_4x4
   i49 IN: true
 FUNC x264_pixel_hadamard_ac_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6985,6 +7098,7 @@ FUNC x264_pixel_hadamard_ac_16x16
   i48 IN: true
 FUNC x264_pixel_hadamard_ac_16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7015,6 +7129,7 @@ FUNC x264_pixel_hadamard_ac_16x8
   i27 IN: true
 FUNC x264_pixel_hadamard_ac_8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7048,6 +7163,7 @@ FUNC x264_pixel_hadamard_ac_8x16
   i30 IN: true
 FUNC x264_pixel_hadamard_ac_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7071,6 +7187,7 @@ FUNC x264_pixel_hadamard_ac_8x8
   i20 IN: true
 FUNC x264_pixel_ads4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7183,6 +7300,7 @@ FUNC x264_pixel_ads4
   i109 IN: true
 FUNC x264_pixel_ads2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7272,6 +7390,7 @@ FUNC x264_pixel_ads2
   i86 IN: true
 FUNC x264_pixel_ads1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7349,6 +7468,7 @@ FUNC x264_pixel_ads1
   i74 IN: true
 FUNC x264_pixel_sa8d_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7413,6 +7533,7 @@ FUNC x264_pixel_sa8d_16x16
   i61 IN: true
 FUNC x264_pixel_sa8d_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7439,6 +7560,7 @@ FUNC x264_pixel_sa8d_8x8
   i23 IN: true
 FUNC x264_pixel_var_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7514,6 +7636,7 @@ FUNC x264_pixel_var_16x16
   i72 IN: true
 FUNC x264_pixel_var_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7589,6 +7712,7 @@ FUNC x264_pixel_var_8x8
   i72 IN: true
 FUNC ssim_4x4x2_core
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7741,6 +7865,7 @@ FUNC ssim_4x4x2_core
   i149 IN: true
 FUNC ssim_end4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7890,6 +8015,7 @@ FUNC ssim_end4
   i146 IN: true
 FUNC pixel_var2_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7991,6 +8117,7 @@ FUNC pixel_var2_8x8
   i98 IN: true
 FUNC ssim_end1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8055,6 +8182,7 @@ FUNC sa8d_8x8
   [skipped] reason=too_large insts=448
 FUNC abs2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8075,6 +8203,7 @@ FUNC pixel_hadamard_ac
   [skipped] reason=too_large insts=431
 FUNC x264_mb_mc_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8220,6 +8349,7 @@ FUNC x264_mb_mc_1xywh
   [skipped] reason=too_large insts=235
 FUNC x264_clip3
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8253,6 +8383,7 @@ FUNC x264_macroblock_cache_allocate
   [skipped] reason=too_large insts=586
 FUNC x264_macroblock_cache_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8386,6 +8517,7 @@ FUNC x264_macroblock_thread_allocate
   [skipped] reason=too_large insts=372
 FUNC x264_macroblock_thread_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8454,6 +8586,7 @@ FUNC x264_macroblock_thread_init
   [skipped] reason=too_large insts=172
 FUNC x264_prefetch_fenc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8531,6 +8664,7 @@ FUNC x264_macroblock_cache_load_neighbours
   [skipped] reason=too_large insts=532
 FUNC copy_column8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8566,6 +8700,7 @@ FUNC x264_macroblock_load_pic_pointers
   [skipped] reason=too_large insts=558
 FUNC x264_macroblock_cache_skip
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8604,6 +8739,7 @@ FUNC x264_macroblock_cache_rect
   [skipped] reason=too_large insts=271
 FUNC x264_macroblock_cache_load_neighbours_deblock
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8754,6 +8890,7 @@ FUNC x264_macroblock_cache_load_deblock
   [skipped] reason=too_large insts=943
 FUNC pack16to32.2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8769,6 +8906,7 @@ FUNC x264_macroblock_cache_save
   [skipped] reason=too_large insts=1434
 FUNC x264_macroblock_store_pic
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8888,6 +9026,7 @@ FUNC x264_macroblock_store_pic
   i116 IN: true
 FUNC pack8to32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8925,6 +9064,7 @@ FUNC plane_expand_border
   [skipped] reason=too_large insts=178
 FUNC x264_frame_expand_border_filtered
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9067,6 +9207,7 @@ FUNC x264_frame_expand_border_filtered
   i139 IN: true
 FUNC x264_frame_expand_border_lowres
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9103,6 +9244,7 @@ FUNC x264_frame_expand_border_mod16
   [skipped] reason=too_large insts=205
 FUNC x264_frame_cond_broadcast
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9116,6 +9258,7 @@ FUNC x264_frame_cond_broadcast
   i10 IN: true
 FUNC x264_frame_cond_wait
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9133,6 +9276,7 @@ FUNC x264_frame_cond_wait
   i14 IN: true
 FUNC x264_frame_push
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9163,6 +9307,7 @@ FUNC x264_frame_push
   i27 IN: true
 FUNC x264_frame_pop
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9199,6 +9344,7 @@ FUNC x264_frame_pop
   i33 IN: true
 FUNC x264_frame_unshift
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9245,6 +9391,7 @@ FUNC x264_frame_unshift
   i43 IN: true
 FUNC x264_frame_shift
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9285,6 +9432,7 @@ FUNC x264_frame_shift
   i37 IN: true
 FUNC x264_frame_push_unused
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9316,6 +9464,7 @@ FUNC x264_frame_push_unused
   i28 IN: true
 FUNC x264_frame_pop_unused
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9388,6 +9537,7 @@ FUNC x264_frame_pop_unused
   i69 IN: true
 FUNC x264_frame_push_blank_unused
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9414,6 +9564,7 @@ FUNC x264_frame_push_blank_unused
   i23 IN: true
 FUNC x264_frame_pop_blank_unused
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9457,6 +9608,7 @@ FUNC x264_frame_pop_blank_unused
   i40 IN: true
 FUNC x264_frame_sort
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9588,6 +9740,7 @@ FUNC x264_frame_sort
   i128 IN: true
 FUNC x264_weight_scale_plane
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9672,6 +9825,7 @@ FUNC x264_weight_scale_plane
   i81 IN: true
 FUNC x264_frame_delete_list
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9706,6 +9860,7 @@ FUNC x264_frame_delete_list
   i31 IN: true
 FUNC x264_synch_frame_list_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9763,6 +9918,7 @@ FUNC x264_synch_frame_list_init
   i54 IN: true
 FUNC x264_synch_frame_list_delete
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9773,6 +9929,7 @@ FUNC x264_synch_frame_list_delete
   i7 IN: true
 FUNC x264_synch_frame_list_push
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9804,6 +9961,7 @@ FUNC x264_synch_frame_list_push
   i28 IN: true
 FUNC x264_dct_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9862,6 +10020,7 @@ FUNC add4x4_idct
   [skipped] reason=too_large insts=307
 FUNC sub8x8_dct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9906,6 +10065,7 @@ FUNC sub8x8_dct
   i41 IN: true
 FUNC sub8x8_dct_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10030,6 +10190,7 @@ FUNC sub8x8_dct_dc
   i121 IN: true
 FUNC add8x8_idct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10063,6 +10224,7 @@ FUNC add8x8_idct
   i30 IN: true
 FUNC add8x8_idct_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10096,6 +10258,7 @@ FUNC add8x8_idct_dc
   i30 IN: true
 FUNC sub16x16_dct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10136,6 +10299,7 @@ FUNC sub16x16_dct
   i37 IN: true
 FUNC add16x16_idct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10165,6 +10329,7 @@ FUNC add16x16_idct
   i26 IN: true
 FUNC add16x16_idct_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10220,6 +10385,7 @@ FUNC add8x8_idct8
   [skipped] reason=too_large insts=830
 FUNC sub16x16_dct8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10264,6 +10430,7 @@ FUNC sub16x16_dct8
   i41 IN: true
 FUNC add16x16_idct8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10301,6 +10468,7 @@ FUNC idct4x4dc
   [skipped] reason=too_large insts=262
 FUNC x264_clip_uint8.5
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10319,6 +10487,7 @@ FUNC x264_clip_uint8.5
   i15 IN: true
 FUNC pixel_sub_wxh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10399,6 +10568,7 @@ FUNC pixel_sub_wxh
   i77 IN: true
 FUNC add4x4_idct_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10473,6 +10643,7 @@ FUNC add4x4_idct_dc
   i71 IN: true
 FUNC sub4x4_dct_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10560,6 +10731,7 @@ FUNC sub4x4_dct_dc
   i84 IN: true
 FUNC x264_dct_init_weights
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10635,6 +10807,7 @@ FUNC x264_dct_init_weights
   i72 IN: true
 FUNC x264_zigzag_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10687,6 +10860,7 @@ FUNC zigzag_scan_8x8_field
   [skipped] reason=too_large insts=391
 FUNC zigzag_scan_4x4_field
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10766,6 +10940,7 @@ FUNC zigzag_scan_8x8_frame
   [skipped] reason=too_large insts=391
 FUNC zigzag_scan_4x4_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10877,6 +11052,7 @@ FUNC zigzag_sub_4x4ac_frame
   [skipped] reason=too_large insts=536
 FUNC zigzag_interleave_8x8_cavlc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10960,12 +11136,15 @@ FUNC zigzag_interleave_8x8_cavlc
   i80 IN: true
 FUNC x264_cpu_detect
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC x264_cpu_num_processors
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC x264_cabac_context_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11049,6 +11228,7 @@ FUNC x264_cabac_context_init
   i80 IN: true
 FUNC x264_clip3.6
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11078,6 +11258,7 @@ FUNC x264_clip3.6
   i26 IN: true
 FUNC x264_cabac_encode_init_core
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11096,6 +11277,7 @@ FUNC x264_cabac_encode_init_core
   i15 IN: true
 FUNC x264_cabac_encode_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11122,6 +11304,7 @@ FUNC x264_cabac_encode_init
   i23 IN: true
 FUNC x264_cabac_encode_decision_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11199,6 +11382,7 @@ FUNC x264_cabac_encode_decision_c
   i74 IN: true
 FUNC x264_cabac_encode_renorm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11236,6 +11420,7 @@ FUNC x264_cabac_encode_renorm
   i34 IN: true
 FUNC x264_cabac_putbyte
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11334,6 +11519,7 @@ FUNC x264_cabac_putbyte
   i95 IN: true
 FUNC x264_cabac_encode_bypass_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11366,6 +11552,7 @@ FUNC x264_cabac_encode_bypass_c
   i29 IN: true
 FUNC x264_cabac_encode_ue_bypass
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11461,6 +11648,7 @@ FUNC x264_cabac_encode_ue_bypass
   i92 IN: true
 FUNC x264_cabac_encode_terminal_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11474,6 +11662,7 @@ FUNC x264_cabac_encode_terminal_c
   i10 IN: true
 FUNC x264_cabac_encode_flush
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11555,6 +11744,7 @@ FUNC x264_cabac_encode_flush
   i78 IN: true
 FUNC spec_strdup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11606,6 +11796,7 @@ FUNC x264_param_default
   [skipped] reason=too_large insts=389
 FUNC x264_log_default
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11642,6 +11833,7 @@ FUNC x264_log_default
   i33 IN: true
 FUNC x264_param_default_preset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11684,6 +11876,7 @@ FUNC x264_param_apply_tune
   [skipped] reason=too_large insts=342
 FUNC x264_malloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11736,6 +11929,7 @@ FUNC x264_malloc
   i49 IN: true
 FUNC x264_log
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11788,6 +11982,7 @@ FUNC x264_log
   i49 IN: true
 FUNC x264_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11803,6 +11998,7 @@ FUNC x264_free
   i12 IN: true
 FUNC x264_param_apply_fastfirstpass
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11862,6 +12058,7 @@ FUNC x264_param_apply_fastfirstpass
   i56 IN: true
 FUNC x264_param_apply_profile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11970,6 +12167,7 @@ FUNC x264_param_parse
   [skipped] reason=too_large insts=2052
 FUNC x264_atobool
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12013,6 +12211,7 @@ FUNC x264_atobool
   i40 IN: true
 FUNC x264_atoi
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12043,6 +12242,7 @@ FUNC x264_atoi
   i27 IN: true
 FUNC x264_atof
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12072,6 +12272,7 @@ FUNC x264_atof
   i26 IN: true
 FUNC parse_enum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12118,6 +12319,7 @@ FUNC parse_enum
   i43 IN: true
 FUNC parse_cqm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12183,6 +12385,7 @@ FUNC parse_cqm
   i62 IN: true
 FUNC x264_clip3.16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12212,6 +12415,7 @@ FUNC x264_clip3.16
   i26 IN: true
 FUNC x264_picture_alloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12323,6 +12527,7 @@ FUNC x264_picture_alloc
   i108 IN: true
 FUNC x264_picture_clean
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12340,6 +12545,7 @@ FUNC x264_nal_encode
   [skipped] reason=too_large insts=158
 FUNC x264_reduce_fraction
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12396,6 +12602,7 @@ FUNC x264_reduce_fraction
   i53 IN: true
 FUNC x264_slurp_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12506,9 +12713,11 @@ FUNC x264_param2string
   [skipped] reason=too_large insts=814
 FUNC x264_mdate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC x264_macroblock_cache_mv_1_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12521,6 +12730,7 @@ FUNC x264_macroblock_cache_mv_1_1
   i9 IN: true
 FUNC x264_macroblock_cache_mv_2_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12533,6 +12743,7 @@ FUNC x264_macroblock_cache_mv_2_1
   i9 IN: true
 FUNC x264_macroblock_cache_mv_1_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12545,6 +12756,7 @@ FUNC x264_macroblock_cache_mv_1_2
   i9 IN: true
 FUNC x264_macroblock_cache_mv_2_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12557,6 +12769,7 @@ FUNC x264_macroblock_cache_mv_2_2
   i9 IN: true
 FUNC x264_macroblock_cache_mv_4_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12569,6 +12782,7 @@ FUNC x264_macroblock_cache_mv_4_2
   i9 IN: true
 FUNC x264_macroblock_cache_mv_2_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12581,6 +12795,7 @@ FUNC x264_macroblock_cache_mv_2_4
   i9 IN: true
 FUNC x264_macroblock_cache_mv_4_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12595,6 +12810,7 @@ FUNC x264_macroblock_cache_rect.17
   [skipped] reason=too_large insts=271
 FUNC x264_macroblock_cache_mvd_1_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12607,6 +12823,7 @@ FUNC x264_macroblock_cache_mvd_1_1
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_2_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12619,6 +12836,7 @@ FUNC x264_macroblock_cache_mvd_2_1
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_1_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12631,6 +12849,7 @@ FUNC x264_macroblock_cache_mvd_1_2
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_2_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12643,6 +12862,7 @@ FUNC x264_macroblock_cache_mvd_2_2
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_4_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12655,6 +12875,7 @@ FUNC x264_macroblock_cache_mvd_4_2
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_2_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12667,6 +12888,7 @@ FUNC x264_macroblock_cache_mvd_2_4
   i9 IN: true
 FUNC x264_macroblock_cache_mvd_4_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12679,6 +12901,7 @@ FUNC x264_macroblock_cache_mvd_4_4
   i9 IN: true
 FUNC x264_macroblock_cache_ref_1_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12691,6 +12914,7 @@ FUNC x264_macroblock_cache_ref_1_1
   i9 IN: true
 FUNC x264_macroblock_cache_ref_2_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12703,6 +12927,7 @@ FUNC x264_macroblock_cache_ref_2_1
   i9 IN: true
 FUNC x264_macroblock_cache_ref_1_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12715,6 +12940,7 @@ FUNC x264_macroblock_cache_ref_1_2
   i9 IN: true
 FUNC x264_macroblock_cache_ref_2_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12727,6 +12953,7 @@ FUNC x264_macroblock_cache_ref_2_2
   i9 IN: true
 FUNC x264_macroblock_cache_ref_4_2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12739,6 +12966,7 @@ FUNC x264_macroblock_cache_ref_4_2
   i9 IN: true
 FUNC x264_macroblock_cache_ref_2_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12751,6 +12979,7 @@ FUNC x264_macroblock_cache_ref_2_4
   i9 IN: true
 FUNC x264_macroblock_cache_ref_4_4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12767,6 +12996,7 @@ FUNC x264_cqm_delete
   [skipped] reason=too_large insts=220
 FUNC x264_cqm_parse_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12876,6 +13106,7 @@ FUNC x264_cqm_parse_file
   i106 IN: true
 FUNC x264_cqm_parse_jmlist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13017,6 +13248,7 @@ FUNC x264_cqm_parse_jmlist
   i138 IN: true
 FUNC x264_quant_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13122,6 +13354,7 @@ FUNC x264_quant_init
   i102 IN: true
 FUNC quant_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13228,6 +13461,7 @@ FUNC quant_8x8
   i103 IN: true
 FUNC quant_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13334,6 +13568,7 @@ FUNC quant_4x4
   i103 IN: true
 FUNC quant_4x4_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13422,6 +13657,7 @@ FUNC quant_2x2_dc
   [skipped] reason=too_large insts=186
 FUNC dequant_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13530,6 +13766,7 @@ FUNC dequant_4x4
   i105 IN: true
 FUNC dequant_4x4_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13635,6 +13872,7 @@ FUNC dequant_4x4_dc
   i102 IN: true
 FUNC dequant_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13743,6 +13981,7 @@ FUNC dequant_8x8
   i105 IN: true
 FUNC x264_denoise_dct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13825,6 +14064,7 @@ FUNC x264_denoise_dct
   i79 IN: true
 FUNC x264_decimate_score15
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13834,6 +14074,7 @@ FUNC x264_decimate_score15
   i6 IN: true
 FUNC x264_decimate_score16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13842,6 +14083,7 @@ FUNC x264_decimate_score16
   i5 IN: true
 FUNC x264_decimate_score64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13850,6 +14092,7 @@ FUNC x264_decimate_score64
   i5 IN: true
 FUNC x264_coeff_last4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13858,6 +14101,7 @@ FUNC x264_coeff_last4
   i5 IN: true
 FUNC x264_coeff_last15
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13866,6 +14110,7 @@ FUNC x264_coeff_last15
   i5 IN: true
 FUNC x264_coeff_last16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13874,6 +14119,7 @@ FUNC x264_coeff_last16
   i5 IN: true
 FUNC x264_coeff_last64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13882,6 +14128,7 @@ FUNC x264_coeff_last64
   i5 IN: true
 FUNC x264_coeff_level_run4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13952,6 +14199,7 @@ FUNC x264_coeff_level_run4
   i67 IN: true
 FUNC x264_coeff_level_run15
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14022,6 +14270,7 @@ FUNC x264_coeff_level_run15
   i67 IN: true
 FUNC x264_coeff_level_run16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14092,6 +14341,7 @@ FUNC x264_coeff_level_run16
   i67 IN: true
 FUNC x264_coeff_last_internal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14145,6 +14395,7 @@ FUNC x264_coeff_last_internal
   i50 IN: true
 FUNC x264_decimate_score_internal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14264,6 +14515,7 @@ FUNC munge_cavlc_nnz_row
   [skipped] reason=too_large insts=157
 FUNC munge_cavlc_nnz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14340,6 +14592,7 @@ FUNC munge_cavlc_nnz
   i73 IN: true
 FUNC deblock_edge_intra
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14420,6 +14673,7 @@ FUNC deblock_edge
   [skipped] reason=too_large insts=154
 FUNC restore_cavlc_nnz_row
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14476,6 +14730,7 @@ FUNC restore_cavlc_nnz_row
   i53 IN: true
 FUNC x264_deblock_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14520,6 +14775,7 @@ FUNC x264_deblock_init
   i41 IN: true
 FUNC deblock_v_luma_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14544,6 +14800,7 @@ FUNC deblock_v_luma_c
   i21 IN: true
 FUNC deblock_h_luma_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14568,6 +14825,7 @@ FUNC deblock_h_luma_c
   i21 IN: true
 FUNC deblock_v_chroma_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14592,6 +14850,7 @@ FUNC deblock_v_chroma_c
   i21 IN: true
 FUNC deblock_h_chroma_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14616,6 +14875,7 @@ FUNC deblock_h_chroma_c
   i21 IN: true
 FUNC deblock_v_luma_intra_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14636,6 +14896,7 @@ FUNC deblock_v_luma_intra_c
   i17 IN: true
 FUNC deblock_h_luma_intra_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14656,6 +14917,7 @@ FUNC deblock_h_luma_intra_c
   i17 IN: true
 FUNC deblock_v_chroma_intra_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14676,6 +14938,7 @@ FUNC deblock_v_chroma_intra_c
   i17 IN: true
 FUNC deblock_h_chroma_intra_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14698,6 +14961,7 @@ FUNC deblock_strength_c
   [skipped] reason=too_large insts=256
 FUNC deblock_chroma_intra_c
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14829,6 +15093,7 @@ FUNC deblock_chroma_c
   [skipped] reason=too_large insts=166
 FUNC x264_clip3.290
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14858,6 +15123,7 @@ FUNC x264_clip3.290
   i26 IN: true
 FUNC x264_clip_uint8.291
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14882,6 +15148,7 @@ FUNC x264_mb_predict_mv
   [skipped] reason=too_large insts=341
 FUNC x264_median_mv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14931,6 +15198,7 @@ FUNC x264_median_mv
   i46 IN: true
 FUNC x264_median
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14987,6 +15255,7 @@ FUNC x264_mb_predict_mv_16x16
   [skipped] reason=too_large insts=202
 FUNC x264_mb_predict_mv_pskip
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15075,6 +15344,7 @@ FUNC x264_mb_predict_mv_direct16x16_temporal
   [skipped] reason=too_large insts=352
 FUNC x264_macroblock_cache_ref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15122,6 +15392,7 @@ FUNC x264_macroblock_cache_ref
   i44 IN: true
 FUNC x264_macroblock_cache_mv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15170,6 +15441,7 @@ FUNC x264_macroblock_cache_mv
   i45 IN: true
 FUNC pack16to32_mask
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15190,6 +15462,7 @@ FUNC x264_rd_cost_part
   [skipped] reason=too_large insts=167
 FUNC x264_rd_cost_mb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15299,6 +15572,7 @@ FUNC x264_rd_cost_mb
   i106 IN: true
 FUNC x264_rd_cost_subpart
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15395,6 +15669,7 @@ FUNC x264_partition_size_cavlc
   [skipped] reason=too_large insts=303
 FUNC cavlc_mb8x8_mvd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15461,6 +15736,7 @@ FUNC cavlc_mb8x8_mvd
   i63 IN: true
 FUNC bs_size_ue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15473,6 +15749,7 @@ FUNC bs_size_ue
   i9 IN: true
 FUNC cavlc_mb_mvd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15556,6 +15833,7 @@ FUNC x264_macroblock_luma_write_cavlc
   [skipped] reason=too_large insts=172
 FUNC x264_mb_predict_non_zero_code
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15615,6 +15893,7 @@ FUNC block_residual_write_cavlc
   [skipped] reason=too_large insts=396
 FUNC block_residual_write_cavlc_escape
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15756,6 +16035,7 @@ FUNC block_residual_write_cavlc_escape
   i138 IN: true
 FUNC bs_size_se
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15798,6 +16078,7 @@ FUNC x264_cabac_mb8x8_mvd
   [skipped] reason=too_large insts=273
 FUNC x264_cabac_mb_sub_p_partition
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15830,6 +16111,7 @@ FUNC x264_cabac_mb_sub_p_partition
   i29 IN: true
 FUNC x264_cabac_mb_mvd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15960,6 +16242,7 @@ FUNC x264_cabac_mb_mvd
   i127 IN: true
 FUNC x264_macroblock_cache_mvd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16009,6 +16292,7 @@ FUNC x264_macroblock_cache_mvd
   i46 IN: true
 FUNC block_residual_write_cabac_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16027,6 +16311,7 @@ FUNC x264_cabac_mb_cbf_ctxidxinc
   [skipped] reason=too_large insts=162
 FUNC x264_cabac_size_decision
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16071,6 +16356,7 @@ FUNC x264_cabac_size_decision
   i41 IN: true
 FUNC block_residual_write_cabac
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16093,6 +16379,7 @@ FUNC block_residual_write_cabac_internal
   [skipped] reason=too_large insts=472
 FUNC bs_size_ue_big
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16124,6 +16411,7 @@ FUNC x264_macroblock_cache_rect.297
   [skipped] reason=too_large insts=271
 FUNC x264_cabac_mvd_sum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16184,6 +16472,7 @@ FUNC x264_cabac_mb_mvd_cpn
   [skipped] reason=too_large insts=201
 FUNC pack8to16.298
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16197,6 +16486,7 @@ FUNC pack8to16.298
   i10 IN: true
 FUNC cached_hadamard
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16295,6 +16585,7 @@ FUNC cached_hadamard
   i95 IN: true
 FUNC cached_satd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16411,6 +16702,7 @@ FUNC cached_satd
   i113 IN: true
 FUNC x264_copy_cabac_part
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16559,6 +16851,7 @@ FUNC x264_subpartition_size_cabac
   [skipped] reason=too_large insts=161
 FUNC x264_subpartition_size_cavlc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16711,6 +17004,7 @@ FUNC x264_subpartition_size_cavlc
   i149 IN: true
 FUNC ssd_mb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16745,6 +17039,7 @@ FUNC x264_macroblock_size_cavlc
   [skipped] reason=too_large insts=1596
 FUNC x264_mb_predict_intra4x4_mode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16828,6 +17123,7 @@ FUNC x264_mb_predict_intra4x4_mode
   i80 IN: true
 FUNC bs_size_te
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16852,6 +17148,7 @@ FUNC bs_size_te
   i21 IN: true
 FUNC x264_mb_transform_8x8_allowed
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16896,6 +17193,7 @@ FUNC x264_mb_transform_8x8_allowed
   i41 IN: true
 FUNC cavlc_qp_delta
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16977,6 +17275,7 @@ FUNC x264_cabac_mb_type
   [skipped] reason=too_large insts=370
 FUNC x264_cabac_mb_transform_size
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17004,6 +17303,7 @@ FUNC x264_cabac_mb_transform_size
   i24 IN: true
 FUNC x264_cabac_mb_intra4x4_pred_mode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17050,6 +17350,7 @@ FUNC x264_cabac_mb_intra4x4_pred_mode
   i43 IN: true
 FUNC x264_cabac_mb_intra_chroma_pred_mode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17152,6 +17453,7 @@ FUNC x264_cabac_mb_intra_chroma_pred_mode
   i99 IN: true
 FUNC x264_cabac_mb_ref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17283,6 +17585,7 @@ FUNC x264_cabac_mb_ref
   i128 IN: true
 FUNC x264_cabac_mb_sub_b_partition
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17321,6 +17624,7 @@ FUNC x264_cabac_mb_sub_b_partition
   i35 IN: true
 FUNC x264_cabac_mb_cbp_luma
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17413,6 +17717,7 @@ FUNC x264_cabac_mb_cbp_luma
   i89 IN: true
 FUNC x264_cabac_mb_cbp_chroma
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17515,6 +17820,7 @@ FUNC x264_cabac_mb_cbp_chroma
   i99 IN: true
 FUNC x264_cabac_mb_qp_delta
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17631,6 +17937,7 @@ FUNC x264_cabac_mb_qp_delta
   i113 IN: true
 FUNC x264_cabac_size_decision_noup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17664,6 +17971,7 @@ FUNC x264_cabac_size_decision_noup
   i30 IN: true
 FUNC x264_cabac_mb_type_intra
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17779,6 +18087,7 @@ FUNC x264_cabac_mb_type_intra
   i112 IN: true
 FUNC x264_rdo_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17912,6 +18221,7 @@ FUNC x264_rdo_init
   i130 IN: true
 FUNC x264_cabac_size_decision2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17942,6 +18252,7 @@ FUNC x264_cabac_size_decision2
   i27 IN: true
 FUNC x264_quant_dc_trellis
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18019,6 +18330,7 @@ FUNC quant_trellis_cabac
   [skipped] reason=too_large insts=1112
 FUNC x264_cabac_size_decision_noup2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18036,6 +18348,7 @@ FUNC x264_cabac_size_decision_noup2
   i14 IN: true
 FUNC x264_quant_4x4_trellis
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18124,6 +18437,7 @@ FUNC x264_quant_4x4_trellis
   i85 IN: true
 FUNC x264_quant_8x8_trellis
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18193,6 +18507,7 @@ FUNC x264_analyse_init_costs
   [skipped] reason=too_large insts=257
 FUNC x264_analyse_free_costs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18269,6 +18584,7 @@ FUNC x264_mb_analyse_init
   [skipped] reason=too_large insts=1012
 FUNC x264_mb_init_fenc_cache
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18334,6 +18650,7 @@ FUNC x264_mb_analyse_intra
   [skipped] reason=too_large insts=1375
 FUNC x264_intra_rd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18445,6 +18762,7 @@ FUNC x264_mb_analyse_init_qp
   [skipped] reason=too_large insts=158
 FUNC x264_mb_analyse_load_costs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18523,6 +18841,7 @@ FUNC x264_mb_analyse_p_rd
   [skipped] reason=too_large insts=414
 FUNC x264_mb_analyse_transform_rd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18603,6 +18922,7 @@ FUNC x264_analyse_update_cache
   [skipped] reason=too_large insts=423
 FUNC x264_macroblock_cache_ref.303
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18650,6 +18970,7 @@ FUNC x264_macroblock_cache_ref.303
   i44 IN: true
 FUNC x264_mb_analyse_inter_direct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18792,6 +19113,7 @@ FUNC x264_refine_bidir
   [skipped] reason=too_large insts=271
 FUNC x264_mb_analyse_transform
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18874,6 +19196,7 @@ FUNC x264_mb_analyse_qp_rd
   [skipped] reason=too_large insts=456
 FUNC x264_psy_trellis_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18935,6 +19258,7 @@ FUNC x264_psy_trellis_init
   i58 IN: true
 FUNC x264_mb_cache_mv_b8x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19064,6 +19388,7 @@ FUNC x264_mb_cache_mv_b8x16
   i126 IN: true
 FUNC x264_macroblock_cache_mv.304
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19112,6 +19437,7 @@ FUNC x264_macroblock_cache_mv.304
   i45 IN: true
 FUNC x264_mb_cache_mv_b16x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19243,6 +19569,7 @@ FUNC x264_mb_cache_mv_b8x8
   [skipped] reason=too_large insts=172
 FUNC x264_mb_load_mv_direct8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19322,6 +19649,7 @@ FUNC x264_mb_load_mv_direct8x8
   i76 IN: true
 FUNC x264_macroblock_cache_skip.305
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19358,6 +19686,7 @@ FUNC x264_macroblock_cache_skip.305
   i33 IN: true
 FUNC x264_macroblock_cache_intra8x8_pred
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19386,6 +19715,7 @@ FUNC x264_macroblock_cache_intra8x8_pred
   i25 IN: true
 FUNC predict_8x8chroma_mode_available
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19410,6 +19740,7 @@ FUNC x264_mb_analyse_inter_p4x4_chroma
   [skipped] reason=too_large insts=978
 FUNC x264_clip3.309
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19439,6 +19770,7 @@ FUNC x264_clip3.309
   i26 IN: true
 FUNC predict_16x16_mode_available
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19461,6 +19793,7 @@ FUNC predict_16x16_mode_available
   i19 IN: true
 FUNC x264_rd_cost_i8x8_chroma
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19544,6 +19877,7 @@ FUNC x264_rd_cost_i8x8_chroma
   i80 IN: true
 FUNC predict_4x4_mode_available
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19566,6 +19900,7 @@ FUNC predict_4x4_mode_available
   i19 IN: true
 FUNC x264_rd_cost_i4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19645,6 +19980,7 @@ FUNC x264_rd_cost_i4x4
   i76 IN: true
 FUNC x264_rd_cost_i8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19731,6 +20067,7 @@ FUNC x264_rd_cost_i8x8
   i83 IN: true
 FUNC x264_partition_i8x8_size_cabac
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19787,6 +20124,7 @@ FUNC x264_partition_i8x8_size_cabac
   i53 IN: true
 FUNC x264_partition_i8x8_size_cavlc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19840,6 +20178,7 @@ FUNC x264_partition_i8x8_size_cavlc
   i50 IN: true
 FUNC cavlc_intra4x4_pred_size
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19869,6 +20208,7 @@ FUNC cavlc_intra4x4_pred_size
   i26 IN: true
 FUNC x264_partition_i4x4_size_cabac
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19940,6 +20280,7 @@ FUNC x264_partition_i4x4_size_cabac
   i68 IN: true
 FUNC x264_partition_i4x4_size_cavlc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20021,6 +20362,7 @@ FUNC x264_partition_i4x4_size_cavlc
   i78 IN: true
 FUNC x264_i8x8_chroma_size_cabac
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20170,6 +20512,7 @@ FUNC x264_i8x8_chroma_size_cavlc
   [skipped] reason=too_large insts=191
 FUNC x264_weight_plane_analyse
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20297,6 +20640,7 @@ FUNC x264_weights_analyse
   [skipped] reason=too_large insts=451
 FUNC x264_weight_get_h264
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20367,6 +20711,7 @@ FUNC x264_weight_get_h264
   i67 IN: true
 FUNC x264_lowres_context_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20444,6 +20789,7 @@ FUNC x264_slicetype_mb_cost
   [skipped] reason=too_large insts=2034
 FUNC x264_median_mv.310
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20493,6 +20839,7 @@ FUNC x264_median_mv.310
   i46 IN: true
 FUNC x264_median.311
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20551,6 +20898,7 @@ FUNC scenecut
   [skipped] reason=too_large insts=161
 FUNC x264_slicetype_path
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20691,6 +21039,7 @@ FUNC x264_vbv_lookahead
   [skipped] reason=too_large insts=463
 FUNC x264_vbv_frame_cost
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20768,6 +21117,7 @@ FUNC x264_vbv_frame_cost
   i74 IN: true
 FUNC x264_calculate_durations
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20871,6 +21221,7 @@ FUNC x264_slicetype_frame_cost_recalculate
   [skipped] reason=too_large insts=260
 FUNC x264_exp2fix8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20910,6 +21261,7 @@ FUNC x264_macroblock_tree_propagate
   [skipped] reason=too_large insts=1027
 FUNC x264_macroblock_tree_finish
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21042,6 +21394,7 @@ FUNC x264_macroblock_tree_finish
   i129 IN: true
 FUNC x264_log2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21076,6 +21429,7 @@ FUNC x264_me_search_ref
   [skipped] reason=too_large insts=7588
 FUNC x264_clip3.326
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21105,6 +21459,7 @@ FUNC x264_clip3.326
   i26 IN: true
 FUNC pack16to32_mask.327
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21119,6 +21474,7 @@ FUNC pack16to32_mask.327
   i11 IN: true
 FUNC x264_predictor_roundclip
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21202,6 +21558,7 @@ FUNC x264_predictor_roundclip
   i80 IN: true
 FUNC x264_predictor_difference
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21270,6 +21627,7 @@ FUNC refine_subpel
   [skipped] reason=too_large insts=2287
 FUNC x264_me_refine_qpel
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21322,6 +21680,7 @@ FUNC x264_me_refine_qpel
   i49 IN: true
 FUNC x264_me_refine_qpel_refdupe
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21361,6 +21720,7 @@ FUNC x264_me_refine_qpel_refdupe
   i36 IN: true
 FUNC x264_me_refine_bidir_satd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21383,6 +21743,7 @@ FUNC x264_me_refine_bidir
   [skipped] reason=too_large insts=1309
 FUNC x264_macroblock_cache_mv.335
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21431,6 +21792,7 @@ FUNC x264_macroblock_cache_mv.335
   i45 IN: true
 FUNC pack8to16.336
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21444,6 +21806,7 @@ FUNC pack8to16.336
   i10 IN: true
 FUNC x264_macroblock_cache_mvd.337
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21495,6 +21858,7 @@ FUNC x264_macroblock_cache_rect.338
   [skipped] reason=too_large insts=271
 FUNC x264_me_refine_bidir_rd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21535,6 +21899,7 @@ FUNC x264_adaptive_quant_frame
   [skipped] reason=too_large insts=335
 FUNC ac_energy_mb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21575,6 +21940,7 @@ FUNC ac_energy_mb
   i37 IN: true
 FUNC x264_log2.346
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21599,6 +21965,7 @@ FUNC x264_log2.346
   i21 IN: true
 FUNC x264_exp2fix8.347
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21636,6 +22003,7 @@ FUNC x264_exp2fix8.347
   i34 IN: true
 FUNC ac_energy_plane
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21764,6 +22132,7 @@ FUNC x264_macroblock_tree_read
   [skipped] reason=too_large insts=194
 FUNC endian_fix16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21778,6 +22147,7 @@ FUNC endian_fix16
   i11 IN: true
 FUNC x264_reference_build_list_optimal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21925,6 +22295,7 @@ FUNC x264_ratecontrol_init_reconfigurable
   [skipped] reason=too_large insts=732
 FUNC qp2qscale
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21936,6 +22307,7 @@ FUNC qp2qscale
   i8 IN: true
 FUNC x264_clip3.351
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21965,6 +22337,7 @@ FUNC x264_clip3.351
   i26 IN: true
 FUNC x264_clip3f
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21998,6 +22371,7 @@ FUNC parse_zones
   [skipped] reason=too_large insts=378
 FUNC x264_strcat_filename
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22036,6 +22410,7 @@ FUNC init_pass2
   [skipped] reason=too_large insts=971
 FUNC qscale2bits
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22092,6 +22467,7 @@ FUNC qscale2bits
   i53 IN: true
 FUNC get_qscale
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22198,6 +22574,7 @@ FUNC vbv_pass2
   [skipped] reason=too_large insts=251
 FUNC count_expected_bits
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22251,6 +22628,7 @@ FUNC count_expected_bits
   i50 IN: true
 FUNC qscale2qp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22263,6 +22641,7 @@ FUNC find_underflow
   [skipped] reason=too_large insts=180
 FUNC fix_underflow
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22361,6 +22740,7 @@ FUNC fix_underflow
   i95 IN: true
 FUNC predict_size
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22387,6 +22767,7 @@ FUNC predict_size
   i23 IN: true
 FUNC get_zone
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22446,6 +22827,7 @@ FUNC parse_zone
   [skipped] reason=too_large insts=151
 FUNC x264_ratecontrol_summary
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22534,6 +22916,7 @@ FUNC x264_ratecontrol_delete
   [skipped] reason=too_large insts=243
 FUNC x264_is_regular_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22546,6 +22929,7 @@ FUNC rate_estimate_qscale
   [skipped] reason=too_large insts=1226
 FUNC accum_p_qp_update
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22604,6 +22988,7 @@ FUNC x264_ratecontrol_mb
   [skipped] reason=too_large insts=811
 FUNC update_predictor
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22713,6 +23098,7 @@ FUNC update_predictor
   i106 IN: true
 FUNC predict_row_size_sum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22756,6 +23142,7 @@ FUNC predict_row_size_sum
   i40 IN: true
 FUNC row_bits_so_far
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22800,6 +23187,7 @@ FUNC predict_row_size
   [skipped] reason=too_large insts=216
 FUNC x264_ratecontrol_qp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22825,6 +23213,7 @@ FUNC x264_ratecontrol_qp
   i22 IN: true
 FUNC x264_ratecontrol_mb_qp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22901,6 +23290,7 @@ FUNC x264_ratecontrol_slice_type
   [skipped] reason=too_large insts=253
 FUNC x264_ratecontrol_set_weights
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22984,6 +23374,7 @@ FUNC update_vbv
   [skipped] reason=too_large insts=186
 FUNC x264_hrd_fullness
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23068,6 +23459,7 @@ FUNC x264_hrd_fullness
   i81 IN: true
 FUNC x264_threads_normalize_predictors
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23155,6 +23547,7 @@ FUNC x264_sps_write
   [skipped] reason=too_large insts=630
 FUNC bs_realign
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23212,6 +23605,7 @@ FUNC bs_realign
   i54 IN: true
 FUNC bs_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23274,6 +23668,7 @@ FUNC bs_write
   i59 IN: true
 FUNC bs_write_ue_big
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23328,6 +23723,7 @@ FUNC bs_write_ue_big
   i51 IN: true
 FUNC bs_write_se
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23375,6 +23771,7 @@ FUNC bs_write_se
   i44 IN: true
 FUNC bs_write1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23427,6 +23824,7 @@ FUNC bs_write1
   i49 IN: true
 FUNC bs_write32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23443,6 +23841,7 @@ FUNC bs_write32
   i13 IN: true
 FUNC bs_rbsp_trailing
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23457,6 +23856,7 @@ FUNC bs_rbsp_trailing
   i11 IN: true
 FUNC bs_flush
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23494,6 +23894,7 @@ FUNC bs_flush
   i34 IN: true
 FUNC endian_fix32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23513,6 +23914,7 @@ FUNC endian_fix32
   i16 IN: true
 FUNC endian_fix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23521,6 +23923,7 @@ FUNC endian_fix
   i5 IN: true
 FUNC endian_fix64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23540,6 +23943,7 @@ FUNC x264_pps_init
   [skipped] reason=too_large insts=285
 FUNC transpose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23621,6 +24025,7 @@ FUNC scaling_list_write
   [skipped] reason=too_large insts=218
 FUNC bs_size_se.459
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23661,6 +24066,7 @@ FUNC bs_size_se.459
   i37 IN: true
 FUNC x264_sei_recovery_point_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23694,6 +24100,7 @@ FUNC x264_sei_recovery_point_write
   i30 IN: true
 FUNC x264_sei_write_header
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23719,6 +24126,7 @@ FUNC x264_sei_write_header
   i22 IN: true
 FUNC x264_sei_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23748,6 +24156,7 @@ FUNC x264_sei_write
   i26 IN: true
 FUNC bs_align_10
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23773,6 +24182,7 @@ FUNC bs_align_10
   i22 IN: true
 FUNC x264_sei_version_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23905,6 +24315,7 @@ FUNC x264_sei_version_write
   i129 IN: true
 FUNC x264_sei_buffering_period_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23964,6 +24375,7 @@ FUNC x264_sei_buffering_period_write
   i56 IN: true
 FUNC x264_sei_pic_timing_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24066,6 +24478,7 @@ FUNC x264_sei_pic_timing_write
   i99 IN: true
 FUNC x264_filler_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24103,6 +24516,7 @@ FUNC x264_mb_encode_i4x4
   [skipped] reason=too_large insts=160
 FUNC x264_quant_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24179,6 +24593,7 @@ FUNC x264_mb_encode_i8x8
   [skipped] reason=too_large insts=241
 FUNC x264_quant_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24253,6 +24668,7 @@ FUNC x264_mb_optimize_chroma_dc
   [skipped] reason=too_large insts=172
 FUNC zigzag_scan_2x2_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24286,6 +24702,7 @@ FUNC zigzag_scan_2x2_dc
   i30 IN: true
 FUNC idct_dequant_2x2_dconly
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24402,6 +24819,7 @@ FUNC idct_dequant_2x2_dconly
   i113 IN: true
 FUNC array_non_zero_int
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24505,6 +24923,7 @@ FUNC array_non_zero_int
   i100 IN: true
 FUNC dct2x2dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24614,6 +25033,7 @@ FUNC dct2x2dc
   i106 IN: true
 FUNC idct_dequant_2x2_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24734,6 +25154,7 @@ FUNC idct_dequant_2x2_dc
   i117 IN: true
 FUNC idct_dequant_round_2x2_dc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24796,6 +25217,7 @@ FUNC idct_dequant_round_2x2_dc
   i59 IN: true
 FUNC x264_predict_lossless_8x8_chroma
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24941,6 +25363,7 @@ FUNC x264_predict_lossless_8x8_chroma
   i142 IN: true
 FUNC x264_predict_lossless_4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25038,6 +25461,7 @@ FUNC x264_predict_lossless_4x4
   i94 IN: true
 FUNC x264_predict_lossless_8x8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25133,6 +25557,7 @@ FUNC x264_predict_lossless_8x8
   i92 IN: true
 FUNC x264_predict_lossless_16x16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25225,6 +25650,7 @@ FUNC x264_macroblock_encode_pskip
   [skipped] reason=too_large insts=281
 FUNC x264_macroblock_encode_skip
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25319,6 +25745,7 @@ FUNC x264_mb_encode_i16x16
   [skipped] reason=too_large insts=460
 FUNC x264_clip3.491
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25350,6 +25777,7 @@ FUNC x264_macroblock_probe_skip
   [skipped] reason=too_large insts=567
 FUNC x264_noise_reduction_update
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25498,6 +25926,7 @@ FUNC x264_macroblock_encode_p8x8
   [skipped] reason=too_large insts=836
 FUNC x264_macroblock_encode_p4x4
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25646,6 +26075,7 @@ FUNC x264_macroblock_encode_p4x4
   i145 IN: true
 FUNC x264_cabac_mb_skip
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25722,6 +26152,7 @@ FUNC x264_macroblock_write_cabac
   [skipped] reason=too_large insts=1297
 FUNC x264_cabac_pos
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25751,6 +26182,7 @@ FUNC x264_cabac_mb_type.500
   [skipped] reason=too_large insts=356
 FUNC x264_cabac_mb_transform_size.501
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25776,6 +26208,7 @@ FUNC x264_cabac_mb_transform_size.501
   i22 IN: true
 FUNC x264_mb_predict_intra4x4_mode.502
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25859,6 +26292,7 @@ FUNC x264_mb_predict_intra4x4_mode.502
   i80 IN: true
 FUNC x264_cabac_mb_intra4x4_pred_mode.505
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -25902,6 +26336,7 @@ FUNC x264_cabac_mb_intra4x4_pred_mode.505
   i40 IN: true
 FUNC x264_cabac_mb_intra_chroma_pred_mode.506
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26000,6 +26435,7 @@ FUNC x264_cabac_mb_intra_chroma_pred_mode.506
   i95 IN: true
 FUNC x264_cabac_mb_ref.507
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26129,6 +26565,7 @@ FUNC x264_cabac_mb_ref.507
   i126 IN: true
 FUNC x264_cabac_mb_mvd.508
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26259,6 +26696,7 @@ FUNC x264_cabac_mb_mvd.508
   i127 IN: true
 FUNC x264_macroblock_cache_mvd.511
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26308,6 +26746,7 @@ FUNC x264_macroblock_cache_mvd.511
   i46 IN: true
 FUNC x264_cabac_mb_sub_p_partition.512
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26341,6 +26780,7 @@ FUNC x264_cabac_mb8x8_mvd.513
   [skipped] reason=too_large insts=273
 FUNC x264_cabac_mb_sub_b_partition.514
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26378,6 +26818,7 @@ FUNC x264_cabac_mb_sub_b_partition.514
   i34 IN: true
 FUNC x264_cabac_mb_cbp_luma.517
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26462,6 +26903,7 @@ FUNC x264_cabac_mb_cbp_luma.517
   i81 IN: true
 FUNC x264_cabac_mb_cbp_chroma.518
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26560,6 +27002,7 @@ FUNC x264_cabac_mb_cbp_chroma.518
   i95 IN: true
 FUNC x264_mb_transform_8x8_allowed.519
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26604,6 +27047,7 @@ FUNC x264_mb_transform_8x8_allowed.519
   i41 IN: true
 FUNC x264_cabac_mb_qp_delta.520
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26732,6 +27176,7 @@ FUNC x264_macroblock_cache_rect.533
   [skipped] reason=too_large insts=271
 FUNC x264_cabac_mvd_sum.534
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26790,6 +27235,7 @@ FUNC x264_cabac_mvd_sum.534
   i55 IN: true
 FUNC x264_cabac_mb_mvd_cpn.535
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26917,6 +27363,7 @@ FUNC x264_cabac_mb_mvd_cpn.535
   i124 IN: true
 FUNC pack8to16.536
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -26930,6 +27377,7 @@ FUNC pack8to16.536
   i10 IN: true
 FUNC x264_cabac_mb_type_intra.538
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27043,6 +27491,7 @@ FUNC x264_macroblock_write_cavlc
   [skipped] reason=too_large insts=1654
 FUNC bs_pos
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27066,6 +27515,7 @@ FUNC bs_pos
   i20 IN: true
 FUNC bs_write1.541
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27118,6 +27568,7 @@ FUNC bs_write1.541
   i49 IN: true
 FUNC bs_write_ue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27137,6 +27588,7 @@ FUNC bs_write_ue
   i16 IN: true
 FUNC bs_align_0
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27151,6 +27603,7 @@ FUNC bs_align_0
   i11 IN: true
 FUNC bs_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27216,6 +27669,7 @@ FUNC bs_init
   i62 IN: true
 FUNC x264_mb_predict_intra4x4_mode.542
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27299,6 +27753,7 @@ FUNC x264_mb_predict_intra4x4_mode.542
   i80 IN: true
 FUNC bs_write.545
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27361,6 +27816,7 @@ FUNC bs_write.545
   i59 IN: true
 FUNC bs_write_te
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27385,6 +27841,7 @@ FUNC bs_write_te
   i21 IN: true
 FUNC cavlc_mb_mvd.548
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27458,6 +27915,7 @@ FUNC cavlc_mb_mvd.548
   i70 IN: true
 FUNC cavlc_mb8x8_mvd.550
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27524,6 +27982,7 @@ FUNC cavlc_mb8x8_mvd.550
   i63 IN: true
 FUNC x264_mb_transform_8x8_allowed.557
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27568,6 +28027,7 @@ FUNC x264_mb_transform_8x8_allowed.557
   i41 IN: true
 FUNC cavlc_qp_delta.558
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27651,6 +28111,7 @@ FUNC cavlc_qp_delta.558
   i80 IN: true
 FUNC x264_mb_predict_non_zero_code.559
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27712,6 +28173,7 @@ FUNC x264_macroblock_luma_write_cavlc.562
   [skipped] reason=too_large insts=175
 FUNC block_residual_write_cavlc_escape.564
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27860,6 +28322,7 @@ FUNC block_residual_write_cavlc_escape.564
   i145 IN: true
 FUNC bs_write_se.568
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27907,6 +28370,7 @@ FUNC bs_write_se.568
   i44 IN: true
 FUNC endian_fix.571
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27915,6 +28379,7 @@ FUNC endian_fix.571
   i5 IN: true
 FUNC endian_fix64.572
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27932,6 +28397,7 @@ FUNC endian_fix64.572
   i14 IN: true
 FUNC endian_fix32.573
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27951,6 +28417,7 @@ FUNC endian_fix32.573
   i16 IN: true
 FUNC bs_flush.574
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27992,6 +28459,7 @@ FUNC x264_validate_parameters
   [skipped] reason=too_large insts=2593
 FUNC x264_set_aspect_ratio
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28119,12 +28587,14 @@ FUNC mbcmp_init
   [skipped] reason=too_large insts=191
 FUNC x264_is_regular_file.592
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC x264_clip3.604
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28154,6 +28624,7 @@ FUNC x264_clip3.604
   i26 IN: true
 FUNC x264_clip3f.611
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28185,6 +28656,7 @@ FUNC x264_encoder_reconfig
   [skipped] reason=too_large insts=430
 FUNC x264_encoder_parameters
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28207,6 +28679,7 @@ FUNC x264_encoder_parameters
   i19 IN: true
 FUNC x264_encoder_headers
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28310,6 +28783,7 @@ FUNC x264_encoder_headers
   i100 IN: true
 FUNC bs_init.628
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28375,6 +28849,7 @@ FUNC bs_init.628
   i62 IN: true
 FUNC x264_nal_start
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28425,6 +28900,7 @@ FUNC x264_nal_start
   i47 IN: true
 FUNC x264_nal_end
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28475,6 +28951,7 @@ FUNC x264_encoder_encapsulate_nals
   [skipped] reason=too_large insts=231
 FUNC bs_pos.629
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28498,6 +28975,7 @@ FUNC bs_pos.629
   i20 IN: true
 FUNC x264_nal_check_buffer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28568,6 +29046,7 @@ FUNC x264_nal_check_buffer
   i67 IN: true
 FUNC endian_fix32.630
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28587,6 +29066,7 @@ FUNC endian_fix32.630
   i16 IN: true
 FUNC x264_weighted_reference_duplicate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28686,6 +29166,7 @@ FUNC x264_weighted_reference_duplicate
   i96 IN: true
 FUNC x264_encoder_intra_refresh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28706,6 +29187,7 @@ FUNC x264_encoder_encode
   [skipped] reason=too_large insts=1488
 FUNC x264_thread_sync_context
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28798,6 +29280,7 @@ FUNC x264_thread_sync_context
   i89 IN: true
 FUNC x264_reference_update
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28946,6 +29429,7 @@ FUNC x264_encoder_frame_end
   [skipped] reason=too_large insts=1457
 FUNC x264_reference_reset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -28982,6 +29466,7 @@ FUNC x264_reference_build_list
   [skipped] reason=too_large insts=664
 FUNC bs_write.632
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29044,6 +29529,7 @@ FUNC bs_write.632
   i59 IN: true
 FUNC bs_rbsp_trailing.633
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29058,6 +29544,7 @@ FUNC bs_rbsp_trailing.633
   i11 IN: true
 FUNC x264_reference_check_reorder
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29139,6 +29626,7 @@ FUNC x264_slice_write
   [skipped] reason=too_large insts=1231
 FUNC bs_realign.634
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29198,6 +29686,7 @@ FUNC x264_slice_header_write
   [skipped] reason=too_large insts=640
 FUNC bs_align_1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29218,6 +29707,7 @@ FUNC bs_align_1
   i17 IN: true
 FUNC x264_cabac_pos.635
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29249,6 +29739,7 @@ FUNC x264_bitstream_check_buffer
   [skipped] reason=too_large insts=196
 FUNC bs_write_ue_big.636
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29303,6 +29794,7 @@ FUNC bs_write_ue_big.636
   i51 IN: true
 FUNC bs_flush.639
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29340,6 +29832,7 @@ FUNC bs_flush.639
   i34 IN: true
 FUNC bs_write1.641
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29392,6 +29885,7 @@ FUNC bs_write1.641
   i49 IN: true
 FUNC bs_write_se.642
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29441,6 +29935,7 @@ FUNC x264_slice_header_init
   [skipped] reason=too_large insts=380
 FUNC endian_fix.643
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29449,6 +29944,7 @@ FUNC endian_fix.643
   i5 IN: true
 FUNC endian_fix64.644
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29466,6 +29962,7 @@ FUNC endian_fix64.644
   i14 IN: true
 FUNC x264_thread_sync_stat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29490,6 +29987,7 @@ FUNC x264_thread_sync_stat
   i21 IN: true
 FUNC x264_psnr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29521,6 +30019,7 @@ FUNC x264_psnr
   i28 IN: true
 FUNC x264_frame_dump_to_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29622,6 +30121,7 @@ FUNC x264_frame_dump_to_file
   i98 IN: true
 FUNC x264_frame_dump
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29739,6 +30239,7 @@ FUNC x264_encoder_close
   [skipped] reason=too_large insts=2148
 FUNC x264_print_intra
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29794,6 +30295,7 @@ FUNC x264_print_intra
   i52 IN: true
 FUNC x264_encoder_delayed_frames
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29892,6 +30394,7 @@ FUNC x264_lookahead_init
   [skipped] reason=too_large insts=174
 FUNC x264_lookahead_delete
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -29976,6 +30479,7 @@ FUNC x264_lookahead_delete
   i81 IN: true
 FUNC x264_lookahead_put_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30005,6 +30509,7 @@ FUNC x264_lookahead_put_frame
   i26 IN: true
 FUNC x264_lookahead_is_empty
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30034,6 +30539,7 @@ FUNC x264_lookahead_is_empty
   i26 IN: true
 FUNC x264_lookahead_get_frames
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30151,6 +30657,7 @@ FUNC x264_lookahead_get_frames
   i114 IN: true
 FUNC x264_lookahead_encoder_shift
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30208,6 +30715,7 @@ FUNC x264_lookahead_encoder_shift
   i54 IN: true
 FUNC x264_lookahead_update_last_nonb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30243,6 +30751,7 @@ FUNC x264_lookahead_update_last_nonb
   i32 IN: true
 FUNC x264_lookahead_shift
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30292,6 +30801,7 @@ FUNC open_file
   [skipped] reason=too_large insts=209
 FUNC get_frame_total
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30306,6 +30816,7 @@ FUNC get_frame_total
   i11 IN: true
 FUNC read_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30409,6 +30920,7 @@ FUNC read_frame
   i100 IN: true
 FUNC release_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30444,6 +30956,7 @@ FUNC release_frame
   i32 IN: true
 FUNC close_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30477,6 +30990,7 @@ FUNC close_file
   i30 IN: true
 FUNC x264_is_regular_file.700
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30485,6 +30999,7 @@ FUNC parse_tcfile
   [skipped] reason=too_large insts=1196
 FUNC correct_fps
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30592,6 +31107,7 @@ FUNC correct_fps
   i104 IN: true
 FUNC try_mkv_timebase_den
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30683,6 +31199,7 @@ FUNC try_mkv_timebase_den
   i88 IN: true
 FUNC sigexp10
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30702,6 +31219,7 @@ FUNC sigexp10
   i16 IN: true
 FUNC lcm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30718,6 +31236,7 @@ FUNC lcm
   i13 IN: true
 FUNC gcd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30743,6 +31262,7 @@ FUNC gcd
   i22 IN: true
 FUNC open_file.721
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30878,6 +31398,7 @@ FUNC open_file.721
   i132 IN: true
 FUNC get_frame_total.722
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -30929,6 +31450,7 @@ FUNC get_frame_total.722
   i48 IN: true
 FUNC read_frame.723
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31015,6 +31537,7 @@ FUNC read_frame.723
   i83 IN: true
 FUNC close_file.724
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31047,12 +31570,14 @@ FUNC close_file.724
   i29 IN: true
 FUNC x264_is_regular_file.725
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC read_frame_internal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31125,6 +31650,7 @@ FUNC open_file.730
   [skipped] reason=too_large insts=310
 FUNC get_frame_total.731
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31193,6 +31719,7 @@ FUNC get_frame_total.731
   i65 IN: true
 FUNC read_frame.732
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31287,6 +31814,7 @@ FUNC read_frame.732
   i91 IN: true
 FUNC close_file.733
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31319,12 +31847,14 @@ FUNC close_file.733
   i29 IN: true
 FUNC x264_is_regular_file.734
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC read_frame_internal.735
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31469,6 +31999,7 @@ FUNC read_frame_internal.735
   i141 IN: true
 FUNC open_file.746
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31501,6 +32032,7 @@ FUNC open_file.746
   i29 IN: true
 FUNC set_param
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31510,6 +32042,7 @@ FUNC set_param
   i6 IN: true
 FUNC write_headers
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31554,6 +32087,7 @@ FUNC write_headers
   i41 IN: true
 FUNC write_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31584,6 +32118,7 @@ FUNC write_frame
   i27 IN: true
 FUNC close_file.747
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31613,6 +32148,7 @@ FUNC close_file.747
   i26 IN: true
 FUNC open_file.750
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31660,6 +32196,7 @@ FUNC open_file.750
   i44 IN: true
 FUNC set_param.751
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31809,6 +32346,7 @@ FUNC write_headers.752
   [skipped] reason=too_large insts=244
 FUNC write_frame.753
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31901,6 +32439,7 @@ FUNC write_frame.753
   i89 IN: true
 FUNC close_file.754
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31949,6 +32488,7 @@ FUNC close_file.754
   i45 IN: true
 FUNC gcd.757
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -31974,6 +32514,7 @@ FUNC gcd.757
   i22 IN: true
 FUNC mk_create_writer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32043,6 +32584,7 @@ FUNC mk_create_writer
   i66 IN: true
 FUNC mk_create_context
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32142,6 +32684,7 @@ FUNC mk_create_context
   i96 IN: true
 FUNC mk_destroy_contexts
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32211,6 +32754,7 @@ FUNC mk_writeHeader
   [skipped] reason=too_large insts=393
 FUNC mk_write_uint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32321,6 +32865,7 @@ FUNC mk_write_uint
   i107 IN: true
 FUNC mk_write_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32372,6 +32917,7 @@ FUNC mk_write_string
   i48 IN: true
 FUNC mk_close_context
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32478,6 +33024,7 @@ FUNC mk_close_context
   i103 IN: true
 FUNC mk_flush_context_id
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32524,6 +33071,7 @@ FUNC mk_flush_context_id
   i43 IN: true
 FUNC mk_write_float
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32566,6 +33114,7 @@ FUNC mk_write_float
   i39 IN: true
 FUNC mk_write_bin
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32613,6 +33162,7 @@ FUNC mk_write_bin
   i44 IN: true
 FUNC mk_flush_context_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32673,6 +33223,7 @@ FUNC mk_flush_context_data
   i57 IN: true
 FUNC mk_append_context_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32766,6 +33317,7 @@ FUNC mk_append_context_data
   i90 IN: true
 FUNC mk_write_id
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32833,6 +33385,7 @@ FUNC mk_write_id
   i64 IN: true
 FUNC mk_write_size
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32932,6 +33485,7 @@ FUNC mk_write_size
   i96 IN: true
 FUNC mk_write_float_raw
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -32974,6 +33528,7 @@ FUNC mk_write_float_raw
   i39 IN: true
 FUNC mk_start_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33001,6 +33556,7 @@ FUNC mk_flush_frame
   [skipped] reason=too_large insts=222
 FUNC mk_close_cluster
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33041,6 +33597,7 @@ FUNC mk_close_cluster
   i37 IN: true
 FUNC mk_set_frame_flags
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33096,6 +33653,7 @@ FUNC mk_set_frame_flags
   i52 IN: true
 FUNC mk_add_frame_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33140,6 +33698,7 @@ FUNC mk_add_frame_data
   i41 IN: true
 FUNC mk_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33239,12 +33798,14 @@ FUNC mk_close
   i96 IN: true
 FUNC x264_is_regular_file.774
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC open_file.775
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33305,6 +33866,7 @@ FUNC write_frame.778
   [skipped] reason=too_large insts=284
 FUNC close_file.779
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33435,12 +33997,14 @@ FUNC close_file.779
   i127 IN: true
 FUNC x264_is_regular_file.780
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC rewrite_amf_double
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33465,6 +34029,7 @@ FUNC rewrite_amf_double
   i21 IN: true
 FUNC endian_fix64.781
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33482,6 +34047,7 @@ FUNC endian_fix64.781
   i14 IN: true
 FUNC endian_fix32.782
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33501,6 +34067,7 @@ FUNC endian_fix32.782
   i16 IN: true
 FUNC write_header
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33519,6 +34086,7 @@ FUNC write_header
   i15 IN: true
 FUNC dbl2int
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33532,6 +34100,7 @@ FUNC dbl2int
   i10 IN: true
 FUNC x264_put_byte
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33543,6 +34112,7 @@ FUNC x264_put_byte
   i8 IN: true
 FUNC flv_append_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33624,6 +34194,7 @@ FUNC flv_append_data
   i78 IN: true
 FUNC x264_put_be32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33652,6 +34223,7 @@ FUNC x264_put_be32
   i25 IN: true
 FUNC x264_put_be64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33670,6 +34242,7 @@ FUNC x264_put_be64
   i15 IN: true
 FUNC x264_put_be16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33689,6 +34262,7 @@ FUNC x264_put_be16
   i16 IN: true
 FUNC x264_put_be24
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33707,6 +34281,7 @@ FUNC x264_put_be24
   i15 IN: true
 FUNC x264_put_tag
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33728,6 +34303,7 @@ FUNC x264_put_tag
   i18 IN: true
 FUNC x264_put_amf_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33751,6 +34327,7 @@ FUNC x264_put_amf_string
   i20 IN: true
 FUNC x264_put_amf_double
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33766,6 +34343,7 @@ FUNC x264_put_amf_double
   i12 IN: true
 FUNC flv_create_writer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33815,6 +34393,7 @@ FUNC flv_create_writer
   i46 IN: true
 FUNC rewrite_amf_be24
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33860,6 +34439,7 @@ FUNC rewrite_amf_be24
   i42 IN: true
 FUNC flv_flush_data
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -33904,6 +34484,7 @@ FUNC flv_flush_data
   i41 IN: true
 FUNC open_file.821
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34010,6 +34591,7 @@ FUNC open_file.821
   i103 IN: true
 FUNC get_frame_total.822
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34024,6 +34606,7 @@ FUNC get_frame_total.822
   i11 IN: true
 FUNC read_frame.823
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34139,6 +34722,7 @@ FUNC read_frame.823
   i112 IN: true
 FUNC release_frame.824
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34174,6 +34758,7 @@ FUNC release_frame.824
   i32 IN: true
 FUNC close_file.825
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34214,6 +34799,7 @@ FUNC close_file.825
   i37 IN: true
 FUNC main
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34247,6 +34833,7 @@ FUNC Parse
   [skipped] reason=too_large insts=889
 FUNC SigIntHandler
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34261,6 +34848,7 @@ FUNC Encode
   [skipped] reason=too_large insts=835
 FUNC gcd.831
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34286,6 +34874,7 @@ FUNC gcd.831
   i22 IN: true
 FUNC x264_clip3.832
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34315,6 +34904,7 @@ FUNC x264_clip3.832
   i26 IN: true
 FUNC parse_qpfile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34458,6 +35048,7 @@ FUNC parse_qpfile
   i140 IN: true
 FUNC Encode_frame
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34515,6 +35106,7 @@ FUNC Encode_frame
   i54 IN: true
 FUNC Print_status
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34563,6 +35155,7 @@ FUNC Help
   [skipped] reason=too_large insts=866
 FUNC parse_enum_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34613,12 +35206,14 @@ FUNC parse_enum_name
   i47 IN: true
 FUNC x264_is_regular_file.838
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC parse_enum_value
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34665,6 +35260,7 @@ FUNC parse_enum_value
   i43 IN: true
 FUNC select_output
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34739,6 +35335,7 @@ FUNC select_output
   i71 IN: true
 FUNC select_input
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34878,6 +35475,7 @@ FUNC select_input
   i136 IN: true
 FUNC get_filename_extension
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34917,6 +35515,7 @@ FUNC get_filename_extension
   i36 IN: true
 FUNC strtable_lookup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -34956,6 +35555,7 @@ FUNC strtable_lookup
   i36 IN: true
 FUNC stringify_names
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -35014,4 +35614,4 @@ FUNC stringify_names
   i55 IN: true
   i56 IN: true
 [summary] skipped_functions=236
-[mem] peak_rss_kb=77972
+[mem] peak_rss_kb=79452

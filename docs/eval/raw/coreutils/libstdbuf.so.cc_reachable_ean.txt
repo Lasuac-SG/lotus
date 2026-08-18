@@ -1,6 +1,7 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC stdbuf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -37,6 +38,7 @@ FUNC stdbuf
   i33 IN: true
 FUNC apply_mode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -126,6 +128,7 @@ FUNC apply_mode
   i86 IN: true
 FUNC fileno_to_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -145,4 +148,4 @@ FUNC fileno_to_name
   i16 IN: true
   i17 IN: true
 [summary] skipped_functions=0
-[mem] peak_rss_kb=15444
+[mem] peak_rss_kb=16608

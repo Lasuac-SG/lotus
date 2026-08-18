@@ -1,8 +1,9 @@
-[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=432
 FUNC first_last_page
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -95,6 +96,7 @@ FUNC first_last_page
   i89 IN: arg0,arg1,arg2,i0,i1,i2,i20,i21,i23,i24,i26,i27,i3,i35,i36,i37,i39,i4,i40,i42,i44,i45,i46,i47,i5,i50,i51,i53,i54,i56,i57,i6,i65,i66,i67,i69,i7,i70,i71,i73,i76,i77,i78,i8,i80,i82,i84,i86,i88
 FUNC parse_column_count
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -105,6 +107,7 @@ FUNC parse_column_count
   i7 IN: arg0,i0,i3,i4,i6
 FUNC getoptarg
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -180,6 +183,7 @@ FUNC getoptarg
   i72 IN: arg0,arg1,arg2,arg3,i0,i1,i12,i14,i15,i16,i17,i18,i2,i20,i21,i23,i24,i25,i27,i28,i29,i3,i33,i34,i36,i37,i39,i4,i40,i44,i45,i5,i51,i52,i67,i68,i69,i70
 FUNC getoptnum
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -207,6 +211,7 @@ FUNC getoptnum
   i24 IN: arg0,arg1,arg2,arg3,i0,i1,i14,i15,i16,i17,i18,i2,i20,i21,i22,i23,i3,i4
 FUNC separator_string
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -228,6 +233,7 @@ FUNC separator_string
   i18 IN: arg0,i0,i1,i13,i14,i16,i17,i5,i6,i8,i9
 FUNC usage
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -301,6 +307,7 @@ FUNC usage
   i70 IN: arg0,i0,i10,i13,i14,i15,i16,i17,i18,i21,i22,i23,i24,i25,i26,i27,i28,i29,i3,i30,i31,i32,i33,i34,i35,i36,i37,i38,i39,i4,i40,i41,i42,i43,i44,i45,i46,i47,i48,i49,i50,i51,i52,i53,i54,i55,i56,i57,i58,i59,i60,i61,i62,i63,i64,i65,i68,i7,i8,i9
 FUNC print_files
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -342,6 +349,7 @@ FUNC print_files
   i38 IN: arg0,arg1,i0,i1,i10,i13,i14,i18,i19,i21,i22,i25,i32,i35,i6,i8,i9
 FUNC cleanup
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0
@@ -366,6 +374,7 @@ FUNC init_store_cols
   [skipped] reason=too_large insts=259
 FUNC skip_to_page
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -494,6 +503,7 @@ FUNC skip_to_page
   i125 IN: arg0,i0,i1,i10,i100,i101,i103,i104,i11,i110,i111,i113,i114,i115,i119,i12,i120,i121,i123,i124,i19,i2,i20,i21,i24,i27,i28,i29,i3,i31,i32,i33,i34,i36,i37,i4,i41,i42,i44,i45,i49,i50,i55,i58,i59,i60,i62,i63,i64,i65,i67,i68,i72,i73,i75,i76,i79,i8,i80,i83,i86,i87,i88,i90,i91,i92,i93,i95,i96
 FUNC init_funcs
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -645,6 +655,7 @@ FUNC print_page
   [skipped] reason=too_large insts=257
 FUNC init_page
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -736,6 +747,7 @@ FUNC init_page
   i88 IN: i0,i1,i11,i14,i15,i17,i18,i19,i20,i21,i24,i25,i27,i28,i31,i32,i34,i35,i36,i37,i38,i39,i4,i41,i42,i43,i44,i46,i47,i48,i49,i5,i51,i52,i53,i57,i59,i60,i62,i63,i65,i66,i67,i68,i70,i71,i72,i75,i76,i8,i80,i81,i83,i84,i85,i9
 FUNC cols_ready_to_print
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -790,6 +802,7 @@ FUNC cols_ready_to_print
   i51 IN: i0,i1,i11,i12,i13,i15,i16,i17,i18,i2,i20,i21,i22,i23,i25,i26,i28,i29,i30,i31,i33,i34,i35,i36,i38,i39,i43,i44,i46,i47,i48,i50,i7,i9
 FUNC read_rest_of_line
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -838,6 +851,7 @@ FUNC read_rest_of_line
   i45 IN: arg0,i0,i1,i12,i13,i14,i15,i17,i18,i2,i20,i21,i23,i25,i26,i27,i29,i30,i34,i37,i38,i40,i7,i8,i9
 FUNC align_column
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -871,6 +885,7 @@ FUNC align_column
   i30 IN: arg0,i0,i11,i12,i13,i15,i17,i18,i22,i23,i24,i25,i27,i3,i4,i5,i6,i7,i8,i9
 FUNC pad_down
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -897,6 +912,7 @@ FUNC pad_down
   i23 IN: arg0,i0,i1,i10,i11,i13,i14,i16,i18,i19,i20,i4,i5,i7
 FUNC reset_status
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -945,6 +961,7 @@ FUNC reset_status
   i45 IN: i0,i1,i10,i12,i13,i14,i15,i17,i18,i20,i21,i25,i26,i28,i29,i3,i30,i32,i33,i35,i36,i37,i38,i40,i42,i6,i7,i9
 FUNC pad_across_to
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -975,6 +992,7 @@ FUNC pad_across_to
   i27 IN: arg0,i0,i1,i10,i11,i12,i13,i16,i17,i19,i20,i22,i24,i25,i5,i7,i8
 FUNC print_sep_string
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -1044,6 +1062,7 @@ FUNC print_sep_string
   i66 IN: i0,i1,i11,i12,i18,i19,i22,i23,i25,i27,i28,i29,i3,i30,i32,i33,i35,i36,i39,i40,i44,i45,i47,i48,i49,i50,i51,i55,i56,i6,i61,i62,i63,i7,i8,i9
 FUNC add_line_number
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1150,6 +1169,7 @@ FUNC add_line_number
   i103 IN: arg0,i0,i1,i10,i100,i101,i11,i12,i14,i15,i17,i18,i19,i2,i20,i21,i22,i24,i27,i28,i3,i30,i31,i32,i33,i34,i36,i39,i40,i43,i44,i46,i47,i48,i50,i51,i52,i55,i56,i57,i58,i60,i61,i62,i66,i67,i68,i69,i73,i74,i75,i76,i78,i79,i80,i82,i83,i84,i85,i86,i87,i88,i89,i9,i92,i93,i95,i96,i98,i99
 FUNC print_white_space
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -1202,6 +1222,7 @@ FUNC print_white_space
   i49 IN: i0,i1,i10,i13,i14,i15,i16,i18,i19,i2,i20,i21,i22,i23,i24,i26,i27,i29,i31,i32,i33,i34,i38,i39,i41,i42,i44,i46,i48,i5,i8,i9
 FUNC hold_file
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1253,6 +1274,7 @@ FUNC hold_file
   i48 IN: arg0,i0,i1,i10,i12,i15,i16,i18,i19,i2,i21,i22,i25,i26,i30,i31,i33,i34,i38,i39,i42,i43,i45,i46,i47,i7,i8
 FUNC close_file
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1360,6 +1382,7 @@ FUNC close_file
   i104 IN: arg0,i0,i1,i10,i100,i101,i102,i11,i15,i16,i18,i19,i2,i20,i21,i22,i26,i27,i28,i29,i3,i30,i32,i33,i34,i37,i38,i39,i4,i40,i41,i43,i44,i46,i47,i51,i52,i61,i62,i64,i66,i69,i70,i72,i73,i75,i76,i77,i78,i8,i80,i81,i85,i86,i88,i89,i9,i93,i94,i96,i97
 FUNC store_columns
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -1506,6 +1529,7 @@ FUNC read_line
   [skipped] reason=too_large insts=256
 FUNC balance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1563,6 +1587,7 @@ FUNC balance
   i54 IN: arg0,i0,i1,i13,i14,i16,i17,i18,i2,i20,i21,i22,i24,i25,i26,i27,i28,i3,i30,i31,i34,i35,i36,i38,i39,i4,i40,i42,i43,i44,i47,i48,i50,i51,i52
 FUNC print_header
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -1619,6 +1644,7 @@ FUNC char_to_clump
   [skipped] reason=too_large insts=220
 FUNC store_char
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1642,6 +1668,7 @@ FUNC store_char
   i20 IN: arg0,i0,i12,i13,i14,i15,i17,i18,i19,i3,i4,i5,i6,i8,i9
 FUNC print_clump
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -1669,6 +1696,7 @@ FUNC print_clump
   i24 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i13,i15,i16,i17,i18,i19,i2,i21
 FUNC print_stored
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1810,6 +1838,7 @@ FUNC print_stored
   i138 IN: arg0,i0,i1,i100,i102,i103,i105,i108,i109,i11,i111,i112,i113,i114,i115,i116,i117,i118,i119,i12,i121,i122,i123,i124,i125,i126,i127,i129,i13,i130,i131,i135,i137,i14,i18,i19,i2,i20,i21,i22,i23,i24,i25,i28,i29,i3,i30,i31,i32,i33,i34,i35,i36,i39,i4,i40,i44,i45,i46,i47,i5,i51,i54,i55,i56,i58,i59,i6,i62,i63,i65,i66,i69,i70,i71,i72,i74,i75,i79,i82,i83,i84,i86,i87,i88,i92,i93,i98,i99
 FUNC print_char
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1863,6 +1892,7 @@ FUNC print_char
   i50 IN: arg0,i0,i10,i11,i12,i14,i15,i20,i21,i22,i23,i24,i25,i26,i27,i28,i29,i3,i30,i32,i33,i34,i36,i37,i4,i41,i42,i46,i47,i48,i6,i7,i8
 FUNC to_uchar
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -1870,6 +1900,7 @@ FUNC to_uchar
   i4 IN: arg0,i0,i1,i3
 FUNC skip_read
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2007,11 +2038,13 @@ FUNC skip_read
   i134 IN: arg0,arg1,i0,i1,i100,i101,i103,i106,i107,i109,i113,i114,i115,i117,i118,i120,i121,i123,i124,i126,i127,i129,i13,i130,i131,i14,i15,i2,i21,i22,i24,i26,i27,i28,i29,i3,i31,i32,i34,i36,i37,i4,i41,i42,i43,i44,i45,i47,i49,i5,i50,i52,i53,i54,i57,i58,i6,i60,i61,i63,i64,i66,i67,i69,i71,i74,i75,i77,i78,i81,i82,i84,i85,i89,i90,i94,i95,i97,i99
 FUNC integer_overflow
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0
 FUNC open_file
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2079,6 +2112,7 @@ FUNC open_file
   i64 IN: arg0,arg1,i0,i1,i11,i12,i13,i15,i16,i17,i2,i21,i22,i23,i25,i26,i27,i28,i31,i32,i33,i34,i37,i38,i40,i41,i42,i43,i46,i48,i49,i50,i52,i53,i55,i56,i58,i59,i61,i63,i7,i8,i9
 FUNC init_header
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2199,6 +2233,7 @@ FUNC init_header
   i117 IN: arg0,arg1,i0,i1,i100,i103,i105,i107,i109,i110,i111,i112,i113,i114,i115,i116,i2,i20,i21,i22,i26,i27,i29,i3,i30,i31,i33,i34,i35,i36,i38,i39,i4,i41,i42,i45,i46,i5,i50,i53,i54,i55,i57,i58,i59,i6,i60,i63,i64,i65,i66,i67,i69,i7,i70,i72,i73,i74,i75,i76,i77,i8,i80,i82,i83,i84,i85,i86,i87,i88,i9,i90,i92,i94,i95,i97,i99
 FUNC timetostr
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2211,18 +2246,21 @@ FUNC timetostr
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC emit_stdin_note
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
   i3 IN: i0,i1,i2
 FUNC emit_mandatory_arg_note
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
   i3 IN: i0,i1,i2
 FUNC emit_ancillary_info
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2310,6 +2348,7 @@ FUNC emit_ancillary_info
   i84 IN: arg0,i0,i1,i12,i15,i18,i19,i2,i20,i21,i23,i24,i25,i26,i27,i28,i29,i3,i31,i33,i34,i37,i38,i39,i4,i40,i42,i43,i44,i47,i48,i5,i50,i52,i53,i55,i56,i57,i59,i60,i61,i64,i65,i66,i69,i71,i73,i74,i75,i76,i77,i78,i79,i80,i81,i82,i83,i9
 FUNC close_stdout_set_file_name
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2318,6 +2357,7 @@ FUNC close_stdout_set_file_name
   i5 IN: arg0,i0,i3,i4
 FUNC close_stdout_set_ignore_EPIPE
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2329,6 +2369,7 @@ FUNC close_stdout_set_ignore_EPIPE
   i8 IN: arg0,i0,i1,i4,i5,i6,i7
 FUNC close_stdout
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -2372,6 +2413,7 @@ FUNC close_stdout
   i40 IN: i0,i1,i10,i2,i3,i33,i34,i35,i5,i6,i8,i9
 FUNC fdadvise
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -2392,6 +2434,7 @@ FUNC fdadvise
   i17 IN: arg0,arg1,arg2,arg3,i0,i1,i12,i13,i14,i15,i16,i2,i3
 FUNC fadvise
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2409,6 +2452,7 @@ FUNC fadvise
   i14 IN: arg0,arg1,i0,i1,i10,i11,i4,i6,i7,i9
 FUNC rpl_fclose
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2466,6 +2510,7 @@ FUNC rpl_fclose
   i54 IN: arg0,i0,i1,i12,i13,i15,i16,i18,i19,i2,i20,i22,i23,i24,i26,i27,i28,i29,i3,i31,i32,i33,i35,i36,i39,i4,i40,i42,i43,i45,i46,i50,i51,i53
 FUNC rpl_fflush
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2491,6 +2536,7 @@ FUNC rpl_fflush
   i22 IN: arg0,i0,i1,i11,i12,i13,i15,i17,i18,i19,i21,i4,i5,i7,i8,i9
 FUNC clear_ungetc_buffer_preserving_position
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2506,6 +2552,7 @@ FUNC clear_ungetc_buffer_preserving_position
   i12 IN: arg0,i0,i1,i10,i3,i4,i5,i6,i7,i9
 FUNC fopen_safer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2584,6 +2631,7 @@ FUNC fopen_safer
   i75 IN: arg0,arg1,i0,i1,i13,i14,i15,i17,i18,i2,i21,i22,i24,i25,i27,i28,i3,i31,i32,i34,i35,i38,i39,i4,i41,i42,i43,i44,i46,i48,i49,i5,i50,i52,i53,i54,i56,i59,i6,i60,i62,i63,i64,i65,i67,i7,i71,i72,i74
 FUNC rpl_fseeko
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -2649,6 +2697,7 @@ FUNC rpl_fseeko
   i62 IN: arg0,arg1,arg2,i0,i1,i11,i12,i13,i14,i15,i16,i17,i19,i2,i20,i21,i22,i23,i24,i25,i27,i28,i29,i3,i30,i33,i34,i35,i36,i37,i39,i4,i40,i42,i44,i45,i46,i47,i49,i50,i51,i53,i55,i56,i57,i58,i59,i61
 FUNC gettime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2657,6 +2706,7 @@ FUNC gettime
   i5 IN: arg0,i0,i3,i4
 FUNC current_timespec
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0
@@ -2665,6 +2715,7 @@ FUNC current_timespec
   i5 IN: i0,i3,i4
 FUNC hard_locale
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2694,6 +2745,7 @@ FUNC hard_locale
   i26 IN: arg0,i0,i1,i11,i13,i14,i15,i17,i18,i19,i2,i21,i23,i25,i6,i7,i8,i9
 FUNC imaxtostr
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2750,6 +2802,7 @@ FUNC imaxtostr
   i53 IN: arg0,arg1,i0,i1,i11,i13,i14,i17,i18,i19,i2,i20,i21,i22,i26,i27,i29,i31,i32,i34,i37,i38,i39,i40,i41,i42,i46,i47,i48,i49,i52,i8,i9
 FUNC gnu_mbswidth
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2766,6 +2819,7 @@ FUNC mbsnwidth
   [skipped] reason=too_large insts=215
 FUNC nstrftime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0,i1
@@ -2799,6 +2853,7 @@ FUNC __strftime_internal
   [skipped] reason=too_large insts=2620
 FUNC memcpy_lowcase
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -2830,6 +2885,7 @@ FUNC memcpy_lowcase
   i28 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i13,i15,i16,i17,i18,i19,i2,i20,i21,i22,i23,i24,i27
 FUNC memcpy_uppcase
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -2861,6 +2917,7 @@ FUNC memcpy_uppcase
   i28 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i13,i15,i16,i17,i18,i19,i2,i20,i21,i22,i23,i24,i27
 FUNC iso_week_days
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -2884,6 +2941,7 @@ FUNC iso_week_days
   i20 IN: arg0,arg1,i0,i1,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i2,i8,i9
 FUNC set_program_name
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2943,6 +3001,7 @@ FUNC set_program_name
   i56 IN: arg0,i0,i1,i14,i15,i17,i18,i2,i20,i21,i23,i25,i27,i28,i29,i30,i31,i32,i34,i35,i36,i37,i39,i41,i42,i43,i45,i46,i48,i52,i54,i55,i7,i8
 FUNC clone_quoting_options
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2971,6 +3030,7 @@ FUNC clone_quoting_options
   i25 IN: arg0,i0,i1,i10,i11,i13,i16,i17,i18,i19,i2,i21,i22,i23,i24,i6,i7
 FUNC get_quoting_style
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -2986,6 +3046,7 @@ FUNC get_quoting_style
   i12 IN: arg0,i0,i1,i10,i11,i3,i4,i6,i9
 FUNC set_quoting_style
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3005,6 +3066,7 @@ FUNC set_quoting_style
   i16 IN: arg0,arg1,i0,i1,i10,i13,i14,i15,i6,i7,i8
 FUNC set_char_quoting
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3063,6 +3125,7 @@ FUNC set_char_quoting
   i55 IN: arg0,arg1,arg2,i0,i1,i14,i17,i18,i2,i20,i23,i24,i25,i26,i27,i28,i29,i3,i32,i33,i34,i35,i38,i39,i4,i40,i41,i42,i44,i45,i46,i47,i48,i49,i5,i50,i51,i52,i53,i54,i6
 FUNC set_quoting_flags
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3088,6 +3151,7 @@ FUNC set_quoting_flags
   i22 IN: arg0,arg1,i0,i1,i13,i14,i15,i17,i18,i19,i2,i20,i21,i8,i9
 FUNC set_custom_quoting
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3124,6 +3188,7 @@ FUNC set_custom_quoting
   i33 IN: arg0,arg1,arg2,i0,i1,i10,i14,i15,i17,i18,i2,i20,i21,i25,i26,i27,i29,i30,i31,i32,i9
 FUNC quotearg_buffer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -3186,6 +3251,7 @@ FUNC quotearg_buffer_restyled
   [skipped] reason=too_large insts=1308
 FUNC gettext_quote
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3245,6 +3311,7 @@ FUNC gettext_quote
   i56 IN: arg0,arg1,i0,i1,i10,i11,i14,i15,i16,i18,i19,i2,i21,i23,i24,i25,i27,i28,i29,i3,i30,i31,i32,i33,i34,i36,i37,i38,i4,i40,i41,i42,i43,i44,i45,i46,i47,i49,i50,i51,i52,i53,i55
 FUNC quotearg_alloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3261,6 +3328,7 @@ FUNC quotearg_alloc
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC quotearg_alloc_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -3357,6 +3425,7 @@ FUNC quotearg_alloc_mem
   i93 IN: arg0,arg1,arg2,arg3,i0,i1,i18,i19,i2,i21,i24,i27,i28,i3,i31,i32,i33,i34,i35,i36,i37,i38,i4,i41,i42,i43,i44,i45,i46,i47,i48,i49,i5,i50,i51,i52,i53,i54,i55,i56,i57,i6,i60,i61,i63,i64,i65,i66,i67,i68,i69,i7,i70,i71,i72,i73,i74,i75,i76,i77,i78,i79,i8,i80,i81,i82,i83,i84,i85,i87,i88,i89,i90,i92
 FUNC quotearg_free
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -3407,6 +3476,7 @@ FUNC quotearg_free
   i47 IN: i0,i1,i10,i12,i13,i14,i15,i16,i17,i20,i21,i24,i25,i26,i27,i28,i3,i30,i31,i32,i33,i38,i39,i41,i42,i46,i8,i9
 FUNC quotearg_n
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3421,6 +3491,7 @@ FUNC quotearg_n_options
   [skipped] reason=too_large insts=187
 FUNC quotearg_n_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3437,6 +3508,7 @@ FUNC quotearg_n_mem
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC quotearg
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3445,6 +3517,7 @@ FUNC quotearg
   i5 IN: arg0,i0,i3,i4
 FUNC quotearg_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3457,6 +3530,7 @@ FUNC quotearg_mem
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quotearg_n_style
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3476,6 +3550,7 @@ FUNC quotearg_n_style
   i16 IN: arg0,arg1,arg2,i0,i1,i11,i13,i14,i15,i2,i3
 FUNC quoting_options_from_style
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3493,6 +3568,7 @@ FUNC quoting_options_from_style
   i14 IN: arg0,arg1,i0,i11,i12,i13,i4,i6,i7
 FUNC quotearg_n_style_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -3516,6 +3592,7 @@ FUNC quotearg_n_style_mem
   i20 IN: arg0,arg1,arg2,arg3,i0,i1,i14,i16,i17,i18,i19,i2,i3,i4
 FUNC quotearg_style
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3528,6 +3605,7 @@ FUNC quotearg_style
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quotearg_style_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3544,6 +3622,7 @@ FUNC quotearg_style_mem
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC quotearg_char_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3565,6 +3644,7 @@ FUNC quotearg_char_mem
   i18 IN: arg0,arg1,arg2,i0,i1,i11,i13,i14,i15,i16,i17,i2,i3
 FUNC quotearg_char
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3577,6 +3657,7 @@ FUNC quotearg_char
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quotearg_colon
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3585,6 +3666,7 @@ FUNC quotearg_colon
   i5 IN: arg0,i0,i3,i4
 FUNC quotearg_colon_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3597,6 +3679,7 @@ FUNC quotearg_colon_mem
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quotearg_n_style_colon
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3621,6 +3704,7 @@ FUNC quotearg_n_style_colon
   i21 IN: arg0,arg1,arg2,i0,i1,i12,i14,i15,i17,i18,i19,i2,i20,i3,i4
 FUNC quotearg_n_custom
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -3641,6 +3725,7 @@ FUNC quotearg_n_custom
   i17 IN: arg0,arg1,arg2,arg3,i0,i1,i12,i13,i14,i15,i16,i2,i3
 FUNC quotearg_n_custom_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -3670,6 +3755,7 @@ FUNC quotearg_n_custom_mem
   i26 IN: arg0,arg1,arg2,arg3,arg4,i0,i1,i17,i19,i2,i20,i22,i23,i24,i25,i3,i4,i5
 FUNC quotearg_custom
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3686,6 +3772,7 @@ FUNC quotearg_custom
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC quotearg_custom_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -3706,6 +3793,7 @@ FUNC quotearg_custom_mem
   i17 IN: arg0,arg1,arg2,arg3,i0,i1,i12,i13,i14,i15,i16,i2,i3
 FUNC quote_n_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3722,6 +3810,7 @@ FUNC quote_n_mem
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC quote_mem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3734,6 +3823,7 @@ FUNC quote_mem
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quote_n
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3746,6 +3836,7 @@ FUNC quote_n
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC quote
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3754,6 +3845,7 @@ FUNC quote
   i5 IN: arg0,i0,i3,i4
 FUNC setlocale_null_r
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3770,6 +3862,7 @@ FUNC setlocale_null_r
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC setlocale_null_unlocked
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -3833,6 +3926,7 @@ FUNC setlocale_null_unlocked
   i60 IN: arg0,arg1,arg2,i0,i1,i13,i14,i16,i17,i19,i2,i20,i22,i23,i26,i29,i3,i30,i32,i33,i34,i36,i37,i38,i39,i4,i41,i43,i44,i46,i47,i48,i49,i5,i51,i52,i53,i54,i57,i59
 FUNC setlocale_null_androidfix
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3845,6 +3939,7 @@ FUNC setlocale_null_androidfix
   i9 IN: arg0,i0,i1,i5,i6,i7,i8
 FUNC setlocale_null
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3853,6 +3948,7 @@ FUNC setlocale_null
   i5 IN: arg0,i0,i3,i4
 FUNC get_stat_atime_ns
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3863,6 +3959,7 @@ FUNC get_stat_atime_ns
   i7 IN: arg0,i0,i1,i3,i4,i5,i6
 FUNC get_stat_ctime_ns
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3873,6 +3970,7 @@ FUNC get_stat_ctime_ns
   i7 IN: arg0,i0,i1,i3,i4,i5,i6
 FUNC get_stat_mtime_ns
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3883,12 +3981,14 @@ FUNC get_stat_mtime_ns
   i7 IN: arg0,i0,i1,i3,i4,i5,i6
 FUNC get_stat_birthtime_ns
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
   i3 IN: arg0,i0,i1
 FUNC get_stat_atime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3903,6 +4003,7 @@ FUNC get_stat_atime
   i11 IN: arg0,i0,i1,i10,i4,i5,i6,i7,i9
 FUNC get_stat_ctime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3917,6 +4018,7 @@ FUNC get_stat_ctime
   i11 IN: arg0,i0,i1,i10,i4,i5,i6,i7,i9
 FUNC get_stat_mtime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3931,6 +4033,7 @@ FUNC get_stat_mtime
   i11 IN: arg0,i0,i1,i10,i4,i5,i6,i7,i9
 FUNC get_stat_birthtime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -3945,6 +4048,7 @@ FUNC get_stat_birthtime
   i11 IN: arg0,i0,i1,i10,i5,i7,i8,i9
 FUNC stat_time_normalize
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3955,6 +4059,7 @@ FUNC stat_time_normalize
   i7 IN: arg0,arg1,i0,i1,i4,i6
 FUNC tzalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4023,6 +4128,7 @@ FUNC tzalloc
   i65 IN: arg0,i0,i1,i10,i11,i12,i15,i18,i19,i2,i22,i23,i25,i28,i29,i3,i30,i31,i32,i33,i34,i35,i37,i38,i40,i41,i42,i43,i44,i45,i46,i47,i49,i50,i51,i52,i53,i54,i56,i57,i58,i59,i60,i64,i7,i8
 FUNC extend_abbrs
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4043,6 +4149,7 @@ FUNC extend_abbrs
   i17 IN: arg0,arg1,arg2,i0,i1,i10,i11,i13,i14,i15,i16,i2,i9
 FUNC tzfree
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4069,6 +4176,7 @@ FUNC tzfree
   i23 IN: arg0,i0,i1,i12,i13,i14,i16,i17,i19,i2,i20,i4,i5,i8,i9
 FUNC localtime_rz
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4125,6 +4233,7 @@ FUNC localtime_rz
   i53 IN: arg0,arg1,arg2,i0,i1,i12,i13,i15,i16,i17,i18,i2,i21,i22,i24,i25,i28,i29,i3,i30,i31,i33,i34,i35,i37,i38,i4,i40,i41,i43,i44,i46,i47,i5,i50,i52
 FUNC set_tz
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4189,6 +4298,7 @@ FUNC set_tz
   i61 IN: arg0,i0,i1,i10,i11,i13,i14,i15,i16,i17,i19,i2,i20,i21,i22,i23,i24,i26,i27,i28,i29,i3,i31,i34,i35,i37,i38,i4,i40,i41,i43,i44,i47,i48,i50,i52,i53,i55,i57,i58,i60,i8
 FUNC save_abbr
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4331,6 +4441,7 @@ FUNC save_abbr
   i139 IN: arg0,arg1,i0,i1,i100,i101,i102,i106,i107,i108,i109,i110,i112,i113,i114,i116,i117,i118,i119,i121,i122,i123,i125,i126,i127,i132,i133,i134,i136,i138,i14,i15,i16,i18,i19,i2,i21,i22,i23,i24,i26,i27,i28,i29,i3,i30,i32,i34,i35,i36,i38,i39,i4,i40,i43,i44,i45,i46,i48,i49,i5,i50,i51,i53,i54,i55,i56,i57,i59,i60,i61,i62,i63,i66,i67,i68,i70,i71,i72,i73,i74,i75,i76,i77,i78,i79,i81,i82,i83,i86,i87,i88,i89,i92,i93,i95,i97,i98
 FUNC revert_tz
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4371,6 +4482,7 @@ FUNC revert_tz
   i37 IN: arg0,i0,i1,i12,i13,i16,i17,i18,i2,i20,i21,i23,i24,i27,i29,i3,i30,i32,i33,i34,i36,i6,i7,i9
 FUNC change_env
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4399,6 +4511,7 @@ FUNC change_env
   i25 IN: arg0,i0,i1,i10,i11,i12,i15,i16,i17,i19,i22,i24,i4,i5,i6,i7,i8
 FUNC setenv_TZ
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4414,10 +4527,12 @@ FUNC setenv_TZ
   i12 IN: arg0,i0,i11,i3,i4,i6,i7,i9
 FUNC getenv_TZ
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
 FUNC mktime_z
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4519,6 +4634,7 @@ FUNC mktime_z
   i98 IN: arg0,arg1,i0,i1,i11,i12,i14,i15,i16,i19,i2,i20,i22,i23,i26,i27,i28,i29,i3,i31,i32,i33,i34,i36,i37,i38,i39,i4,i41,i42,i43,i44,i46,i47,i48,i49,i5,i51,i52,i53,i54,i56,i58,i59,i6,i60,i61,i64,i67,i68,i69,i70,i72,i73,i75,i76,i78,i79,i81,i82,i84,i85,i87,i88,i89,i91,i92,i95,i97
 FUNC rpl_timegm
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4530,6 +4646,7 @@ FUNC rpl_timegm
   i8 IN: arg0,i0,i3,i4,i6,i7
 FUNC dup_safer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4540,6 +4657,7 @@ FUNC version_etc_arn
   [skipped] reason=too_large insts=248
 FUNC version_etc_ar
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -4580,6 +4698,7 @@ FUNC version_etc_ar
   i37 IN: arg0,arg1,arg2,arg3,arg4,i0,i1,i19,i2,i20,i21,i22,i23,i26,i27,i3,i30,i31,i32,i33,i34,i35,i4,i5
 FUNC version_etc_va
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -4646,6 +4765,7 @@ FUNC version_etc_va
   i63 IN: arg0,arg1,arg2,arg3,arg4,i0,i1,i2,i21,i22,i24,i25,i26,i27,i29,i3,i30,i31,i32,i33,i36,i37,i38,i39,i4,i42,i43,i44,i45,i47,i49,i5,i52,i53,i56,i57,i58,i59,i6,i60,i61
 FUNC version_etc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -4675,6 +4795,7 @@ FUNC version_etc
   i26 IN: arg0,arg1,arg2,arg3,i0,i1,i14,i15,i17,i18,i19,i2,i20,i21,i23,i24,i3,i4
 FUNC emit_bug_reporting_address
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -4686,6 +4807,7 @@ FUNC emit_bug_reporting_address
   i8 IN: i0,i1,i2,i3,i4,i5,i6,i7
 FUNC xnrealloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4702,6 +4824,7 @@ FUNC xnrealloc
   i13 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i2,i9
 FUNC xreallocarray
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4736,6 +4859,7 @@ FUNC xreallocarray
   i31 IN: arg0,arg1,arg2,i0,i1,i11,i12,i13,i14,i15,i16,i17,i19,i2,i20,i22,i23,i25,i26,i3,i30
 FUNC xmalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4745,6 +4869,7 @@ FUNC xmalloc
   i6 IN: arg0,i0,i3,i4,i5
 FUNC nonnull
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4757,6 +4882,7 @@ FUNC nonnull
   i9 IN: arg0,i0,i1,i3,i4,i8
 FUNC ximalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4766,6 +4892,7 @@ FUNC ximalloc
   i6 IN: arg0,i0,i3,i4,i5
 FUNC xcharalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -4774,6 +4901,7 @@ FUNC xcharalloc
   i5 IN: arg0,i0,i3,i4
 FUNC xrealloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4801,6 +4929,7 @@ FUNC xrealloc
   i24 IN: arg0,arg1,i0,i1,i10,i11,i12,i13,i15,i16,i18,i19,i2,i23,i8,i9
 FUNC xirealloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4814,6 +4943,7 @@ FUNC xirealloc
   i10 IN: arg0,arg1,i0,i1,i6,i7,i8,i9
 FUNC xireallocarray
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4831,6 +4961,7 @@ FUNC xireallocarray
   i14 IN: arg0,arg1,arg2,i0,i1,i10,i11,i12,i13,i2,i9
 FUNC xnmalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4843,6 +4974,7 @@ FUNC xnmalloc
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC xinmalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4855,6 +4987,7 @@ FUNC xinmalloc
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC x2realloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -4867,6 +5000,7 @@ FUNC x2realloc
   i9 IN: arg0,arg1,i0,i1,i6,i7,i8
 FUNC x2nrealloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -4924,6 +5058,7 @@ FUNC x2nrealloc
   i54 IN: arg0,arg1,arg2,i0,i1,i11,i12,i14,i15,i17,i18,i2,i20,i21,i23,i24,i25,i26,i27,i28,i29,i3,i33,i34,i35,i36,i37,i38,i39,i45,i46,i47,i48,i50,i51,i52,i53
 FUNC xpalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -5046,6 +5181,7 @@ FUNC xpalloc
   i119 IN: arg0,arg1,arg2,arg3,arg4,i0,i1,i100,i102,i103,i104,i105,i106,i111,i112,i113,i115,i116,i117,i118,i2,i20,i21,i24,i25,i26,i27,i28,i29,i3,i34,i35,i37,i38,i39,i4,i41,i46,i47,i48,i49,i5,i50,i54,i55,i56,i57,i58,i6,i60,i62,i63,i65,i66,i67,i69,i7,i70,i71,i72,i73,i76,i77,i79,i8,i82,i83,i84,i85,i86,i88,i89,i90,i91,i92,i95,i96,i98,i99
 FUNC xzalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -5054,6 +5190,7 @@ FUNC xzalloc
   i5 IN: arg0,i0,i3,i4
 FUNC xcalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5067,6 +5204,7 @@ FUNC xcalloc
   i10 IN: arg0,arg1,i0,i1,i6,i7,i8,i9
 FUNC xizalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -5075,6 +5213,7 @@ FUNC xizalloc
   i5 IN: arg0,i0,i3,i4
 FUNC xicalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5088,6 +5227,7 @@ FUNC xicalloc
   i10 IN: arg0,arg1,i0,i1,i6,i7,i8,i9
 FUNC xmemdup
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5102,6 +5242,7 @@ FUNC xmemdup
   i11 IN: arg0,arg1,i0,i1,i6,i7,i8,i9
 FUNC ximemdup
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5116,6 +5257,7 @@ FUNC ximemdup
   i11 IN: arg0,arg1,i0,i1,i6,i7,i8,i9
 FUNC ximemdup0
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5139,6 +5281,7 @@ FUNC ximemdup0
   i20 IN: arg0,arg1,i0,i1,i10,i12,i13,i14,i16,i17,i18,i2,i8,i9
 FUNC xstrdup
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -5150,6 +5293,7 @@ FUNC xstrdup
   i8 IN: arg0,i0,i3,i4,i5,i6,i7
 FUNC xalloc_die
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -5157,6 +5301,7 @@ FUNC xalloc_die
   i4 IN: i0,i1
 FUNC xnumtoimax
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6,i0,i1
@@ -5259,6 +5404,7 @@ FUNC xnumtoimax
   i99 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6,i0,i1,i2,i25,i26,i27,i28,i29,i3,i30,i31,i33,i34,i35,i37,i38,i39,i4,i42,i43,i45,i46,i48,i49,i5,i51,i52,i54,i55,i6,i60,i61,i63,i64,i66,i67,i69,i7,i70,i74,i75,i8,i98
 FUNC xdectoimax
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0,i1
@@ -5289,6 +5435,7 @@ FUNC xstrtoimax
   [skipped] reason=too_large insts=254
 FUNC bkm_scale
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5435,6 +5582,7 @@ FUNC bkm_scale
   i143 IN: arg0,arg1,i0,i1,i10,i100,i101,i103,i104,i105,i106,i107,i108,i11,i110,i111,i112,i113,i114,i115,i116,i119,i120,i121,i122,i123,i124,i125,i128,i129,i13,i130,i131,i132,i133,i135,i137,i138,i14,i140,i142,i15,i18,i19,i2,i20,i21,i22,i23,i26,i27,i29,i3,i30,i33,i34,i35,i36,i38,i39,i40,i41,i42,i47,i48,i51,i52,i53,i54,i56,i57,i58,i60,i61,i62,i63,i65,i66,i67,i68,i69,i70,i72,i73,i76,i77,i78,i83,i84,i85,i88,i89,i90,i92,i93,i94,i96,i97,i98,i99
 FUNC bkm_scale_by_power
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -5466,6 +5614,7 @@ FUNC xstrtol
   [skipped] reason=too_large insts=254
 FUNC bkm_scale.236
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5612,6 +5761,7 @@ FUNC bkm_scale.236
   i143 IN: arg0,arg1,i0,i1,i10,i100,i101,i103,i104,i105,i106,i107,i108,i11,i110,i111,i112,i113,i114,i115,i116,i119,i120,i121,i122,i123,i124,i125,i128,i129,i13,i130,i131,i132,i133,i135,i137,i138,i14,i140,i142,i15,i18,i19,i2,i20,i21,i22,i23,i26,i27,i29,i3,i30,i33,i34,i35,i36,i38,i39,i40,i41,i42,i47,i48,i51,i52,i53,i54,i56,i57,i58,i60,i61,i62,i63,i65,i66,i67,i68,i69,i70,i72,i73,i76,i77,i78,i83,i84,i85,i88,i89,i90,i92,i93,i94,i96,i97,i98,i99
 FUNC bkm_scale_by_power.237
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -5641,6 +5791,7 @@ FUNC bkm_scale_by_power.237
   i26 IN: arg0,arg1,arg2,i0,i1,i13,i14,i15,i16,i18,i19,i2,i20,i21,i22,i25,i3
 FUNC xstrtol_fatal
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,i0,i1
@@ -5667,6 +5818,7 @@ FUNC xstrtol_fatal
   i23 IN: arg0,arg1,arg2,arg3,arg4,i0,i1,i15,i16,i17,i18,i19,i2,i20,i3,i4
 FUNC xstrtol_error
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0,i1
@@ -5743,6 +5895,7 @@ FUNC bkm_scale.248
   [skipped] reason=too_large insts=160
 FUNC bkm_scale_by_power.249
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -5774,6 +5927,7 @@ FUNC mktime_internal
   [skipped] reason=too_large insts=463
 FUNC leapyear
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -5798,6 +5952,7 @@ FUNC ydhms_diff
   [skipped] reason=too_large insts=170
 FUNC ranged_convert
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -5920,6 +6075,7 @@ FUNC ranged_convert
   i119 IN: arg0,arg1,arg2,i0,i1,i102,i103,i104,i106,i108,i109,i111,i112,i113,i115,i116,i118,i17,i18,i19,i2,i22,i23,i24,i26,i27,i3,i30,i32,i35,i36,i37,i38,i4,i40,i41,i43,i44,i46,i47,i49,i5,i50,i51,i53,i56,i6,i61,i65,i66,i67,i69,i7,i70,i71,i73,i74,i75,i78,i79,i8,i80,i81,i82,i84,i86,i87,i88,i9,i91,i92,i93,i95,i97
 FUNC tm_diff
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0,i1
@@ -5962,6 +6118,7 @@ FUNC tm_diff
   i39 IN: arg0,arg1,arg2,arg3,arg4,arg5,i0,i1,i18,i19,i2,i20,i21,i22,i23,i24,i25,i26,i27,i28,i29,i3,i30,i31,i32,i33,i34,i35,i36,i37,i38,i4,i5
 FUNC isdst_differ
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -5988,6 +6145,7 @@ FUNC isdst_differ
   i23 IN: arg0,arg1,i0,i1,i10,i11,i12,i13,i14,i16,i17,i19,i20,i22,i4,i6,i7,i8,i9
 FUNC convert_time
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -6007,6 +6165,7 @@ FUNC convert_time
   i16 IN: arg0,arg1,arg2,i0,i1,i11,i13,i14,i15,i2,i3
 FUNC long_int_avg
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6026,6 +6185,7 @@ FUNC long_int_avg
   i16 IN: arg0,arg1,i0,i1,i10,i11,i12,i13,i14,i15,i6,i7,i8,i9
 FUNC shr
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6066,6 +6226,7 @@ FUNC shr
   i37 IN: arg0,arg1,i0,i1,i10,i11,i12,i14,i15,i16,i17,i19,i2,i20,i21,i22,i23,i24,i25,i26,i27,i28,i29,i30,i31,i32,i33,i34,i36,i8,i9
 FUNC rpl_mktime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6075,10 +6236,12 @@ FUNC rpl_mktime
   i6 IN: arg0,i0,i4,i5
 FUNC my_tzset
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: 
 FUNC c_strcasecmp
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6146,6 +6309,7 @@ FUNC c_strcasecmp
   i64 IN: arg0,arg1,i0,i1,i12,i15,i19,i2,i20,i21,i23,i26,i27,i28,i29,i3,i30,i32,i33,i34,i35,i36,i38,i39,i4,i40,i43,i44,i46,i47,i5,i50,i51,i52,i53,i54,i56,i57,i58,i59,i6,i60,i61,i63
 FUNC close_stream
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6198,6 +6362,7 @@ FUNC close_stream
   i49 IN: arg0,i0,i1,i10,i11,i14,i15,i16,i17,i2,i20,i21,i22,i23,i25,i26,i28,i29,i3,i31,i32,i34,i35,i36,i38,i39,i4,i41,i44,i46,i48,i8,i9
 FUNC rpl_fcntl
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6343,6 +6508,7 @@ FUNC rpl_fcntl
   i142 IN: arg0,arg1,i0,i1,i100,i101,i103,i104,i105,i106,i110,i111,i112,i113,i115,i116,i117,i118,i119,i122,i123,i124,i125,i128,i129,i131,i132,i133,i134,i138,i139,i141,i15,i16,i18,i2,i21,i22,i23,i24,i26,i27,i28,i29,i3,i30,i33,i34,i35,i36,i39,i4,i40,i42,i43,i44,i48,i49,i5,i50,i51,i53,i54,i55,i56,i57,i6,i60,i61,i62,i63,i66,i67,i69,i7,i70,i71,i74,i76,i77,i78,i82,i83,i84,i85,i87,i88,i89,i90,i91,i94,i95,i96,i97
 FUNC rpl_fcntl_DUPFD
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6359,6 +6525,7 @@ FUNC rpl_fcntl_DUPFD
   i13 IN: arg0,arg1,i0,i1,i10,i11,i12,i2,i8,i9
 FUNC rpl_fcntl_DUPFD_CLOEXEC
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6436,11 +6603,13 @@ FUNC rpl_fcntl_DUPFD_CLOEXEC
   i74 IN: arg0,arg1,i0,i1,i10,i11,i13,i14,i15,i17,i18,i2,i20,i21,i22,i24,i26,i27,i28,i29,i3,i30,i31,i33,i37,i38,i39,i4,i40,i42,i43,i45,i46,i49,i50,i52,i53,i55,i56,i57,i58,i59,i62,i63,i65,i66,i67,i68,i70,i73
 FUNC _gl_alloc_nomem
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
 FUNC imalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6456,6 +6625,7 @@ FUNC imalloc
   i12 IN: arg0,i0,i11,i3,i4,i6,i7,i9
 FUNC irealloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6481,6 +6651,7 @@ FUNC irealloc
   i22 IN: arg0,arg1,i0,i1,i10,i11,i12,i13,i14,i15,i16,i17,i19,i21,i6,i7,i9
 FUNC icalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -6519,6 +6690,7 @@ FUNC icalloc
   i35 IN: arg0,arg1,i0,i1,i10,i11,i13,i14,i18,i19,i2,i21,i22,i24,i25,i29,i30,i31,i32,i34,i7,i8
 FUNC ireallocarray
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -6554,6 +6726,7 @@ FUNC ireallocarray
   i32 IN: arg0,arg1,arg2,i0,i1,i10,i12,i13,i18,i19,i2,i21,i22,i24,i25,i26,i27,i29,i31,i9
 FUNC locale_charset
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0
@@ -6575,6 +6748,7 @@ FUNC locale_charset
   i18 IN: i0,i10,i11,i12,i13,i15,i17,i2,i3,i4,i5,i7,i9
 FUNC rpl_mbrtowc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -6629,6 +6803,7 @@ FUNC rpl_mbrtowc
   i51 IN: arg0,arg1,arg2,arg3,i0,i1,i18,i19,i2,i23,i24,i25,i26,i27,i29,i3,i30,i32,i33,i35,i38,i39,i4,i41,i42,i43,i45,i47,i48,i5,i50,i6,i7
 FUNC c_isalnum
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6643,6 +6818,7 @@ FUNC c_isalnum
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isalpha
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6657,6 +6833,7 @@ FUNC c_isalpha
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isascii
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6671,6 +6848,7 @@ FUNC c_isascii
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isblank
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6684,6 +6862,7 @@ FUNC c_isblank
   i10 IN: arg0,i0,i1,i3,i4,i6,i7,i9
 FUNC c_iscntrl
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6698,6 +6877,7 @@ FUNC c_iscntrl
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isdigit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6712,6 +6892,7 @@ FUNC c_isdigit
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isgraph
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6726,6 +6907,7 @@ FUNC c_isgraph
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_islower
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6740,6 +6922,7 @@ FUNC c_islower
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isprint
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6754,6 +6937,7 @@ FUNC c_isprint
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_ispunct
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6768,6 +6952,7 @@ FUNC c_ispunct
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isspace
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6782,6 +6967,7 @@ FUNC c_isspace
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isupper
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6796,6 +6982,7 @@ FUNC c_isupper
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_isxdigit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6810,6 +6997,7 @@ FUNC c_isxdigit
   i11 IN: arg0,i0,i1,i10,i4,i6,i8
 FUNC c_tolower
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6828,6 +7016,7 @@ FUNC c_tolower
   i15 IN: arg0,i0,i1,i11,i12,i14,i4,i6,i7,i8,i9
 FUNC c_toupper
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -6845,4 +7034,4 @@ FUNC c_toupper
   i14 IN: arg0,i0,i1,i11,i12,i4,i6,i7,i8,i9
   i15 IN: arg0,i0,i1,i11,i12,i14,i4,i6,i7,i8,i9
 [summary] skipped_functions=18
-[mem] peak_rss_kb=27424
+[mem] peak_rss_kb=28576

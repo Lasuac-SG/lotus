@@ -1,4 +1,4 @@
-[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC usage
   [client:constant_prop]
   i0 IN: 
@@ -3810,6 +3810,5 @@ FUNC hash_delete
   i4 IN: i0=overdefined
   i5 IN: i0=overdefined,i1=overdefined
   i6 IN: i0=overdefined,i1=overdefined
-  i7 IN: i0=overdefined,i1=overdefined,i6=overdefined
-  i8 IN: i0=ov
+  i7 IN: i0=overdefined,i1=overdef
 [TIMEOUT] 45s

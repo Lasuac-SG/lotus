@@ -1,8 +1,9 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=155
 FUNC xalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22,6 +23,7 @@ FUNC xalloc
   i16 IN: true
 FUNC process_prime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -53,6 +55,7 @@ FUNC output_primes
   [skipped] reason=too_large insts=168
 FUNC print_wide_uint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -139,6 +142,7 @@ FUNC print_wide_uint
   i83 IN: true
 FUNC binvert
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -174,4 +178,4 @@ FUNC binvert
   i32 IN: true
   i33 IN: true
 [summary] skipped_functions=2
-[mem] peak_rss_kb=15284
+[mem] peak_rss_kb=16352

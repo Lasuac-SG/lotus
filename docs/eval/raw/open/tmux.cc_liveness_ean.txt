@@ -1,4 +1,4 @@
-[elim] clients=liveness, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=liveness, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC alerts_check_session
   [client:liveness]
   i0 IN: arg0,i11
@@ -22062,6 +22062,5 @@ FUNC format_draw_put_list
   i66 IN: arg0,arg1,arg10,arg2,arg5,arg7,i49,i50,i51,i58
   i67 IN: arg0,arg1,arg10,arg2,arg5,arg7,i49,i50,i51,i58,i66
   i68 IN: arg0,arg1,arg10,arg2,arg5,i49,i50,i51,i58
-  i69 IN: arg0,arg1,arg10,arg2,arg5,i49,i50,i51,i68
-  i70 IN: arg0,arg1,arg
+  i69 IN: arg0,arg1,arg10,arg2,arg5,i49,i
 [TIMEOUT] 45s

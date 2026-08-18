@@ -1,8 +1,8 @@
 [elim] clients=affine, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=200
 FUNC sqlite3_status64
   [client:affine]
-  [cfg] args=4, blocks=10, insts=65, edges=13, branching_blocks=4, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=152171
-  [timing] gen_us=1441, norm_us=18803, interp_us=131345, end2end_us=152171, runs=1
+  [cfg] args=4, blocks=10, insts=65, edges=13, branching_blocks=4, max_succs=2, phis=1, calls=5, returns=1, unreachable=0, elapsed_us=189398
+  [timing] gen_us=2138, norm_us=21826, interp_us=164766, end2end_us=189398, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=306, edges=482, tree=5.227000e+03, seq=192, stars=0, unions=49, atoms=64, sharing=1.708170e+01, roots=65
   [expr-profile] with_expr=65, missing_expr=0, total_unique_nodes=4415, total_shared_refs=590, total_unions=49, total_concats=2421, total_stars=0, max_nodes=161@i64, max_depth=32@i57
@@ -73,8 +73,8 @@ FUNC sqlite3_status64
   i64 IN: w32:0,1,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3MisuseError
   [client:affine]
-  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=389
-  [timing] gen_us=53, norm_us=187, interp_us=108, end2end_us=389, runs=1
+  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=561
+  [timing] gen_us=60, norm_us=203, interp_us=234, end2end_us=561, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -85,8 +85,8 @@ FUNC sqlite3MisuseError
   i4 IN: w32:1,0,0,4294967295,0,0,0
 FUNC sqlite3Pcache1Mutex
   [client:affine]
-  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=85
-  [timing] gen_us=19, norm_us=51, interp_us=5, end2end_us=85, runs=1
+  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=155
+  [timing] gen_us=34, norm_us=88, interp_us=9, end2end_us=155, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2, edges=0, tree=2.000000e+00, seq=0, stars=0, unions=0, atoms=1, sharing=1.000000e+00, roots=2
   [expr-profile] with_expr=2, missing_expr=0, total_unique_nodes=2, total_shared_refs=0, total_unions=0, total_concats=0, total_stars=0, max_nodes=1@i0, max_depth=1@i0
@@ -94,8 +94,8 @@ FUNC sqlite3Pcache1Mutex
   i1 IN: w64:
 FUNC sqlite3MallocMutex
   [client:affine]
-  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=61
-  [timing] gen_us=12, norm_us=38, interp_us=3, end2end_us=61, runs=1
+  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=81
+  [timing] gen_us=17, norm_us=48, interp_us=5, end2end_us=81, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2, edges=0, tree=2.000000e+00, seq=0, stars=0, unions=0, atoms=1, sharing=1.000000e+00, roots=2
   [expr-profile] with_expr=2, missing_expr=0, total_unique_nodes=2, total_shared_refs=0, total_unions=0, total_concats=0, total_stars=0, max_nodes=1@i0, max_depth=1@i0
@@ -103,8 +103,8 @@ FUNC sqlite3MallocMutex
   i1 IN: w64:
 FUNC sqlite3_mutex_enter
   [client:affine]
-  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=592
-  [timing] gen_us=69, norm_us=387, interp_us=109, end2end_us=592, runs=1
+  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=932
+  [timing] gen_us=92, norm_us=587, interp_us=203, end2end_us=932, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=23, edges=26, tree=8.400000e+01, seq=12, stars=0, unions=1, atoms=9, sharing=3.652174e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=83, total_shared_refs=1, total_unions=1, total_concats=36, total_stars=0, max_nodes=18@i9, max_depth=8@i8
@@ -120,8 +120,8 @@ FUNC sqlite3_mutex_enter
   i9 IN: w1:
 FUNC sqlite3_mutex_leave
   [client:affine]
-  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=592
-  [timing] gen_us=71, norm_us=381, interp_us=107, end2end_us=592, runs=1
+  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=863
+  [timing] gen_us=101, norm_us=577, interp_us=138, end2end_us=863, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=23, edges=26, tree=8.400000e+01, seq=12, stars=0, unions=1, atoms=9, sharing=3.652174e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=83, total_shared_refs=1, total_unions=1, total_concats=36, total_stars=0, max_nodes=18@i9, max_depth=8@i8
@@ -137,8 +137,8 @@ FUNC sqlite3_mutex_leave
   i9 IN: w1:
 FUNC sqlite3ReportError
   [client:affine]
-  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=2100
-  [timing] gen_us=178, norm_us=977, interp_us=865, end2end_us=2100, runs=1
+  [cfg] args=3, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1985
+  [timing] gen_us=154, norm_us=749, interp_us=1004, end2end_us=1985, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -158,16 +158,16 @@ FUNC sqlite3ReportError
   i13 IN: w32:0,1,0,0,0,0,4294967295,0,0,0,0;1,0,0,0,0,4294967295,0,0,0,0,0
 FUNC sqlite3_sourceid
   [client:affine]
-  [cfg] args=0, blocks=1, insts=1, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=96
-  [timing] gen_us=18, norm_us=56, interp_us=5, end2end_us=96, runs=1
+  [cfg] args=0, blocks=1, insts=1, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=106
+  [timing] gen_us=22, norm_us=57, interp_us=6, end2end_us=106, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1, edges=0, tree=1.000000e+00, seq=0, stars=0, unions=0, atoms=0, sharing=1.000000e+00, roots=1
   [expr-profile] with_expr=1, missing_expr=0, total_unique_nodes=1, total_shared_refs=0, total_unions=0, total_concats=0, total_stars=0, max_nodes=1@i0, max_depth=1@i0
   i0 IN: w64:
 FUNC sqlite3_log
   [client:affine]
-  [cfg] args=2, blocks=3, insts=20, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1886
-  [timing] gen_us=189, norm_us=994, interp_us=625, end2end_us=1886, runs=1
+  [cfg] args=2, blocks=3, insts=20, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=2385
+  [timing] gen_us=196, norm_us=1382, interp_us=645, end2end_us=2385, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=50, edges=60, tree=3.640000e+02, seq=29, stars=0, unions=1, atoms=19, sharing=7.280000e+00, roots=20
   [expr-profile] with_expr=20, missing_expr=0, total_unique_nodes=363, total_shared_refs=1, total_unions=1, total_concats=171, total_stars=0, max_nodes=38@i19, max_depth=18@i18
@@ -193,8 +193,8 @@ FUNC sqlite3_log
   i19 IN: w32:1,0,4294967295,0,0
 FUNC renderLogMsg
   [client:affine]
-  [cfg] args=3, blocks=1, insts=19, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1896
-  [timing] gen_us=172, norm_us=843, interp_us=816, end2end_us=1896, runs=1
+  [cfg] args=3, blocks=1, insts=19, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1818
+  [timing] gen_us=242, norm_us=1038, interp_us=450, end2end_us=1818, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=36, edges=34, tree=3.250000e+02, seq=17, stars=0, unions=0, atoms=18, sharing=9.027778e+00, roots=19
   [expr-profile] with_expr=19, missing_expr=0, total_unique_nodes=325, total_shared_refs=0, total_unions=0, total_concats=153, total_stars=0, max_nodes=35@i18, max_depth=18@i18
@@ -219,8 +219,8 @@ FUNC renderLogMsg
   i18 IN: w32:1,0,4294967295,0,0
 FUNC sqlite3StrAccumInit
   [client:affine]
-  [cfg] args=5, blocks=1, insts=36, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=5292
-  [timing] gen_us=695, norm_us=2648, interp_us=1795, end2end_us=5292, runs=1
+  [cfg] args=5, blocks=1, insts=36, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=4766
+  [timing] gen_us=663, norm_us=2124, interp_us=1803, end2end_us=4766, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=70, edges=68, tree=1.226000e+03, seq=34, stars=0, unions=0, atoms=35, sharing=1.751429e+01, roots=36
   [expr-profile] with_expr=36, missing_expr=0, total_unique_nodes=1226, total_shared_refs=0, total_unions=0, total_concats=595, total_stars=0, max_nodes=69@i35, max_depth=35@i35
@@ -264,8 +264,8 @@ FUNC sqlite3_str_vappendf
   [skipped] reason=too_large insts=2365
 FUNC sqlite3StrAccumFinish
   [client:affine]
-  [cfg] args=1, blocks=7, insts=41, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=12629
-  [timing] gen_us=598, norm_us=6110, interp_us=5755, end2end_us=12629, runs=1
+  [cfg] args=1, blocks=7, insts=41, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=14428
+  [timing] gen_us=1099, norm_us=8002, interp_us=5061, end2end_us=14428, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=177, edges=272, tree=1.683000e+03, seq=119, stars=0, unions=17, atoms=40, sharing=9.508475e+00, roots=41
   [expr-profile] with_expr=41, missing_expr=0, total_unique_nodes=1618, total_shared_refs=65, total_unions=17, total_concats=804, total_stars=0, max_nodes=96@i40, max_depth=32@i32
@@ -312,8 +312,8 @@ FUNC sqlite3StrAccumFinish
   i40 IN: w32:
 FUNC strAccumFinishRealloc
   [client:affine]
-  [cfg] args=1, blocks=4, insts=43, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=13694
-  [timing] gen_us=830, norm_us=4427, interp_us=8156, end2end_us=13694, runs=1
+  [cfg] args=1, blocks=4, insts=43, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=14567
+  [timing] gen_us=925, norm_us=4983, interp_us=8410, end2end_us=14567, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=120, edges=154, tree=1.699000e+03, seq=71, stars=0, unions=6, atoms=42, sharing=1.415833e+01, roots=43
   [expr-profile] with_expr=43, missing_expr=0, total_unique_nodes=1678, total_shared_refs=21, total_unions=6, total_concats=822, total_stars=0, max_nodes=89@i42, max_depth=33@i33
@@ -362,8 +362,8 @@ FUNC strAccumFinishRealloc
   i42 IN: w32:0,0,0,0,0,0,1,4294967295,0,0,0,0,1
 FUNC sqlite3DbMallocRaw
   [client:affine]
-  [cfg] args=2, blocks=4, insts=22, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3341
-  [timing] gen_us=225, norm_us=1658, interp_us=1360, end2end_us=3341, runs=1
+  [cfg] args=2, blocks=4, insts=22, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3318
+  [timing] gen_us=318, norm_us=1584, interp_us=1312, end2end_us=3318, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=56, edges=68, tree=3.880000e+02, seq=32, stars=0, unions=2, atoms=21, sharing=6.928571e+00, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=385, total_shared_refs=3, total_unions=2, total_concats=181, total_stars=0, max_nodes=43@i21, max_depth=14@i19
@@ -391,8 +391,8 @@ FUNC sqlite3DbMallocRaw
   i21 IN: w64:1,0,0,18446744073709551615,0,0,0
 FUNC setStrAccumError
   [client:affine]
-  [cfg] args=2, blocks=5, insts=28, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=8707
-  [timing] gen_us=472, norm_us=4065, interp_us=4001, end2end_us=8707, runs=1
+  [cfg] args=2, blocks=5, insts=28, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=10263
+  [timing] gen_us=480, norm_us=5324, interp_us=4311, end2end_us=10263, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=103, edges=150, tree=8.880000e+02, seq=62, stars=0, unions=13, atoms=27, sharing=8.621359e+00, roots=28
   [expr-profile] with_expr=28, missing_expr=0, total_unique_nodes=801, total_shared_refs=71, total_unions=13, total_concats=409, total_stars=0, max_nodes=62@i26, max_depth=16@i26
@@ -426,8 +426,8 @@ FUNC setStrAccumError
   i27 IN: w32:
 FUNC sqlite3_str_reset
   [client:affine]
-  [cfg] args=1, blocks=3, insts=34, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=9662
-  [timing] gen_us=479, norm_us=4964, interp_us=4085, end2end_us=9662, runs=1
+  [cfg] args=1, blocks=3, insts=34, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=11386
+  [timing] gen_us=491, norm_us=5293, interp_us=5396, end2end_us=11386, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=125, edges=182, tree=1.198000e+03, seq=81, stars=0, unions=10, atoms=33, sharing=9.584000e+00, roots=34
   [expr-profile] with_expr=34, missing_expr=0, total_unique_nodes=1144, total_shared_refs=54, total_unions=10, total_concats=572, total_stars=0, max_nodes=75@i33, max_depth=27@i33
@@ -467,8 +467,8 @@ FUNC sqlite3_str_reset
   i33 IN: w32:
 FUNC sqlite3ErrorToParser
   [client:affine]
-  [cfg] args=2, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=14666
-  [timing] gen_us=380, norm_us=3817, interp_us=10308, end2end_us=14666, runs=1
+  [cfg] args=2, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=17801
+  [timing] gen_us=630, norm_us=3733, interp_us=13116, end2end_us=17801, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=107, edges=150, tree=9.240000e+02, seq=68, stars=0, unions=7, atoms=31, sharing=8.635514e+00, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=907, total_shared_refs=17, total_unions=7, total_concats=439, total_stars=0, max_nodes=68@i31, max_depth=26@i29
@@ -506,8 +506,8 @@ FUNC sqlite3ErrorToParser
   i31 IN: w32:1,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0
 FUNC sqlite3DbFree
   [client:affine]
-  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1302
-  [timing] gen_us=126, norm_us=989, interp_us=134, end2end_us=1302, runs=1
+  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=906
+  [timing] gen_us=122, norm_us=595, interp_us=135, end2end_us=906, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=27, edges=30, tree=1.240000e+02, seq=14, stars=0, unions=1, atoms=11, sharing=4.592593e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -525,8 +525,8 @@ FUNC sqlite3DbFree
   i11 IN: w1:
 FUNC sqlite3DbFreeNN
   [client:affine]
-  [cfg] args=2, blocks=12, insts=83, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=36247
-  [timing] gen_us=2474, norm_us=13357, interp_us=19791, end2end_us=36247, runs=1
+  [cfg] args=2, blocks=12, insts=83, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=42043
+  [timing] gen_us=2003, norm_us=15643, interp_us=23505, end2end_us=42043, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=312, edges=458, tree=5.145000e+03, seq=217, stars=0, unions=12, atoms=82, sharing=1.649038e+01, roots=83
   [expr-profile] with_expr=83, missing_expr=0, total_unique_nodes=5119, total_shared_refs=26, total_unions=12, total_concats=2519, total_stars=0, max_nodes=175@i82, max_depth=56@i76
@@ -615,8 +615,8 @@ FUNC sqlite3DbFreeNN
   i82 IN: w64:
 FUNC measureAllocationSize
   [client:affine]
-  [cfg] args=2, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1108
-  [timing] gen_us=120, norm_us=561, interp_us=375, end2end_us=1108, runs=1
+  [cfg] args=2, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1427
+  [timing] gen_us=185, norm_us=646, interp_us=505, end2end_us=1427, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -636,8 +636,8 @@ FUNC measureAllocationSize
   i13 IN: w32:0,0,0,1,1,4294967295,0
 FUNC sqlite3_free
   [client:affine]
-  [cfg] args=1, blocks=6, insts=26, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=2930
-  [timing] gen_us=343, norm_us=1900, interp_us=600, end2end_us=2930, runs=1
+  [cfg] args=1, blocks=6, insts=26, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=3427
+  [timing] gen_us=359, norm_us=2277, interp_us=698, end2end_us=3427, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=69, edges=86, tree=4.940000e+02, seq=41, stars=0, unions=2, atoms=25, sharing=7.159420e+00, roots=26
   [expr-profile] with_expr=26, missing_expr=0, total_unique_nodes=493, total_shared_refs=1, total_unions=2, total_concats=232, total_stars=0, max_nodes=50@i25, max_depth=19@i20
@@ -669,8 +669,8 @@ FUNC sqlite3_free
   i25 IN: w32:
 FUNC sqlite3MallocSize
   [client:affine]
-  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=330
-  [timing] gen_us=46, norm_us=202, interp_us=56, end2end_us=330, runs=1
+  [cfg] args=1, blocks=1, insts=6, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=345
+  [timing] gen_us=59, norm_us=198, interp_us=55, end2end_us=345, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=10, edges=8, tree=2.600000e+01, seq=4, stars=0, unions=0, atoms=5, sharing=2.600000e+00, roots=6
   [expr-profile] with_expr=6, missing_expr=0, total_unique_nodes=26, total_shared_refs=0, total_unions=0, total_concats=10, total_stars=0, max_nodes=9@i5, max_depth=5@i5
@@ -682,8 +682,8 @@ FUNC sqlite3MallocSize
   i5 IN: w32:
 FUNC sqlite3StatusDown
   [client:affine]
-  [cfg] args=2, blocks=1, insts=13, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=1135
-  [timing] gen_us=95, norm_us=482, interp_us=512, end2end_us=1135, runs=1
+  [cfg] args=2, blocks=1, insts=13, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=1086
+  [timing] gen_us=101, norm_us=437, interp_us=499, end2end_us=1086, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=24, edges=22, tree=1.450000e+02, seq=11, stars=0, unions=0, atoms=12, sharing=6.041667e+00, roots=13
   [expr-profile] with_expr=13, missing_expr=0, total_unique_nodes=145, total_shared_refs=0, total_unions=0, total_concats=66, total_stars=0, max_nodes=23@i12, max_depth=12@i12
@@ -702,8 +702,8 @@ FUNC sqlite3StatusDown
   i12 IN: w64:0,0,0,0,1,0,18446744073709551615,1,0
 FUNC sqlite3DbMallocSize
   [client:affine]
-  [cfg] args=2, blocks=10, insts=53, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=25542
-  [timing] gen_us=1351, norm_us=9310, interp_us=14602, end2end_us=25542, runs=1
+  [cfg] args=2, blocks=10, insts=53, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=30175
+  [timing] gen_us=1089, norm_us=11583, interp_us=17042, end2end_us=30175, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=232, edges=358, tree=2.651000e+03, seq=160, stars=0, unions=19, atoms=52, sharing=1.142672e+01, roots=53
   [expr-profile] with_expr=53, missing_expr=0, total_unique_nodes=2583, total_shared_refs=68, total_unions=19, total_concats=1280, total_stars=0, max_nodes=122@i52, max_depth=41@i43
@@ -762,8 +762,8 @@ FUNC sqlite3DbMallocSize
   i52 IN: w64:
 FUNC sqlite3DbMallocRawNN
   [client:affine]
-  [cfg] args=2, blocks=22, insts=162, edges=29, branching_blocks=8, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=425973
-  [timing] gen_us=5349, norm_us=44166, interp_us=374949, end2end_us=425973, runs=1
+  [cfg] args=2, blocks=22, insts=162, edges=29, branching_blocks=8, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=510180
+  [timing] gen_us=6420, norm_us=55114, interp_us=446394, end2end_us=510180, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=721, edges=1118, tree=1.440000e+04, seq=476, stars=0, unions=83, atoms=161, sharing=1.997226e+01, roots=162
   [expr-profile] with_expr=162, missing_expr=0, total_unique_nodes=12971, total_shared_refs=1187, total_unions=85, total_concats=6913, total_stars=0, max_nodes=348@i161, max_depth=50@i145
@@ -931,8 +931,8 @@ FUNC sqlite3DbMallocRawNN
   i161 IN: w32:
 FUNC sqlite3Malloc
   [client:affine]
-  [cfg] args=1, blocks=8, insts=31, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=8940
-  [timing] gen_us=360, norm_us=3696, interp_us=4749, end2end_us=8940, runs=1
+  [cfg] args=1, blocks=8, insts=31, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=9623
+  [timing] gen_us=547, norm_us=3679, interp_us=5207, end2end_us=9623, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=105, edges=148, tree=7.690000e+02, seq=65, stars=0, unions=9, atoms=30, sharing=7.323810e+00, roots=31
   [expr-profile] with_expr=31, missing_expr=0, total_unique_nodes=751, total_shared_refs=18, total_unions=9, total_concats=360, total_stars=0, max_nodes=68@i30, max_depth=19@i21
@@ -969,8 +969,8 @@ FUNC sqlite3Malloc
   i30 IN: w64:1,0,0,0,0,18446744073709551615,0,0,0,0,0
 FUNC mallocWithAlarm
   [client:affine]
-  [cfg] args=2, blocks=13, insts=73, edges=17, branching_blocks=5, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=173249
-  [timing] gen_us=1751, norm_us=24183, interp_us=146452, end2end_us=173249, runs=1
+  [cfg] args=2, blocks=13, insts=73, edges=17, branching_blocks=5, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=189308
+  [timing] gen_us=2211, norm_us=26723, interp_us=159392, end2end_us=189308, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=408, edges=670, tree=6.255000e+03, seq=269, stars=0, unions=66, atoms=72, sharing=1.533088e+01, roots=73
   [expr-profile] with_expr=73, missing_expr=0, total_unique_nodes=5392, total_shared_refs=509, total_unions=66, total_concats=2848, total_stars=0, max_nodes=176@i72, max_depth=46@i46
@@ -1049,8 +1049,8 @@ FUNC mallocWithAlarm
   i72 IN: w64:
 FUNC sqlite3StatusHighwater
   [client:affine]
-  [cfg] args=2, blocks=3, insts=22, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=5213
-  [timing] gen_us=322, norm_us=1640, interp_us=3119, end2end_us=5213, runs=1
+  [cfg] args=2, blocks=3, insts=22, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=4716
+  [timing] gen_us=340, norm_us=1735, interp_us=2505, end2end_us=4716, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=49, edges=54, tree=4.440000e+02, seq=26, stars=0, unions=1, atoms=21, sharing=9.061224e+00, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=443, total_shared_refs=1, total_unions=1, total_concats=210, total_stars=0, max_nodes=42@i21, max_depth=20@i20
@@ -1078,8 +1078,8 @@ FUNC sqlite3StatusHighwater
   i21 IN: w64:
 FUNC sqlite3StatusValue
   [client:affine]
-  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=484
-  [timing] gen_us=72, norm_us=262, interp_us=106, end2end_us=484, runs=1
+  [cfg] args=1, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=533
+  [timing] gen_us=83, norm_us=291, interp_us=106, end2end_us=533, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=12, edges=10, tree=3.700000e+01, seq=5, stars=0, unions=0, atoms=6, sharing=3.083333e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=37, total_shared_refs=0, total_unions=0, total_concats=15, total_stars=0, max_nodes=11@i6, max_depth=6@i6
@@ -1092,8 +1092,8 @@ FUNC sqlite3StatusValue
   i6 IN: w64:
 FUNC sqlite3MallocAlarm
   [client:affine]
-  [cfg] args=1, blocks=4, insts=14, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1464
-  [timing] gen_us=112, norm_us=819, interp_us=486, end2end_us=1464, runs=1
+  [cfg] args=1, blocks=4, insts=14, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1490
+  [timing] gen_us=121, norm_us=722, interp_us=584, end2end_us=1490, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=33, edges=38, tree=1.560000e+02, seq=18, stars=0, unions=1, atoms=13, sharing=4.727273e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=156, total_shared_refs=0, total_unions=1, total_concats=70, total_stars=0, max_nodes=25@i13, max_depth=11@i12
@@ -1113,8 +1113,8 @@ FUNC sqlite3MallocAlarm
   i13 IN: w32:1,0,0,4294967295,0,0,0
 FUNC sqlite3StatusUp
   [client:affine]
-  [cfg] args=2, blocks=3, insts=32, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=15881
-  [timing] gen_us=700, norm_us=2259, interp_us=12699, end2end_us=15881, runs=1
+  [cfg] args=2, blocks=3, insts=32, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=18626
+  [timing] gen_us=431, norm_us=2434, interp_us=15520, end2end_us=18626, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=72, edges=80, tree=9.640000e+02, seq=39, stars=0, unions=1, atoms=31, sharing=1.338889e+01, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=963, total_shared_refs=1, total_unions=1, total_concats=465, total_stars=0, max_nodes=62@i31, max_depth=30@i30
@@ -1152,8 +1152,8 @@ FUNC sqlite3StatusUp
   i31 IN: w64:0,0,0,0,0,0,0,0,0,0,0,1,0,1,18446744073709551615,0,0,0,0,0,0,0,0
 FUNC sqlite3_release_memory
   [client:affine]
-  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=613
-  [timing] gen_us=112, norm_us=324, interp_us=121, end2end_us=613, runs=1
+  [cfg] args=1, blocks=1, insts=4, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=393
+  [timing] gen_us=70, norm_us=199, interp_us=67, end2end_us=393, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=6, edges=4, tree=1.000000e+01, seq=2, stars=0, unions=0, atoms=3, sharing=1.666667e+00, roots=4
   [expr-profile] with_expr=4, missing_expr=0, total_unique_nodes=10, total_shared_refs=0, total_unions=0, total_concats=3, total_stars=0, max_nodes=5@i3, max_depth=3@i3
@@ -1163,8 +1163,8 @@ FUNC sqlite3_release_memory
   i3 IN: w32:1,0,4294967295,0,0
 FUNC dbMallocRawFinish
   [client:affine]
-  [cfg] args=2, blocks=3, insts=16, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1887
-  [timing] gen_us=201, norm_us=1214, interp_us=410, end2end_us=1887, runs=1
+  [cfg] args=2, blocks=3, insts=16, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=2300
+  [timing] gen_us=202, norm_us=1479, interp_us=550, end2end_us=2300, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=39, edges=46, tree=2.300000e+02, seq=21, stars=0, unions=2, atoms=15, sharing=5.897436e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=228, total_shared_refs=2, total_unions=2, total_concats=105, total_stars=0, max_nodes=30@i15, max_depth=13@i13
@@ -1186,8 +1186,8 @@ FUNC dbMallocRawFinish
   i15 IN: w64:1,0,18446744073709551615,0,0
 FUNC sqlite3OomFault
   [client:affine]
-  [cfg] args=1, blocks=8, insts=53, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=28818
-  [timing] gen_us=982, norm_us=10958, interp_us=16569, end2end_us=28818, runs=1
+  [cfg] args=1, blocks=8, insts=53, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=33080
+  [timing] gen_us=1281, norm_us=15582, interp_us=15828, end2end_us=33080, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=217, edges=328, tree=3.267000e+03, seq=137, stars=0, unions=27, atoms=52, sharing=1.505530e+01, roots=53
   [expr-profile] with_expr=53, missing_expr=0, total_unique_nodes=2971, total_shared_refs=266, total_unions=27, total_concats=1565, total_stars=0, max_nodes=122@i52, max_depth=30@i50
@@ -1246,8 +1246,8 @@ FUNC sqlite3OomFault
   i52 IN: w32:
 FUNC sqlite3_str_append
   [client:affine]
-  [cfg] args=3, blocks=6, insts=47, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=79452
-  [timing] gen_us=965, norm_us=4632, interp_us=73385, end2end_us=79452, runs=1
+  [cfg] args=3, blocks=6, insts=47, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=85000
+  [timing] gen_us=829, norm_us=4843, interp_us=78815, end2end_us=85000, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=145, edges=196, tree=1.873000e+03, seq=95, stars=0, unions=3, atoms=46, sharing=1.291724e+01, roots=47
   [expr-profile] with_expr=47, missing_expr=0, total_unique_nodes=1870, total_shared_refs=3, total_unions=3, total_concats=910, total_stars=0, max_nodes=93@i46, max_depth=39@i44
@@ -1300,8 +1300,8 @@ FUNC sqlite3_str_append
   i46 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC getIntArg
   [client:affine]
-  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=5526
-  [timing] gen_us=338, norm_us=2582, interp_us=2476, end2end_us=5526, runs=1
+  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=5263
+  [timing] gen_us=369, norm_us=2174, interp_us=2556, end2end_us=5263, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=75, edges=92, tree=7.350000e+02, seq=44, stars=0, unions=2, atoms=28, sharing=9.800000e+00, roots=29
   [expr-profile] with_expr=29, missing_expr=0, total_unique_nodes=732, total_shared_refs=3, total_unions=2, total_concats=351, total_stars=0, max_nodes=57@i28, max_depth=24@i26
@@ -1336,8 +1336,8 @@ FUNC getIntArg
   i28 IN: w32:
 FUNC printfTempBuf
   [client:affine]
-  [cfg] args=2, blocks=9, insts=48, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=25629
-  [timing] gen_us=1220, norm_us=9805, interp_us=14357, end2end_us=25629, runs=1
+  [cfg] args=2, blocks=9, insts=48, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=31164
+  [timing] gen_us=1179, norm_us=12203, interp_us=17424, end2end_us=31164, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=207, edges=318, tree=2.330000e+03, seq=133, stars=0, unions=26, atoms=47, sharing=1.125604e+01, roots=48
   [expr-profile] with_expr=48, missing_expr=0, total_unique_nodes=2105, total_shared_refs=147, total_unions=26, total_concats=1076, total_stars=0, max_nodes=112@i47, max_depth=28@i30
@@ -1391,8 +1391,8 @@ FUNC printfTempBuf
   i47 IN: w64:1,0,0,0,0,0,18446744073709551615,0,0,0,0,0,0
 FUNC getDoubleArg
   [client:affine]
-  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=5136
-  [timing] gen_us=338, norm_us=2390, interp_us=2285, end2end_us=5136, runs=1
+  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=5677
+  [timing] gen_us=592, norm_us=2316, interp_us=2602, end2end_us=5677, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=75, edges=92, tree=7.350000e+02, seq=44, stars=0, unions=2, atoms=28, sharing=9.800000e+00, roots=29
   [expr-profile] with_expr=29, missing_expr=0, total_unique_nodes=732, total_shared_refs=3, total_unions=2, total_concats=351, total_stars=0, max_nodes=57@i28, max_depth=24@i26
@@ -1427,8 +1427,8 @@ FUNC getDoubleArg
   i28 IN: w32:
 FUNC sqlite3IsNaN
   [client:affine]
-  [cfg] args=1, blocks=3, insts=17, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=3008
-  [timing] gen_us=166, norm_us=1256, interp_us=1506, end2end_us=3008, runs=1
+  [cfg] args=1, blocks=3, insts=17, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=3360
+  [timing] gen_us=237, norm_us=1425, interp_us=1484, end2end_us=3360, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=48, edges=62, tree=2.670000e+02, seq=28, stars=0, unions=3, atoms=16, sharing=5.562500e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=262, total_shared_refs=5, total_unions=3, total_concats=122, total_stars=0, max_nodes=34@i16, max_depth=13@i13
@@ -1451,8 +1451,8 @@ FUNC sqlite3IsNaN
   i16 IN: w64:
 FUNC et_getdigit
   [client:affine]
-  [cfg] args=2, blocks=4, insts=40, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=16768
-  [timing] gen_us=817, norm_us=4644, interp_us=11090, end2end_us=16768, runs=1
+  [cfg] args=2, blocks=4, insts=40, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=19012
+  [timing] gen_us=746, norm_us=3109, interp_us=14891, end2end_us=19012, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=108, edges=136, tree=1.428000e+03, seq=66, stars=0, unions=2, atoms=39, sharing=1.322222e+01, roots=40
   [expr-profile] with_expr=40, missing_expr=0, total_unique_nodes=1425, total_shared_refs=3, total_unions=2, total_concats=692, total_stars=0, max_nodes=79@i39, max_depth=35@i37
@@ -1498,8 +1498,8 @@ FUNC et_getdigit
   i39 IN: w32:
 FUNC getTextArg
   [client:affine]
-  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=4923
-  [timing] gen_us=447, norm_us=2017, interp_us=2348, end2end_us=4923, runs=1
+  [cfg] args=1, blocks=4, insts=29, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=5861
+  [timing] gen_us=592, norm_us=2101, interp_us=3008, end2end_us=5861, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=75, edges=92, tree=7.350000e+02, seq=44, stars=0, unions=2, atoms=28, sharing=9.800000e+00, roots=29
   [expr-profile] with_expr=29, missing_expr=0, total_unique_nodes=732, total_shared_refs=3, total_unions=2, total_concats=351, total_stars=0, max_nodes=57@i28, max_depth=24@i26
@@ -1534,11 +1534,11 @@ FUNC getTextArg
   i28 IN: w32:
 FUNC sqlite3_str_appendchar
   [client:affine]
-  [cfg] args=3, blocks=7, insts=46, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=52072
-  [timing] gen_us=998, norm_us=10297, interp_us=40357, end2end_us=52072, runs=1
+  [cfg] args=3, blocks=7, insts=46, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=60492
+  [timing] gen_us=1498, norm_us=12270, interp_us=46136, end2end_us=60492, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
-  [dagstats] nodes=191, edges=289, tree=3.916000e+03, seq=121, stars=1, unions=23, atoms=45, sharing=2.050262e+01, roots=46
-  [expr-profile] with_expr=46, missing_expr=0, total_unique_nodes=2761, total_shared_refs=374, total_unions=41, total_concats=1494, total_stars=19, max_nodes=127@i44, max_depth=40@i44
+  [dagstats] nodes=185, edges=277, tree=3.930000e+03, seq=115, stars=1, unions=23, atoms=45, sharing=2.124324e+01, roots=46
+  [expr-profile] with_expr=46, missing_expr=0, total_unique_nodes=2762, total_shared_refs=375, total_unions=41, total_concats=1495, total_stars=19, max_nodes=127@i44, max_depth=40@i44
   i0 IN: w32:0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0;0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0;0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0;0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0
   i1 IN: w32:0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0;0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0;0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0;0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0
   i2 IN: w32:0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0;0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0;0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0;0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0
@@ -1587,8 +1587,8 @@ FUNC sqlite3_str_appendchar
   i45 IN: w32:1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3_str_appendall
   [client:affine]
-  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=690
-  [timing] gen_us=107, norm_us=410, interp_us=116, end2end_us=690, runs=1
+  [cfg] args=2, blocks=1, insts=10, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=895
+  [timing] gen_us=143, norm_us=521, interp_us=157, end2end_us=895, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=18, edges=16, tree=8.200000e+01, seq=8, stars=0, unions=0, atoms=9, sharing=4.555556e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=82, total_shared_refs=0, total_unions=0, total_concats=36, total_stars=0, max_nodes=17@i9, max_depth=9@i9
@@ -1604,8 +1604,8 @@ FUNC sqlite3_str_appendall
   i9 IN: w32:
 FUNC sqlite3Strlen30
   [client:affine]
-  [cfg] args=1, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1889
-  [timing] gen_us=139, norm_us=1045, interp_us=641, end2end_us=1889, runs=1
+  [cfg] args=1, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2353
+  [timing] gen_us=193, norm_us=1156, interp_us=910, end2end_us=2353, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=41, edges=50, tree=2.080000e+02, seq=23, stars=0, unions=2, atoms=15, sharing=5.073171e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=205, total_shared_refs=3, total_unions=2, total_concats=94, total_stars=0, max_nodes=31@i15, max_depth=11@i13
@@ -1627,8 +1627,8 @@ FUNC sqlite3Strlen30
   i15 IN: w32:
 FUNC sqlite3StrAccumEnlarge
   [client:affine]
-  [cfg] args=2, blocks=24, insts=177, edges=32, branching_blocks=9, max_succs=2, phis=1, calls=9, returns=1, unreachable=0, elapsed_us=6719031
-  [timing] gen_us=10913, norm_us=158950, interp_us=6544170, end2end_us=6719031, runs=1
+  [cfg] args=2, blocks=24, insts=177, edges=32, branching_blocks=9, max_succs=2, phis=1, calls=9, returns=1, unreachable=0, elapsed_us=6940752
+  [timing] gen_us=12817, norm_us=200542, interp_us=6720020, end2end_us=6940752, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1488, edges=2622, tree=8.022100e+04, seq=968, stars=0, unions=343, atoms=176, sharing=5.391196e+01, roots=177
   [expr-profile] with_expr=177, missing_expr=0, total_unique_nodes=31395, total_shared_refs=6246, total_unions=350, total_concats=18382, total_stars=0, max_nodes=449@i176, max_depth=54@i176
@@ -1811,8 +1811,8 @@ FUNC sqlite3StrAccumEnlarge
   i176 IN: w32:1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3DbRealloc
   [client:affine]
-  [cfg] args=3, blocks=15, insts=71, edges=20, branching_blocks=6, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=156479
-  [timing] gen_us=2187, norm_us=15929, interp_us=137644, end2end_us=156479, runs=1
+  [cfg] args=3, blocks=15, insts=71, edges=20, branching_blocks=6, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=183620
+  [timing] gen_us=2232, norm_us=21367, interp_us=159166, end2end_us=183620, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=309, edges=476, tree=4.237000e+03, seq=205, stars=0, unions=33, atoms=70, sharing=1.371197e+01, roots=71
   [expr-profile] with_expr=71, missing_expr=0, total_unique_nodes=4094, total_shared_refs=143, total_unions=33, total_concats=2050, total_stars=0, max_nodes=172@i70, max_depth=47@i59
@@ -1889,8 +1889,8 @@ FUNC sqlite3DbRealloc
   i70 IN: w64:1,0,0,0,0,0,0,0,0,0,0,0,18446744073709551615,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3Realloc
   [client:affine]
-  [cfg] args=2, blocks=22, insts=115, edges=31, branching_blocks=10, max_succs=2, phis=0, calls=14, returns=1, unreachable=0, elapsed_us=1230524
-  [timing] gen_us=5526, norm_us=53048, interp_us=1169997, end2end_us=1230524, runs=1
+  [cfg] args=2, blocks=22, insts=115, edges=31, branching_blocks=10, max_succs=2, phis=0, calls=14, returns=1, unreachable=0, elapsed_us=1228751
+  [timing] gen_us=5959, norm_us=62421, interp_us=1158407, end2end_us=1228751, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=636, edges=1042, tree=1.236500e+04, seq=417, stars=0, unions=104, atoms=114, sharing=1.944182e+01, roots=115
   [expr-profile] with_expr=115, missing_expr=0, total_unique_nodes=10687, total_shared_refs=766, total_unions=104, total_concats=5565, total_stars=0, max_nodes=283@i114, max_depth=69@i82
@@ -2011,8 +2011,8 @@ FUNC sqlite3Realloc
   i114 IN: w32:
 FUNC dbReallocFinish
   [client:affine]
-  [cfg] args=3, blocks=10, insts=52, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=18542
-  [timing] gen_us=1361, norm_us=8349, interp_us=8519, end2end_us=18542, runs=1
+  [cfg] args=3, blocks=10, insts=52, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=17468
+  [timing] gen_us=1254, norm_us=8490, interp_us=7376, end2end_us=17468, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=184, edges=264, tree=2.236000e+03, seq=119, stars=0, unions=13, atoms=51, sharing=1.215217e+01, roots=52
   [expr-profile] with_expr=52, missing_expr=0, total_unique_nodes=2210, total_shared_refs=26, total_unions=13, total_concats=1079, total_stars=0, max_nodes=113@i51, max_depth=36@i36
@@ -2070,8 +2070,8 @@ FUNC dbReallocFinish
   i51 IN: w64:1,0,0,0,18446744073709551615,0,0,0,0
 FUNC isLookaside
   [client:affine]
-  [cfg] args=2, blocks=3, insts=25, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=5799
-  [timing] gen_us=331, norm_us=2672, interp_us=2663, end2end_us=5799, runs=1
+  [cfg] args=2, blocks=3, insts=25, edges=3, branching_blocks=1, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=5596
+  [timing] gen_us=444, norm_us=2589, interp_us=2413, end2end_us=5596, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=74, edges=98, tree=5.870000e+02, seq=46, stars=0, unions=3, atoms=24, sharing=7.932432e+00, roots=25
   [expr-profile] with_expr=25, missing_expr=0, total_unique_nodes=582, total_shared_refs=5, total_unions=3, total_concats=278, total_stars=0, max_nodes=50@i24, max_depth=21@i21
@@ -2102,8 +2102,8 @@ FUNC isLookaside
   i24 IN: w64:
 FUNC lookasideMallocSize
   [client:affine]
-  [cfg] args=2, blocks=4, insts=20, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=3017
-  [timing] gen_us=267, norm_us=1843, interp_us=817, end2end_us=3017, runs=1
+  [cfg] args=2, blocks=4, insts=20, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=2697
+  [timing] gen_us=275, norm_us=1617, interp_us=714, end2end_us=2697, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=54, edges=68, tree=3.540000e+02, seq=32, stars=0, unions=2, atoms=19, sharing=6.555556e+00, roots=20
   [expr-profile] with_expr=20, missing_expr=0, total_unique_nodes=352, total_shared_refs=2, total_unions=2, total_concats=165, total_stars=0, max_nodes=39@i19, max_depth=16@i16
@@ -2129,8 +2129,8 @@ FUNC lookasideMallocSize
   i19 IN: w32:
 FUNC sqlite3_value_text
   [client:affine]
-  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=389
-  [timing] gen_us=101, norm_us=235, interp_us=22, end2end_us=389, runs=1
+  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=286
+  [timing] gen_us=61, norm_us=180, interp_us=19, end2end_us=286, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -2141,8 +2141,8 @@ FUNC sqlite3_value_text
   i4 IN: w64:
 FUNC sqlite3ValueText
   [client:affine]
-  [cfg] args=2, blocks=9, insts=46, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=24461
-  [timing] gen_us=771, norm_us=8051, interp_us=15336, end2end_us=24461, runs=1
+  [cfg] args=2, blocks=9, insts=46, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=25302
+  [timing] gen_us=970, norm_us=8772, interp_us=15232, end2end_us=25302, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=188, edges=284, tree=2.004000e+03, seq=121, stars=0, unions=21, atoms=45, sharing=1.065957e+01, roots=46
   [expr-profile] with_expr=46, missing_expr=0, total_unique_nodes=1849, total_shared_refs=119, total_unions=22, total_concats=939, total_stars=0, max_nodes=103@i45, max_depth=27@i29
@@ -2194,8 +2194,8 @@ FUNC sqlite3ValueText
   i45 IN: w32:
 FUNC valueToText
   [client:affine]
-  [cfg] args=2, blocks=18, insts=93, edges=26, branching_blocks=9, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=2051733
-  [timing] gen_us=4034, norm_us=61268, interp_us=1984496, end2end_us=2051733, runs=1
+  [cfg] args=2, blocks=18, insts=93, edges=26, branching_blocks=9, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=1991424
+  [timing] gen_us=3712, norm_us=85530, interp_us=1900400, end2end_us=1991424, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=776, edges=1366, tree=1.877500e+04, seq=517, stars=0, unions=166, atoms=92, sharing=2.419459e+01, roots=93
   [expr-profile] with_expr=93, missing_expr=0, total_unique_nodes=9495, total_shared_refs=1854, total_unions=174, total_concats=5454, total_stars=0, max_nodes=251@i92, max_depth=32@i88
@@ -2294,8 +2294,8 @@ FUNC valueToText
   i92 IN: w32:
 FUNC sqlite3VdbeMemExpandBlob
   [client:affine]
-  [cfg] args=1, blocks=8, insts=68, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=302382
-  [timing] gen_us=2184, norm_us=23929, interp_us=275379, end2end_us=302382, runs=1
+  [cfg] args=1, blocks=8, insts=68, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=306025
+  [timing] gen_us=2128, norm_us=22611, interp_us=280369, end2end_us=306025, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=320, edges=504, tree=5.808000e+03, seq=208, stars=0, unions=44, atoms=67, sharing=1.815000e+01, roots=68
   [expr-profile] with_expr=68, missing_expr=0, total_unique_nodes=4931, total_shared_refs=733, total_unions=45, total_concats=2753, total_stars=0, max_nodes=158@i65, max_depth=48@i65
@@ -2369,8 +2369,8 @@ FUNC sqlite3VdbeMemExpandBlob
   i67 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3VdbeChangeEncoding
   [client:affine]
-  [cfg] args=2, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=24944
-  [timing] gen_us=587, norm_us=4222, interp_us=19828, end2end_us=24944, runs=1
+  [cfg] args=2, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=25156
+  [timing] gen_us=586, norm_us=3495, interp_us=20799, end2end_us=25156, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=100, edges=136, tree=9.540000e+02, seq=62, stars=0, unions=6, atoms=31, sharing=9.540000e+00, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=942, total_shared_refs=12, total_unions=6, total_concats=455, total_stars=0, max_nodes=67@i31, max_depth=27@i29
@@ -2408,8 +2408,8 @@ FUNC sqlite3VdbeChangeEncoding
   i31 IN: w32:1,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0
 FUNC sqlite3VdbeMemMakeWriteable
   [client:affine]
-  [cfg] args=1, blocks=13, insts=60, edges=19, branching_blocks=7, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=234453
-  [timing] gen_us=1920, norm_us=24898, interp_us=206952, end2end_us=234453, runs=1
+  [cfg] args=1, blocks=13, insts=60, edges=19, branching_blocks=7, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=251623
+  [timing] gen_us=1811, norm_us=29817, interp_us=219255, end2end_us=251623, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=438, edges=756, tree=5.826000e+03, seq=293, stars=0, unions=85, atoms=59, sharing=1.330137e+01, roots=60
   [expr-profile] with_expr=60, missing_expr=0, total_unique_nodes=3843, total_shared_refs=567, total_unions=88, total_concats=2087, total_stars=0, max_nodes=160@i59, max_depth=25@i57
@@ -2475,8 +2475,8 @@ FUNC sqlite3VdbeMemMakeWriteable
   i59 IN: w32:
 FUNC sqlite3VdbeMemNulTerminate
   [client:affine]
-  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3499
-  [timing] gen_us=243, norm_us=1768, interp_us=1383, end2end_us=3499, runs=1
+  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3461
+  [timing] gen_us=251, norm_us=1355, interp_us=1745, end2end_us=3461, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=43, edges=50, tree=2.800000e+02, seq=23, stars=0, unions=2, atoms=17, sharing=6.511628e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=277, total_shared_refs=3, total_unions=2, total_concats=129, total_stars=0, max_nodes=35@i17, max_depth=13@i15
@@ -2500,8 +2500,8 @@ FUNC sqlite3VdbeMemNulTerminate
   i17 IN: w32:
 FUNC sqlite3VdbeMemStringify
   [client:affine]
-  [cfg] args=3, blocks=6, insts=61, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=51997
-  [timing] gen_us=1740, norm_us=11023, interp_us=38798, end2end_us=51997, runs=1
+  [cfg] args=3, blocks=6, insts=61, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=52950
+  [timing] gen_us=1781, norm_us=10973, interp_us=39596, end2end_us=52950, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=194, edges=266, tree=3.267000e+03, seq=123, stars=0, unions=10, atoms=60, sharing=1.684021e+01, roots=61
   [expr-profile] with_expr=61, missing_expr=0, total_unique_nodes=3229, total_shared_refs=38, total_unions=10, total_concats=1593, total_stars=0, max_nodes=129@i60, max_depth=47@i52
@@ -2568,8 +2568,8 @@ FUNC sqlite3VdbeMemStringify
   i60 IN: w32:
 FUNC sqlite3VdbeMemClearAndResize
   [client:affine]
-  [cfg] args=2, blocks=4, insts=33, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=15715
-  [timing] gen_us=558, norm_us=3108, interp_us=11860, end2end_us=15715, runs=1
+  [cfg] args=2, blocks=4, insts=33, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=15428
+  [timing] gen_us=546, norm_us=2448, interp_us=12178, end2end_us=15428, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=87, edges=108, tree=8.810000e+02, seq=52, stars=0, unions=2, atoms=32, sharing=1.012644e+01, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=878, total_shared_refs=3, total_unions=2, total_concats=422, total_stars=0, max_nodes=65@i32, max_depth=25@i30
@@ -2608,8 +2608,8 @@ FUNC sqlite3VdbeMemClearAndResize
   i32 IN: w32:1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0
 FUNC vdbeMemRenderNum
   [client:affine]
-  [cfg] args=3, blocks=7, insts=52, edges=8, branching_blocks=2, max_succs=2, phis=1, calls=3, returns=1, unreachable=0, elapsed_us=22781
-  [timing] gen_us=830, norm_us=7513, interp_us=14098, end2end_us=22781, runs=1
+  [cfg] args=3, blocks=7, insts=52, edges=8, branching_blocks=2, max_succs=2, phis=1, calls=3, returns=1, unreachable=0, elapsed_us=26345
+  [timing] gen_us=1199, norm_us=6850, interp_us=17869, end2end_us=26345, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=157, edges=210, tree=2.234000e+03, seq=94, stars=0, unions=11, atoms=51, sharing=1.422930e+01, roots=52
   [expr-profile] with_expr=52, missing_expr=0, total_unique_nodes=2178, total_shared_refs=56, total_unions=11, total_concats=1080, total_stars=0, max_nodes=112@i51, max_depth=29@i36
@@ -2667,8 +2667,8 @@ FUNC vdbeMemRenderNum
   i51 IN: w32:1,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0
 FUNC sqlite3Int64ToText
   [client:affine]
-  [cfg] args=2, blocks=12, insts=64, edges=15, branching_blocks=4, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=632336
-  [timing] gen_us=2780, norm_us=36621, interp_us=591615, end2end_us=632336, runs=1
+  [cfg] args=2, blocks=12, insts=64, edges=15, branching_blocks=4, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=643316
+  [timing] gen_us=2394, norm_us=37086, interp_us=602478, end2end_us=643316, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=458, edges=787, tree=1.214900e+04, seq=296, stars=1, unions=97, atoms=63, sharing=2.652620e+01, roots=64
   [expr-profile] with_expr=64, missing_expr=0, total_unique_nodes=6545, total_shared_refs=2224, total_unions=133, total_concats=4201, total_stars=37, max_nodes=210@i63, max_depth=48@i53
@@ -2738,8 +2738,8 @@ FUNC sqlite3Int64ToText
   i63 IN: w64:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,18446744073709551595;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,18446744073709551615,0,0,0,0,0,0,0,0,0,48;1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,18446744073709551615,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3_str_appendf
   [client:affine]
-  [cfg] args=2, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1276
-  [timing] gen_us=178, norm_us=960, interp_us=66, end2end_us=1276, runs=1
+  [cfg] args=2, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1171
+  [timing] gen_us=220, norm_us=829, interp_us=61, end2end_us=1171, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=30, edges=28, tree=2.260000e+02, seq=14, stars=0, unions=0, atoms=15, sharing=7.533333e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=226, total_shared_refs=0, total_unions=0, total_concats=105, total_stars=0, max_nodes=29@i15, max_depth=15@i15
@@ -2761,8 +2761,8 @@ FUNC sqlite3_str_appendf
   i15 IN: w64:
 FUNC sqlite3VdbeMemGrow
   [client:affine]
-  [cfg] args=3, blocks=22, insts=173, edges=31, branching_blocks=10, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=2773776
-  [timing] gen_us=11870, norm_us=234184, interp_us=2523747, end2end_us=2773776, runs=1
+  [cfg] args=3, blocks=22, insts=173, edges=31, branching_blocks=10, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=2931521
+  [timing] gen_us=16090, norm_us=316894, interp_us=2592976, end2end_us=2931521, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2323, edges=4300, tree=1.071390e+05, seq=1538, stars=0, unions=612, atoms=172, sharing=4.612096e+01, roots=173
   [expr-profile] with_expr=173, missing_expr=0, total_unique_nodes=34451, total_shared_refs=9172, total_unions=618, total_concats=21107, total_stars=0, max_nodes=463@i170, max_depth=62@i140
@@ -2941,8 +2941,8 @@ FUNC sqlite3VdbeMemGrow
   i172 IN: w32:0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3DbReallocOrFree
   [client:affine]
-  [cfg] args=3, blocks=3, insts=21, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3078
-  [timing] gen_us=310, norm_us=1993, interp_us=683, end2end_us=3078, runs=1
+  [cfg] args=3, blocks=3, insts=21, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3983
+  [timing] gen_us=650, norm_us=2660, interp_us=551, end2end_us=3983, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=51, edges=60, tree=4.050000e+02, seq=28, stars=0, unions=2, atoms=20, sharing=7.941176e+00, roots=21
   [expr-profile] with_expr=21, missing_expr=0, total_unique_nodes=403, total_shared_refs=2, total_unions=2, total_concats=190, total_stars=0, max_nodes=40@i20, max_depth=18@i18
@@ -2969,8 +2969,8 @@ FUNC sqlite3DbReallocOrFree
   i20 IN: w64:1,0,18446744073709551615,0,0
 FUNC sqlite3VdbeMemSetNull
   [client:affine]
-  [cfg] args=1, blocks=4, insts=17, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2114
-  [timing] gen_us=194, norm_us=1176, interp_us=680, end2end_us=2114, runs=1
+  [cfg] args=1, blocks=4, insts=17, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2047
+  [timing] gen_us=167, norm_us=882, interp_us=907, end2end_us=2047, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=39, edges=44, tree=2.350000e+02, seq=21, stars=0, unions=1, atoms=16, sharing=6.025641e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=234, total_shared_refs=1, total_unions=1, total_concats=108, total_stars=0, max_nodes=32@i16, max_depth=12@i15
@@ -2993,8 +2993,8 @@ FUNC sqlite3VdbeMemSetNull
   i16 IN: w32:
 FUNC vdbeMemClearExternAndSetNull
   [client:affine]
-  [cfg] args=1, blocks=5, insts=35, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=18496
-  [timing] gen_us=719, norm_us=8411, interp_us=9181, end2end_us=18496, runs=1
+  [cfg] args=1, blocks=5, insts=35, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=19021
+  [timing] gen_us=717, norm_us=8489, interp_us=9534, end2end_us=19021, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=165, edges=260, tree=1.571000e+03, seq=107, stars=0, unions=23, atoms=34, sharing=9.521212e+00, roots=35
   [expr-profile] with_expr=35, missing_expr=0, total_unique_nodes=1317, total_shared_refs=160, total_unions=23, total_concats=698, total_stars=0, max_nodes=79@i34, max_depth=24@i30
@@ -3035,8 +3035,8 @@ FUNC vdbeMemClearExternAndSetNull
   i34 IN: w32:
 FUNC sqlite3VdbeMemFinalize
   [client:affine]
-  [cfg] args=2, blocks=3, insts=49, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=11300
-  [timing] gen_us=1210, norm_us=7986, interp_us=1849, end2end_us=11300, runs=1
+  [cfg] args=2, blocks=3, insts=49, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=10976
+  [timing] gen_us=1224, norm_us=7552, interp_us=1878, end2end_us=10976, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=132, edges=166, tree=2.359000e+03, seq=76, stars=0, unions=7, atoms=48, sharing=1.787121e+01, roots=49
   [expr-profile] with_expr=49, missing_expr=0, total_unique_nodes=2332, total_shared_refs=27, total_unions=7, total_concats=1148, total_stars=0, max_nodes=102@i48, max_depth=41@i41
@@ -3091,8 +3091,8 @@ FUNC sqlite3VdbeMemFinalize
   i48 IN: w32:
 FUNC vdbeMemAddTerminator
   [client:affine]
-  [cfg] args=1, blocks=4, insts=53, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=51451
-  [timing] gen_us=1278, norm_us=6811, interp_us=42887, end2end_us=51451, runs=1
+  [cfg] args=1, blocks=4, insts=53, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=52853
+  [timing] gen_us=1776, norm_us=5688, interp_us=44853, end2end_us=52853, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=147, edges=188, tree=2.559000e+03, seq=92, stars=0, unions=2, atoms=52, sharing=1.740816e+01, roots=53
   [expr-profile] with_expr=53, missing_expr=0, total_unique_nodes=2556, total_shared_refs=3, total_unions=2, total_concats=1251, total_stars=0, max_nodes=105@i52, max_depth=48@i50
@@ -3153,8 +3153,8 @@ FUNC sqlite3VdbeMemTranslate
   [skipped] reason=too_large insts=804
 FUNC sqlite3VdbeMemRelease
   [client:affine]
-  [cfg] args=1, blocks=4, insts=18, edges=5, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3760
-  [timing] gen_us=222, norm_us=2011, interp_us=1435, end2end_us=3760, runs=1
+  [cfg] args=1, blocks=4, insts=18, edges=5, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3848
+  [timing] gen_us=264, norm_us=1986, interp_us=1494, end2end_us=3848, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=59, edges=82, tree=3.100000e+02, seq=36, stars=0, unions=5, atoms=17, sharing=5.254237e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=300, total_shared_refs=10, total_unions=5, total_concats=141, total_stars=0, max_nodes=38@i17, max_depth=13@i13
@@ -3178,8 +3178,8 @@ FUNC sqlite3VdbeMemRelease
   i17 IN: w32:
 FUNC vdbeMemClear
   [client:affine]
-  [cfg] args=1, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=12664
-  [timing] gen_us=611, norm_us=7742, interp_us=4155, end2end_us=12664, runs=1
+  [cfg] args=1, blocks=5, insts=32, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=13324
+  [timing] gen_us=606, norm_us=8489, interp_us=4036, end2end_us=13324, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=160, edges=256, tree=1.416000e+03, seq=104, stars=0, unions=24, atoms=31, sharing=8.850000e+00, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=1130, total_shared_refs=168, total_unions=24, total_concats=609, total_stars=0, max_nodes=71@i31, max_depth=21@i27
@@ -3217,8 +3217,8 @@ FUNC vdbeMemClear
   i31 IN: w32:
 FUNC sqlite3_value_double
   [client:affine]
-  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=318
-  [timing] gen_us=57, norm_us=221, interp_us=18, end2end_us=318, runs=1
+  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=324
+  [timing] gen_us=67, norm_us=213, interp_us=17, end2end_us=324, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -3229,8 +3229,8 @@ FUNC sqlite3_value_double
   i4 IN: w64:
 FUNC sqlite3VdbeRealValue
   [client:affine]
-  [cfg] args=1, blocks=8, insts=45, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=16366
-  [timing] gen_us=821, norm_us=5041, interp_us=10266, end2end_us=16366, runs=1
+  [cfg] args=1, blocks=8, insts=45, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=13842
+  [timing] gen_us=857, norm_us=4076, interp_us=8663, end2end_us=13842, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=130, edges=170, tree=1.433000e+03, seq=79, stars=0, unions=6, atoms=44, sharing=1.102308e+01, roots=45
   [expr-profile] with_expr=45, missing_expr=0, total_unique_nodes=1424, total_shared_refs=9, total_unions=6, total_concats=688, total_stars=0, max_nodes=93@i44, max_depth=27@i40
@@ -3281,8 +3281,8 @@ FUNC sqlite3VdbeRealValue
   i44 IN: w32:
 FUNC memRealValue
   [client:affine]
-  [cfg] args=1, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1492
-  [timing] gen_us=188, norm_us=892, interp_us=350, end2end_us=1492, runs=1
+  [cfg] args=1, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1376
+  [timing] gen_us=194, norm_us=777, interp_us=341, end2end_us=1376, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=30, edges=28, tree=2.260000e+02, seq=14, stars=0, unions=0, atoms=15, sharing=7.533333e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=226, total_shared_refs=0, total_unions=0, total_concats=105, total_stars=0, max_nodes=29@i15, max_depth=15@i15
@@ -3306,8 +3306,8 @@ FUNC sqlite3AtoF
   [skipped] reason=too_large insts=566
 FUNC sqlite3Pow10
   [client:affine]
-  [cfg] args=1, blocks=7, insts=30, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=14275
-  [timing] gen_us=918, norm_us=5602, interp_us=7510, end2end_us=14275, runs=1
+  [cfg] args=1, blocks=7, insts=30, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=14476
+  [timing] gen_us=901, norm_us=5588, interp_us=7666, end2end_us=14476, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=118, edges=175, tree=2.599000e+03, seq=71, stars=1, unions=16, atoms=29, sharing=2.202542e+01, roots=30
   [expr-profile] with_expr=30, missing_expr=0, total_unique_nodes=1724, total_shared_refs=393, total_unions=61, total_concats=971, total_stars=23, max_nodes=79@i17, max_depth=30@i15
@@ -3343,8 +3343,8 @@ FUNC sqlite3Pow10
   i29 IN: w32:1,0,0,0,0,0,4294967295,0,0,0,0,0,0
 FUNC sqlite3_value_int64
   [client:affine]
-  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=456
-  [timing] gen_us=56, norm_us=302, interp_us=58, end2end_us=456, runs=1
+  [cfg] args=1, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=365
+  [timing] gen_us=71, norm_us=206, interp_us=51, end2end_us=365, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -3355,8 +3355,8 @@ FUNC sqlite3_value_int64
   i4 IN: w64:
 FUNC sqlite3VdbeIntValue
   [client:affine]
-  [cfg] args=1, blocks=9, insts=47, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=23603
-  [timing] gen_us=943, norm_us=6361, interp_us=16089, end2end_us=23603, runs=1
+  [cfg] args=1, blocks=9, insts=47, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=24256
+  [timing] gen_us=901, norm_us=6551, interp_us=16460, end2end_us=24256, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=149, edges=204, tree=1.615000e+03, seq=92, stars=0, unions=10, atoms=46, sharing=1.083893e+01, roots=47
   [expr-profile] with_expr=47, missing_expr=0, total_unique_nodes=1597, total_shared_refs=18, total_unions=10, total_concats=774, total_stars=0, max_nodes=101@i46, max_depth=29@i42
@@ -3409,8 +3409,8 @@ FUNC sqlite3VdbeIntValue
   i46 IN: w32:
 FUNC doubleToInt64
   [client:affine]
-  [cfg] args=1, blocks=6, insts=19, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=2793
-  [timing] gen_us=242, norm_us=1742, interp_us=715, end2end_us=2793, runs=1
+  [cfg] args=1, blocks=6, insts=19, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=2928
+  [timing] gen_us=266, norm_us=1861, interp_us=708, end2end_us=2928, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=53, edges=68, tree=2.850000e+02, seq=30, stars=0, unions=4, atoms=18, sharing=5.377358e+00, roots=19
   [expr-profile] with_expr=19, missing_expr=0, total_unique_nodes=279, total_shared_refs=6, total_unions=4, total_concats=129, total_stars=0, max_nodes=39@i18, max_depth=12@i16
@@ -3435,8 +3435,8 @@ FUNC doubleToInt64
   i18 IN: w64:
 FUNC memIntValue
   [client:affine]
-  [cfg] args=1, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1422
-  [timing] gen_us=178, norm_us=844, interp_us=343, end2end_us=1422, runs=1
+  [cfg] args=1, blocks=1, insts=16, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1386
+  [timing] gen_us=196, norm_us=789, interp_us=336, end2end_us=1386, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=30, edges=28, tree=2.260000e+02, seq=14, stars=0, unions=0, atoms=15, sharing=7.533333e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=226, total_shared_refs=0, total_unions=0, total_concats=105, total_stars=0, max_nodes=29@i15, max_depth=15@i15
@@ -3460,8 +3460,8 @@ FUNC sqlite3Atoi64
   [skipped] reason=too_large insts=314
 FUNC compare2pow63
   [client:affine]
-  [cfg] args=2, blocks=9, insts=56, edges=11, branching_blocks=3, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=416742
-  [timing] gen_us=2529, norm_us=15921, interp_us=397021, end2end_us=416742, runs=1
+  [cfg] args=2, blocks=9, insts=56, edges=11, branching_blocks=3, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=429498
+  [timing] gen_us=2460, norm_us=16854, interp_us=408841, end2end_us=429498, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=263, edges=413, tree=8.471000e+03, seq=163, stars=1, unions=43, atoms=55, sharing=3.220913e+01, roots=56
   [expr-profile] with_expr=56, missing_expr=0, total_unique_nodes=5479, total_shared_refs=1388, total_unions=132, total_concats=3251, total_stars=45, max_nodes=149@i53, max_depth=38@i16
@@ -3523,8 +3523,8 @@ FUNC compare2pow63
   i55 IN: w32:1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC enlargeAndAppend
   [client:affine]
-  [cfg] args=3, blocks=3, insts=33, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=17644
-  [timing] gen_us=615, norm_us=2842, interp_us=13961, end2end_us=17644, runs=1
+  [cfg] args=3, blocks=3, insts=33, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=16752
+  [timing] gen_us=617, norm_us=2732, interp_us=13147, end2end_us=16752, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=84, edges=102, tree=1.027000e+03, seq=50, stars=0, unions=1, atoms=32, sharing=1.222619e+01, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=1026, total_shared_refs=1, total_unions=1, total_concats=496, total_stars=0, max_nodes=64@i32, max_depth=31@i31
@@ -3563,8 +3563,8 @@ FUNC enlargeAndAppend
   i32 IN: w32:1,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0
 FUNC sqlite3_status
   [client:affine]
-  [cfg] args=4, blocks=3, insts=31, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=17559
-  [timing] gen_us=528, norm_us=2915, interp_us=13916, end2end_us=17559, runs=1
+  [cfg] args=4, blocks=3, insts=31, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=19582
+  [timing] gen_us=579, norm_us=2944, interp_us=15806, end2end_us=19582, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=81, edges=100, tree=9.050000e+02, seq=48, stars=0, unions=2, atoms=30, sharing=1.117284e+01, roots=31
   [expr-profile] with_expr=31, missing_expr=0, total_unique_nodes=903, total_shared_refs=2, total_unions=2, total_concats=435, total_stars=0, max_nodes=60@i30, max_depth=28@i28
@@ -3603,8 +3603,8 @@ FUNC sqlite3_db_status
   [skipped] reason=too_large insts=462
 FUNC sqlite3LookasideUsed
   [client:affine]
-  [cfg] args=2, blocks=3, insts=55, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=138683
-  [timing] gen_us=1492, norm_us=9763, interp_us=126698, end2end_us=138683, runs=1
+  [cfg] args=2, blocks=3, insts=55, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=142814
+  [timing] gen_us=1518, norm_us=8987, interp_us=131689, end2end_us=142814, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=152, edges=194, tree=3.005000e+03, seq=88, stars=0, unions=9, atoms=54, sharing=1.976974e+01, roots=55
   [expr-profile] with_expr=55, missing_expr=0, total_unique_nodes=2961, total_shared_refs=44, total_unions=9, total_concats=1466, total_stars=0, max_nodes=116@i54, max_depth=45@i45
@@ -3665,8 +3665,8 @@ FUNC sqlite3LookasideUsed
   i54 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,4294967295,4294967295,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3BtreeEnterAll
   [client:affine]
-  [cfg] args=1, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1053
-  [timing] gen_us=171, norm_us=660, interp_us=161, end2end_us=1053, runs=1
+  [cfg] args=1, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1172
+  [timing] gen_us=144, norm_us=782, interp_us=176, end2end_us=1172, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=28, tree=1.240000e+02, seq=13, stars=0, unions=1, atoms=11, sharing=4.769231e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -3684,8 +3684,8 @@ FUNC sqlite3BtreeEnterAll
   i11 IN: w32:
 FUNC sqlite3BtreePager
   [client:affine]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=457
-  [timing] gen_us=69, norm_us=336, interp_us=28, end2end_us=457, runs=1
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=479
+  [timing] gen_us=88, norm_us=330, interp_us=31, end2end_us=479, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -3699,8 +3699,8 @@ FUNC sqlite3BtreePager
   i7 IN: w64:
 FUNC sqlite3PagerMemUsed
   [client:affine]
-  [cfg] args=1, blocks=1, insts=31, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=17504
-  [timing] gen_us=521, norm_us=2378, interp_us=14370, end2end_us=17504, runs=1
+  [cfg] args=1, blocks=1, insts=31, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=19076
+  [timing] gen_us=747, norm_us=2601, interp_us=15393, end2end_us=19076, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=60, edges=58, tree=9.010000e+02, seq=29, stars=0, unions=0, atoms=30, sharing=1.501667e+01, roots=31
   [expr-profile] with_expr=31, missing_expr=0, total_unique_nodes=901, total_shared_refs=0, total_unions=0, total_concats=435, total_stars=0, max_nodes=59@i30, max_depth=30@i30
@@ -3737,8 +3737,8 @@ FUNC sqlite3PagerMemUsed
   i30 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0;0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,4294967295,0;0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0,0,0,0,0,0,0
 FUNC sqlite3BtreeConnectionCount
   [client:affine]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=567
-  [timing] gen_us=80, norm_us=364, interp_us=89, end2end_us=567, runs=1
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=802
+  [timing] gen_us=92, norm_us=526, interp_us=116, end2end_us=802, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -3752,8 +3752,8 @@ FUNC sqlite3BtreeConnectionCount
   i7 IN: w32:
 FUNC sqlite3BtreeLeaveAll
   [client:affine]
-  [cfg] args=1, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=917
-  [timing] gen_us=116, norm_us=602, interp_us=162, end2end_us=917, runs=1
+  [cfg] args=1, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1102
+  [timing] gen_us=149, norm_us=738, interp_us=152, end2end_us=1102, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=28, tree=1.240000e+02, seq=13, stars=0, unions=1, atoms=11, sharing=4.769231e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -3771,8 +3771,8 @@ FUNC sqlite3BtreeLeaveAll
   i11 IN: w32:
 FUNC sqlite3_msize
   [client:affine]
-  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=1918
-  [timing] gen_us=143, norm_us=1245, interp_us=483, end2end_us=1918, runs=1
+  [cfg] args=1, blocks=4, insts=13, edges=4, branching_blocks=1, max_succs=2, phis=1, calls=1, returns=1, unreachable=0, elapsed_us=1738
+  [timing] gen_us=147, norm_us=1046, interp_us=490, end2end_us=1738, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=39, edges=52, tree=1.470000e+02, seq=23, stars=0, unions=3, atoms=12, sharing=3.769231e+00, roots=13
   [expr-profile] with_expr=13, missing_expr=0, total_unique_nodes=142, total_shared_refs=5, total_unions=3, total_concats=64, total_stars=0, max_nodes=26@i12, max_depth=9@i12
@@ -3791,8 +3791,8 @@ FUNC sqlite3_msize
   i12 IN: w32:
 FUNC sqlite3DeleteTrigger
   [client:affine]
-  [cfg] args=2, blocks=4, insts=39, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=5833
-  [timing] gen_us=752, norm_us=4328, interp_us=599, end2end_us=5833, runs=1
+  [cfg] args=2, blocks=4, insts=39, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=5236
+  [timing] gen_us=846, norm_us=3581, interp_us=667, end2end_us=5236, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=106, edges=134, tree=1.385000e+03, seq=66, stars=0, unions=1, atoms=38, sharing=1.306604e+01, roots=39
   [expr-profile] with_expr=39, missing_expr=0, total_unique_nodes=1385, total_shared_refs=0, total_unions=1, total_concats=672, total_stars=0, max_nodes=75@i38, max_depth=36@i37
@@ -3837,8 +3837,8 @@ FUNC sqlite3DeleteTrigger
   i38 IN: w1:
 FUNC sqlite3DeleteTable
   [client:affine]
-  [cfg] args=2, blocks=8, insts=29, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=12039
-  [timing] gen_us=468, norm_us=6122, interp_us=5329, end2end_us=12039, runs=1
+  [cfg] args=2, blocks=8, insts=29, edges=11, branching_blocks=4, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=12246
+  [timing] gen_us=492, norm_us=6070, interp_us=5527, end2end_us=12246, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=139, edges=220, tree=9.370000e+02, seq=90, stars=0, unions=20, atoms=28, sharing=6.741007e+00, roots=29
   [expr-profile] with_expr=29, missing_expr=0, total_unique_nodes=832, total_shared_refs=95, total_unions=20, total_concats=429, total_stars=0, max_nodes=68@i28, max_depth=15@i23
@@ -3873,8 +3873,8 @@ FUNC sqlite3DeleteTable
   i28 IN: w1:
 FUNC sqlite3VdbeClearObject
   [client:affine]
-  [cfg] args=2, blocks=7, insts=88, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=54069
-  [timing] gen_us=3839, norm_us=21824, interp_us=27376, end2end_us=54069, runs=1
+  [cfg] args=2, blocks=7, insts=88, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=53609
+  [timing] gen_us=4545, norm_us=19946, interp_us=27746, end2end_us=53609, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=301, edges=425, tree=9.570000e+03, seq=190, stars=1, unions=22, atoms=87, sharing=3.179402e+01, roots=88
   [expr-profile] with_expr=88, missing_expr=0, total_unique_nodes=8925, total_shared_refs=599, total_unions=89, total_concats=4595, total_stars=68, max_nodes=199@i87, max_depth=53@i67
@@ -3968,8 +3968,8 @@ FUNC sqlite3VdbeClearObject
   i87 IN: w32:0,0,0,0,0,0,0,2147483648,0,0,0,0,0;0,0,0,0,0,0,2,2147483647,0,0,0,0,0
 FUNC sqlite3PagerCacheStat
   [client:affine]
-  [cfg] args=4, blocks=3, insts=32, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=18723
-  [timing] gen_us=579, norm_us=2508, interp_us=15407, end2end_us=18723, runs=1
+  [cfg] args=4, blocks=3, insts=32, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=18881
+  [timing] gen_us=570, norm_us=2469, interp_us=15577, end2end_us=18881, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=70, edges=76, tree=9.640000e+02, seq=37, stars=0, unions=1, atoms=31, sharing=1.377143e+01, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=963, total_shared_refs=1, total_unions=1, total_concats=465, total_stars=0, max_nodes=62@i31, max_depth=30@i30
@@ -4007,8 +4007,8 @@ FUNC sqlite3PagerCacheStat
   i31 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,4294967295,0,0,0;0,0,0,0,0,0,0,0,0,0,0,0,1,4294967295,0,0,0,0,0,0,4294967289;0,1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0
 FUNC releaseMemArray
   [client:affine]
-  [cfg] args=2, blocks=19, insts=84, edges=26, branching_blocks=8, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=87979
-  [timing] gen_us=4153, norm_us=21343, interp_us=61239, end2end_us=87979, runs=1
+  [cfg] args=2, blocks=19, insts=84, edges=26, branching_blocks=8, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=96352
+  [timing] gen_us=4647, norm_us=26251, interp_us=63779, end2end_us=96352, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=360, edges=550, tree=1.142900e+04, seq=233, stars=2, unions=41, atoms=83, sharing=3.174722e+01, roots=84
   [expr-profile] with_expr=84, missing_expr=0, total_unique_nodes=8692, total_shared_refs=1511, total_unions=187, total_concats=4844, total_stars=57, max_nodes=223@i83, max_depth=48@i70
@@ -4098,8 +4098,8 @@ FUNC releaseMemArray
   i83 IN: w1:
 FUNC vdbeFreeOpArray
   [client:affine]
-  [cfg] args=3, blocks=9, insts=49, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=19386
-  [timing] gen_us=1784, norm_us=7491, interp_us=9562, end2end_us=19386, runs=1
+  [cfg] args=3, blocks=9, insts=49, edges=11, branching_blocks=3, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=21777
+  [timing] gen_us=1967, norm_us=7713, interp_us=11419, end2end_us=21777, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=168, edges=237, tree=4.283000e+03, seq=109, stars=1, unions=9, atoms=48, sharing=2.549405e+01, roots=49
   [expr-profile] with_expr=49, missing_expr=0, total_unique_nodes=3599, total_shared_refs=496, total_unions=71, total_concats=1936, total_stars=32, max_nodes=117@i39, max_depth=42@i37
@@ -4154,8 +4154,8 @@ FUNC vdbeFreeOpArray
   i48 IN: w32:1,0,0,0,0,4294967295,0,0,0,0,0
 FUNC freeP4
   [client:affine]
-  [cfg] args=3, blocks=15, insts=58, edges=27, branching_blocks=4, max_succs=11, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=13096
-  [timing] gen_us=974, norm_us=7459, interp_us=4470, end2end_us=13096, runs=1
+  [cfg] args=3, blocks=15, insts=58, edges=27, branching_blocks=4, max_succs=11, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=12801
+  [timing] gen_us=1025, norm_us=7006, interp_us=4464, end2end_us=12801, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=178, edges=240, tree=1.326000e+03, seq=108, stars=0, unions=12, atoms=57, sharing=7.449438e+00, roots=58
   [expr-profile] with_expr=58, missing_expr=0, total_unique_nodes=1313, total_shared_refs=13, total_unions=12, total_concats=622, total_stars=0, max_nodes=123@i57, max_depth=17@i45
@@ -4219,8 +4219,8 @@ FUNC freeP4
   i57 IN: w1:
 FUNC freeP4FuncCtx
   [client:affine]
-  [cfg] args=2, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=862
-  [timing] gen_us=123, norm_us=655, interp_us=47, end2end_us=862, runs=1
+  [cfg] args=2, blocks=1, insts=14, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=759
+  [timing] gen_us=148, norm_us=523, interp_us=45, end2end_us=759, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=26, edges=24, tree=1.700000e+02, seq=12, stars=0, unions=0, atoms=13, sharing=6.538462e+00, roots=14
   [expr-profile] with_expr=14, missing_expr=0, total_unique_nodes=170, total_shared_refs=0, total_unions=0, total_concats=78, total_stars=0, max_nodes=25@i13, max_depth=13@i13
@@ -4240,8 +4240,8 @@ FUNC freeP4FuncCtx
   i13 IN: w64:
 FUNC sqlite3KeyInfoUnref
   [client:affine]
-  [cfg] args=1, blocks=5, insts=24, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=4144
-  [timing] gen_us=319, norm_us=1974, interp_us=1746, end2end_us=4144, runs=1
+  [cfg] args=1, blocks=5, insts=24, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=4237
+  [timing] gen_us=439, norm_us=2297, interp_us=1401, end2end_us=4237, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=74, edges=100, tree=5.360000e+02, seq=47, stars=0, unions=3, atoms=23, sharing=7.243243e+00, roots=24
   [expr-profile] with_expr=24, missing_expr=0, total_unique_nodes=533, total_shared_refs=3, total_unions=3, total_concats=253, total_stars=0, max_nodes=47@i23, max_depth=21@i21
@@ -4271,8 +4271,8 @@ FUNC sqlite3KeyInfoUnref
   i23 IN: w32:
 FUNC freeEphemeralFunction
   [client:affine]
-  [cfg] args=2, blocks=3, insts=16, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1654
-  [timing] gen_us=182, norm_us=994, interp_us=415, end2end_us=1654, runs=1
+  [cfg] args=2, blocks=3, insts=16, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1715
+  [timing] gen_us=189, norm_us=1023, interp_us=416, end2end_us=1715, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=36, edges=40, tree=2.280000e+02, seq=19, stars=0, unions=1, atoms=15, sharing=6.333333e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=227, total_shared_refs=1, total_unions=1, total_concats=105, total_stars=0, max_nodes=30@i15, max_depth=14@i14
@@ -4294,8 +4294,8 @@ FUNC freeEphemeralFunction
   i15 IN: w32:
 FUNC sqlite3ValueFree
   [client:affine]
-  [cfg] args=1, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1673
-  [timing] gen_us=175, norm_us=1222, interp_us=227, end2end_us=1673, runs=1
+  [cfg] args=1, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1831
+  [timing] gen_us=255, norm_us=1291, interp_us=213, end2end_us=1831, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=39, edges=46, tree=2.080000e+02, seq=22, stars=0, unions=1, atoms=15, sharing=5.333333e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=208, total_shared_refs=0, total_unions=1, total_concats=95, total_stars=0, max_nodes=29@i15, max_depth=13@i14
@@ -4317,8 +4317,8 @@ FUNC sqlite3ValueFree
   i15 IN: w1:
 FUNC freeP4Mem
   [client:affine]
-  [cfg] args=2, blocks=3, insts=20, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3113
-  [timing] gen_us=248, norm_us=2268, interp_us=532, end2end_us=3113, runs=1
+  [cfg] args=2, blocks=3, insts=20, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3132
+  [timing] gen_us=388, norm_us=2215, interp_us=436, end2end_us=3132, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=64, edges=88, tree=3.900000e+02, seq=39, stars=0, unions=5, atoms=19, sharing=6.093750e+00, roots=20
   [expr-profile] with_expr=20, missing_expr=0, total_unique_nodes=376, total_shared_refs=14, total_unions=5, total_concats=180, total_stars=0, max_nodes=42@i19, max_depth=14@i14
@@ -4344,8 +4344,8 @@ FUNC freeP4Mem
   i19 IN: w32:
 FUNC sqlite3VtabUnlock
   [client:affine]
-  [cfg] args=1, blocks=5, insts=46, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=13677
-  [timing] gen_us=1062, norm_us=7429, interp_us=4967, end2end_us=13677, runs=1
+  [cfg] args=1, blocks=5, insts=46, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=13089
+  [timing] gen_us=1143, norm_us=6107, interp_us=5505, end2end_us=13089, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=138, edges=184, tree=2.068000e+03, seq=85, stars=0, unions=7, atoms=45, sharing=1.498551e+01, roots=46
   [expr-profile] with_expr=46, missing_expr=0, total_unique_nodes=2047, total_shared_refs=21, total_unions=7, total_concats=1004, total_stars=0, max_nodes=96@i45, max_depth=39@i39
@@ -4397,8 +4397,8 @@ FUNC sqlite3VtabUnlock
   i45 IN: w32:0,0,0,0,1,4294967295,0,0,4294967295
 FUNC sqlite3VtabModuleUnref
   [client:affine]
-  [cfg] args=2, blocks=5, insts=33, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=7721
-  [timing] gen_us=556, norm_us=4401, interp_us=2648, end2end_us=7721, runs=1
+  [cfg] args=2, blocks=5, insts=33, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=8673
+  [timing] gen_us=643, norm_us=5264, interp_us=2590, end2end_us=8673, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=103, edges=140, tree=1.067000e+03, seq=63, stars=0, unions=7, atoms=32, sharing=1.035922e+01, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=1046, total_shared_refs=21, total_unions=7, total_concats=510, total_stars=0, max_nodes=70@i32, max_depth=26@i26
@@ -4437,8 +4437,8 @@ FUNC sqlite3VtabModuleUnref
   i32 IN: w32:0,0,0,1,4294967295,0,4294967295
 FUNC deleteTable
   [client:affine]
-  [cfg] args=2, blocks=9, insts=84, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=39115
-  [timing] gen_us=3946, norm_us=23350, interp_us=10764, end2end_us=39115, runs=1
+  [cfg] args=2, blocks=9, insts=84, edges=12, branching_blocks=4, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=46178
+  [timing] gen_us=5223, norm_us=26205, interp_us=13160, end2end_us=46178, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=338, edges=507, tree=1.799800e+04, seq=211, stars=1, unions=42, atoms=83, sharing=5.324852e+01, roots=84
   [expr-profile] with_expr=84, missing_expr=0, total_unique_nodes=10891, total_shared_refs=2303, total_unions=326, total_concats=6193, total_stars=72, max_nodes=193@i83, max_depth=62@i83
@@ -4528,8 +4528,8 @@ FUNC deleteTable
   i83 IN: w1:
 FUNC sqlite3HashInsert
   [client:affine]
-  [cfg] args=3, blocks=19, insts=123, edges=26, branching_blocks=8, max_succs=2, phis=1, calls=6, returns=1, unreachable=0, elapsed_us=467313
-  [timing] gen_us=5626, norm_us=45436, interp_us=414567, end2end_us=467313, runs=1
+  [cfg] args=3, blocks=19, insts=123, edges=26, branching_blocks=8, max_succs=2, phis=1, calls=6, returns=1, unreachable=0, elapsed_us=480869
+  [timing] gen_us=5964, norm_us=55084, interp_us=417826, end2end_us=480869, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=577, edges=908, tree=1.206500e+04, seq=375, stars=0, unions=79, atoms=122, sharing=2.090988e+01, roots=123
   [expr-profile] with_expr=123, missing_expr=0, total_unique_nodes=10930, total_shared_refs=511, total_unions=82, total_concats=5577, total_stars=0, max_nodes=283@i122, max_depth=71@i100
@@ -4658,8 +4658,8 @@ FUNC sqlite3HashInsert
   i122 IN: w32:
 FUNC sqlite3FreeIndex
   [client:affine]
-  [cfg] args=2, blocks=3, insts=42, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=9692
-  [timing] gen_us=951, norm_us=6083, interp_us=2443, end2end_us=9692, runs=1
+  [cfg] args=2, blocks=3, insts=42, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=6, returns=1, unreachable=0, elapsed_us=10358
+  [timing] gen_us=1358, norm_us=5754, interp_us=2985, end2end_us=10358, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=110, edges=136, tree=1.710000e+03, seq=63, stars=0, unions=5, atoms=41, sharing=1.554545e+01, roots=42
   [expr-profile] with_expr=42, missing_expr=0, total_unique_nodes=1696, total_shared_refs=14, total_unions=5, total_concats=829, total_stars=0, max_nodes=86@i41, max_depth=36@i36
@@ -4707,8 +4707,8 @@ FUNC sqlite3FreeIndex
   i41 IN: w16:
 FUNC sqlite3FkDelete
   [client:affine]
-  [cfg] args=2, blocks=16, insts=106, edges=21, branching_blocks=6, max_succs=2, phis=1, calls=4, returns=1, unreachable=0, elapsed_us=177416
-  [timing] gen_us=12949, norm_us=76462, interp_us=83432, end2end_us=177416, runs=1
+  [cfg] args=2, blocks=16, insts=106, edges=21, branching_blocks=6, max_succs=2, phis=1, calls=4, returns=1, unreachable=0, elapsed_us=191121
+  [timing] gen_us=13530, norm_us=84830, interp_us=86680, end2end_us=191121, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=938, edges=1663, tree=1.297530e+05, seq=608, stars=1, unions=223, atoms=105, sharing=1.383294e+02, roots=106
   [expr-profile] with_expr=106, missing_expr=0, total_unique_nodes=29180, total_shared_refs=9319, total_unions=777, total_concats=18373, total_stars=93, max_nodes=335@i79, max_depth=56@i23
@@ -4820,8 +4820,8 @@ FUNC sqlite3FkDelete
   i105 IN: w1:
 FUNC sqlite3DeleteColumnNames
   [client:affine]
-  [cfg] args=2, blocks=7, insts=52, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=12373
-  [timing] gen_us=2212, norm_us=5164, interp_us=4442, end2end_us=12373, runs=1
+  [cfg] args=2, blocks=7, insts=52, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=13308
+  [timing] gen_us=2284, norm_us=6493, interp_us=3895, end2end_us=13308, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=155, edges=205, tree=4.694000e+03, seq=99, stars=1, unions=3, atoms=51, sharing=3.028387e+01, roots=52
   [expr-profile] with_expr=52, missing_expr=0, total_unique_nodes=4140, total_shared_refs=494, total_unions=40, total_concats=2232, total_stars=38, max_nodes=119@i43, max_depth=62@i43
@@ -4879,8 +4879,8 @@ FUNC sqlite3DeleteColumnNames
   i51 IN: w32:
 FUNC sqlite3SelectDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=997
-  [timing] gen_us=135, norm_us=650, interp_us=163, end2end_us=997, runs=1
+  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1136
+  [timing] gen_us=135, norm_us=754, interp_us=184, end2end_us=1136, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=27, edges=30, tree=1.240000e+02, seq=14, stars=0, unions=1, atoms=11, sharing=4.592593e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -4898,8 +4898,8 @@ FUNC sqlite3SelectDelete
   i11 IN: w1:
 FUNC sqlite3ExprListDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1047
-  [timing] gen_us=110, norm_us=736, interp_us=157, end2end_us=1047, runs=1
+  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1060
+  [timing] gen_us=142, norm_us=714, interp_us=157, end2end_us=1060, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=27, edges=30, tree=1.240000e+02, seq=14, stars=0, unions=1, atoms=11, sharing=4.592593e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -4917,8 +4917,8 @@ FUNC sqlite3ExprListDelete
   i11 IN: w1:
 FUNC sqlite3VtabClear
   [client:affine]
-  [cfg] args=2, blocks=12, insts=55, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=56374
-  [timing] gen_us=2052, norm_us=27017, interp_us=26719, end2end_us=56374, runs=1
+  [cfg] args=2, blocks=12, insts=55, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=61020
+  [timing] gen_us=2092, norm_us=29433, interp_us=28816, end2end_us=61020, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=431, edges=751, tree=1.174500e+04, seq=287, stars=1, unions=88, atoms=54, sharing=2.725058e+01, roots=55
   [expr-profile] with_expr=55, missing_expr=0, total_unique_nodes=5391, total_shared_refs=1778, total_unions=152, total_concats=3389, total_stars=32, max_nodes=177@i41, max_depth=41@i41
@@ -4979,8 +4979,8 @@ FUNC sqlite3VtabClear
   i54 IN: w32:
 FUNC vtabDisconnectAll
   [client:affine]
-  [cfg] args=2, blocks=7, insts=58, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=13445
-  [timing] gen_us=2838, norm_us=8357, interp_us=1802, end2end_us=13445, runs=1
+  [cfg] args=2, blocks=7, insts=58, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=13224
+  [timing] gen_us=2907, norm_us=7425, interp_us=1945, end2end_us=13224, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=164, edges=211, tree=6.637000e+03, seq=99, stars=1, unions=6, atoms=57, sharing=4.046951e+01, roots=58
   [expr-profile] with_expr=58, missing_expr=0, total_unique_nodes=5673, total_shared_refs=740, total_unions=86, total_concats=3071, total_stars=41, max_nodes=143@i52, max_depth=45@i52
@@ -5044,8 +5044,8 @@ FUNC vtabDisconnectAll
   i57 IN: w1:
 FUNC exprListDeleteNN
   [client:affine]
-  [cfg] args=2, blocks=4, insts=39, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=7222
-  [timing] gen_us=1237, norm_us=3704, interp_us=2025, end2end_us=7222, runs=1
+  [cfg] args=2, blocks=4, insts=39, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=7456
+  [timing] gen_us=1050, norm_us=3787, interp_us=2322, end2end_us=7456, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=101, edges=123, tree=2.471000e+03, seq=59, stars=1, unions=2, atoms=38, sharing=2.446535e+01, roots=39
   [expr-profile] with_expr=39, missing_expr=0, total_unique_nodes=2165, total_shared_refs=268, total_unions=25, total_concats=1160, total_stars=24, max_nodes=97@i38, max_depth=45@i38
@@ -5090,8 +5090,8 @@ FUNC exprListDeleteNN
   i38 IN: w32:0,0,0,0,1,4294967295,4294967295
 FUNC sqlite3ExprDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1247
-  [timing] gen_us=127, norm_us=838, interp_us=232, end2end_us=1247, runs=1
+  [cfg] args=2, blocks=3, insts=12, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1078
+  [timing] gen_us=141, norm_us=701, interp_us=170, end2end_us=1078, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=27, edges=30, tree=1.240000e+02, seq=14, stars=0, unions=1, atoms=11, sharing=4.592593e+00, roots=12
   [expr-profile] with_expr=12, missing_expr=0, total_unique_nodes=123, total_shared_refs=1, total_unions=1, total_concats=55, total_stars=0, max_nodes=22@i11, max_depth=10@i10
@@ -5109,8 +5109,8 @@ FUNC sqlite3ExprDelete
   i11 IN: w1:
 FUNC sqlite3ExprDeleteNN
   [client:affine]
-  [cfg] args=2, blocks=18, insts=98, edges=25, branching_blocks=8, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=471684
-  [timing] gen_us=4298, norm_us=84105, interp_us=381652, end2end_us=471684, runs=1
+  [cfg] args=2, blocks=18, insts=98, edges=25, branching_blocks=8, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=511748
+  [timing] gen_us=4599, norm_us=106367, interp_us=399161, end2end_us=511748, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1046, edges=1896, tree=2.707200e+04, seq=691, stars=0, unions=257, atoms=97, sharing=2.588145e+01, roots=98
   [expr-profile] with_expr=98, missing_expr=0, total_unique_nodes=11277, total_shared_refs=2555, total_unions=261, total_concats=6606, total_stars=0, max_nodes=248@i96, max_depth=40@i69
@@ -5214,8 +5214,8 @@ FUNC sqlite3ExprDeleteNN
   i97 IN: w32:
 FUNC sqlite3WindowDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=50, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=7225
-  [timing] gen_us=1253, norm_us=4889, interp_us=808, end2end_us=7225, runs=1
+  [cfg] args=2, blocks=3, insts=50, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=9390
+  [timing] gen_us=2308, norm_us=5932, interp_us=834, end2end_us=9390, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=141, edges=182, tree=2.404000e+03, seq=90, stars=0, unions=1, atoms=49, sharing=1.704965e+01, roots=50
   [expr-profile] with_expr=50, missing_expr=0, total_unique_nodes=2403, total_shared_refs=1, total_unions=1, total_concats=1176, total_stars=0, max_nodes=98@i49, max_depth=48@i48
@@ -5271,8 +5271,8 @@ FUNC sqlite3WindowDelete
   i49 IN: w1:
 FUNC sqlite3WindowUnlinkFromSelect
   [client:affine]
-  [cfg] args=1, blocks=5, insts=33, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=6475
-  [timing] gen_us=571, norm_us=4399, interp_us=1377, end2end_us=6475, runs=1
+  [cfg] args=1, blocks=5, insts=33, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=6298
+  [timing] gen_us=618, norm_us=4016, interp_us=1506, end2end_us=6298, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=109, edges=152, tree=1.055000e+03, seq=70, stars=0, unions=6, atoms=32, sharing=9.678899e+00, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=1040, total_shared_refs=15, total_unions=6, total_concats=505, total_stars=0, max_nodes=69@i32, max_depth=27@i27
@@ -5311,8 +5311,8 @@ FUNC sqlite3WindowUnlinkFromSelect
   i32 IN: w1:
 FUNC clearSelect
   [client:affine]
-  [cfg] args=3, blocks=10, insts=85, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=49451
-  [timing] gen_us=7967, norm_us=25018, interp_us=13843, end2end_us=49451, runs=1
+  [cfg] args=3, blocks=10, insts=85, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=55002
+  [timing] gen_us=9500, norm_us=28733, interp_us=13304, end2end_us=55002, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=377, edges=583, tree=3.085200e+04, seq=247, stars=1, unions=44, atoms=84, sharing=8.183554e+01, roots=85
   [expr-profile] with_expr=85, missing_expr=0, total_unique_nodes=16922, total_shared_refs=3782, total_unions=348, total_concats=9923, total_stars=77, max_nodes=246@i79, max_depth=102@i60
@@ -5403,8 +5403,8 @@ FUNC clearSelect
   i84 IN: w1:
 FUNC sqlite3SrcListDelete
   [client:affine]
-  [cfg] args=2, blocks=22, insts=133, edges=30, branching_blocks=9, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=471057
-  [timing] gen_us=19868, norm_us=118282, interp_us=324713, end2end_us=471057, runs=1
+  [cfg] args=2, blocks=22, insts=133, edges=30, branching_blocks=9, max_succs=2, phis=0, calls=10, returns=1, unreachable=0, elapsed_us=517182
+  [timing] gen_us=23987, norm_us=140584, interp_us=344826, end2end_us=517182, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=1411, edges=2555, tree=7.399880e+05, seq=930, stars=1, unions=347, atoms=132, sharing=5.244422e+02, roots=133
   [expr-profile] with_expr=133, missing_expr=0, total_unique_nodes=39697, total_shared_refs=9733, total_unions=1275, total_concats=23315, total_stars=117, max_nodes=356@i118, max_depth=48@i32
@@ -5543,8 +5543,8 @@ FUNC sqlite3SrcListDelete
   i132 IN: w1:
 FUNC sqlite3WindowListDelete
   [client:affine]
-  [cfg] args=2, blocks=4, insts=20, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2252
-  [timing] gen_us=447, norm_us=1409, interp_us=288, end2end_us=2252, runs=1
+  [cfg] args=2, blocks=4, insts=20, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1716
+  [timing] gen_us=430, norm_us=935, interp_us=234, end2end_us=1716, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=56, edges=71, tree=7.780000e+02, seq=33, stars=1, unions=2, atoms=19, sharing=1.389286e+01, roots=20
   [expr-profile] with_expr=20, missing_expr=0, total_unique_nodes=669, total_shared_refs=83, total_unions=15, total_concats=344, total_stars=14, max_nodes=52@i18, max_depth=28@i18
@@ -5570,8 +5570,8 @@ FUNC sqlite3WindowListDelete
   i19 IN: w1:
 FUNC sqlite3WithDelete
   [client:affine]
-  [cfg] args=2, blocks=7, insts=49, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=12905
-  [timing] gen_us=2219, norm_us=4885, interp_us=5334, end2end_us=12905, runs=1
+  [cfg] args=2, blocks=7, insts=49, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=13649
+  [timing] gen_us=2180, norm_us=5255, interp_us=5353, end2end_us=13649, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=148, edges=197, tree=4.609000e+03, seq=95, stars=1, unions=3, atoms=48, sharing=3.114189e+01, roots=49
   [expr-profile] with_expr=49, missing_expr=0, total_unique_nodes=4010, total_shared_refs=535, total_unions=40, total_concats=2189, total_stars=38, max_nodes=119@i42, max_depth=66@i42
@@ -5626,8 +5626,8 @@ FUNC sqlite3WithDelete
   i48 IN: w32:
 FUNC sqlite3IdListDelete
   [client:affine]
-  [cfg] args=2, blocks=8, insts=44, edges=9, branching_blocks=2, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=11682
-  [timing] gen_us=1401, norm_us=5127, interp_us=4791, end2end_us=11682, runs=1
+  [cfg] args=2, blocks=8, insts=44, edges=9, branching_blocks=2, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=10252
+  [timing] gen_us=1255, norm_us=3648, interp_us=4806, end2end_us=10252, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=132, edges=175, tree=2.953000e+03, seq=84, stars=1, unions=3, atoms=43, sharing=2.237121e+01, roots=44
   [expr-profile] with_expr=44, missing_expr=0, total_unique_nodes=2627, total_shared_refs=284, total_unions=35, total_concats=1382, total_stars=33, max_nodes=94@i43, max_depth=44@i31
@@ -5677,8 +5677,8 @@ FUNC sqlite3IdListDelete
   i43 IN: w32:
 FUNC fkTriggerDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=38, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=5076
-  [timing] gen_us=740, norm_us=3601, interp_us=584, end2end_us=5076, runs=1
+  [cfg] args=2, blocks=3, insts=38, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=5367
+  [timing] gen_us=769, norm_us=3836, interp_us=591, end2end_us=5367, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=104, edges=132, tree=1.372000e+03, seq=65, stars=0, unions=1, atoms=37, sharing=1.319231e+01, roots=38
   [expr-profile] with_expr=38, missing_expr=0, total_unique_nodes=1371, total_shared_refs=1, total_unions=1, total_concats=666, total_stars=0, max_nodes=74@i37, max_depth=36@i36
@@ -5722,8 +5722,8 @@ FUNC fkTriggerDelete
   i37 IN: w1:
 FUNC sqlite3DeleteIndexSamples
   [client:affine]
-  [cfg] args=2, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=409
-  [timing] gen_us=73, norm_us=289, interp_us=25, end2end_us=409, runs=1
+  [cfg] args=2, blocks=1, insts=7, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=411
+  [timing] gen_us=79, norm_us=282, interp_us=23, end2end_us=411, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=12, edges=10, tree=3.700000e+01, seq=5, stars=0, unions=0, atoms=6, sharing=3.083333e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=37, total_shared_refs=0, total_unions=0, total_concats=15, total_stars=0, max_nodes=11@i6, max_depth=6@i6
@@ -5736,8 +5736,8 @@ FUNC sqlite3DeleteIndexSamples
   i6 IN: w64:
 FUNC findElementWithHash
   [client:affine]
-  [cfg] args=3, blocks=12, insts=81, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=153240
-  [timing] gen_us=3208, norm_us=26670, interp_us=122206, end2end_us=153240, runs=1
+  [cfg] args=3, blocks=12, insts=81, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=137559
+  [timing] gen_us=3382, norm_us=29174, interp_us=103900, end2end_us=137559, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=393, edges=623, tree=1.158100e+04, seq=254, stars=1, unions=57, atoms=80, sharing=2.946819e+01, roots=81
   [expr-profile] with_expr=81, missing_expr=0, total_unique_nodes=6913, total_shared_refs=606, total_unions=84, total_concats=3623, total_stars=24, max_nodes=189@i76, max_depth=40@i76
@@ -5824,8 +5824,8 @@ FUNC findElementWithHash
   i80 IN: w32:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,4294967295,0,4294967295
 FUNC removeElementGivenHash
   [client:affine]
-  [cfg] args=3, blocks=12, insts=90, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=157987
-  [timing] gen_us=3217, norm_us=53576, interp_us=100019, end2end_us=157987, runs=1
+  [cfg] args=3, blocks=12, insts=90, edges=16, branching_blocks=5, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=171246
+  [timing] gen_us=3443, norm_us=60754, interp_us=105640, end2end_us=171246, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=698, edges=1216, tree=1.984200e+04, seq=457, stars=0, unions=151, atoms=89, sharing=2.842693e+01, roots=90
   [expr-profile] with_expr=90, missing_expr=0, total_unique_nodes=9151, total_shared_refs=1355, total_unions=151, total_concats=5057, total_stars=0, max_nodes=225@i88, max_depth=38@i66
@@ -5921,8 +5921,8 @@ FUNC removeElementGivenHash
   i89 IN: w32:0,0,0,0,0,0,0,0,0,0,0,1,4294967295,0,4294967295;1,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0
 FUNC rehash
   [client:affine]
-  [cfg] args=2, blocks=12, insts=99, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=308605
-  [timing] gen_us=5028, norm_us=53627, interp_us=248258, end2end_us=308605, runs=1
+  [cfg] args=2, blocks=12, insts=99, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=315999
+  [timing] gen_us=5193, norm_us=54843, interp_us=254206, end2end_us=315999, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=531, edges=863, tree=1.836500e+04, seq=345, stars=1, unions=86, atoms=98, sharing=3.458569e+01, roots=99
   [expr-profile] with_expr=99, missing_expr=0, total_unique_nodes=13180, total_shared_refs=3370, total_unions=117, total_concats=8094, total_stars=29, max_nodes=284@i94, max_depth=80@i94
@@ -6027,8 +6027,8 @@ FUNC rehash
   i98 IN: w32:1,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC strHash
   [client:affine]
-  [cfg] args=1, blocks=4, insts=28, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=9896
-  [timing] gen_us=838, norm_us=2024, interp_us=6779, end2end_us=9896, runs=1
+  [cfg] args=1, blocks=4, insts=28, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=10838
+  [timing] gen_us=928, norm_us=2424, interp_us=7170, end2end_us=10838, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=79, edges=101, tree=1.672000e+03, seq=48, stars=1, unions=2, atoms=27, sharing=2.116456e+01, roots=28
   [expr-profile] with_expr=28, missing_expr=0, total_unique_nodes=1424, total_shared_refs=208, total_unions=23, total_concats=768, total_stars=22, max_nodes=73@i25, max_depth=42@i25
@@ -6062,8 +6062,8 @@ FUNC strHash
   i27 IN: w32:
 FUNC insertElement
   [client:affine]
-  [cfg] args=3, blocks=15, insts=96, edges=19, branching_blocks=5, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=105131
-  [timing] gen_us=3942, norm_us=56820, interp_us=43361, end2end_us=105131, runs=1
+  [cfg] args=3, blocks=15, insts=96, edges=19, branching_blocks=5, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=109910
+  [timing] gen_us=3808, norm_us=63614, interp_us=41310, end2end_us=109910, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=689, edges=1186, tree=1.357800e+04, seq=445, stars=0, unions=148, atoms=95, sharing=1.970682e+01, roots=96
   [expr-profile] with_expr=96, missing_expr=0, total_unique_nodes=9831, total_shared_refs=2635, total_unions=152, total_concats=6033, total_stars=0, max_nodes=225@i95, max_depth=45@i58
@@ -6165,8 +6165,8 @@ FUNC insertElement
   i95 IN: w1:
 FUNC sqlite3BeginBenignMalloc
   [client:affine]
-  [cfg] args=0, blocks=3, insts=7, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=733
-  [timing] gen_us=95, norm_us=491, interp_us=91, end2end_us=733, runs=1
+  [cfg] args=0, blocks=3, insts=7, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=578
+  [timing] gen_us=90, norm_us=363, interp_us=79, end2end_us=578, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=18, tree=3.900000e+01, seq=8, stars=0, unions=1, atoms=6, sharing=2.437500e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=38, total_shared_refs=1, total_unions=1, total_concats=15, total_stars=0, max_nodes=12@i6, max_depth=6@i6
@@ -6179,8 +6179,8 @@ FUNC sqlite3BeginBenignMalloc
   i6 IN: w1:
 FUNC sqlite3EndBenignMalloc
   [client:affine]
-  [cfg] args=0, blocks=3, insts=7, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=563
-  [timing] gen_us=78, norm_us=332, interp_us=109, end2end_us=563, runs=1
+  [cfg] args=0, blocks=3, insts=7, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=498
+  [timing] gen_us=55, norm_us=336, interp_us=76, end2end_us=498, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=16, edges=18, tree=3.900000e+01, seq=8, stars=0, unions=1, atoms=6, sharing=2.437500e+00, roots=7
   [expr-profile] with_expr=7, missing_expr=0, total_unique_nodes=38, total_shared_refs=1, total_unions=1, total_concats=15, total_stars=0, max_nodes=12@i6, max_depth=6@i6
@@ -6193,8 +6193,8 @@ FUNC sqlite3EndBenignMalloc
   i6 IN: w1:
 FUNC sqlite3HashClear
   [client:affine]
-  [cfg] args=1, blocks=4, insts=40, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=4964
-  [timing] gen_us=748, norm_us=3363, interp_us=654, end2end_us=4964, runs=1
+  [cfg] args=1, blocks=4, insts=40, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=3955
+  [timing] gen_us=727, norm_us=2511, interp_us=510, end2end_us=3955, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=96, edges=111, tree=1.965000e+03, seq=53, stars=1, unions=2, atoms=39, sharing=2.046875e+01, roots=40
   [expr-profile] with_expr=40, missing_expr=0, total_unique_nodes=1847, total_shared_refs=92, total_unions=18, total_concats=923, total_stars=17, max_nodes=86@i35, max_depth=36@i35
@@ -6240,8 +6240,8 @@ FUNC sqlite3HashClear
   i39 IN: w1:
 FUNC sqlite3StrICmp
   [client:affine]
-  [cfg] args=2, blocks=10, insts=56, edges=12, branching_blocks=3, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=65990
-  [timing] gen_us=2972, norm_us=8976, interp_us=53112, end2end_us=65990, runs=1
+  [cfg] args=2, blocks=10, insts=56, edges=12, branching_blocks=3, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=65289
+  [timing] gen_us=2990, norm_us=7993, interp_us=53203, end2end_us=65289, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=173, edges=233, tree=7.119000e+03, seq=104, stars=1, unions=12, atoms=55, sharing=4.115029e+01, roots=56
   [expr-profile] with_expr=56, missing_expr=0, total_unique_nodes=5651, total_shared_refs=938, total_unions=96, total_concats=3149, total_stars=43, max_nodes=141@i45, max_depth=56@i45
@@ -6303,8 +6303,8 @@ FUNC sqlite3StrICmp
   i55 IN: w32:
 FUNC sqlite3DeleteTriggerStep
   [client:affine]
-  [cfg] args=2, blocks=4, insts=56, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=11452
-  [timing] gen_us=3520, norm_us=6351, interp_us=795, end2end_us=11452, runs=1
+  [cfg] args=2, blocks=4, insts=56, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=8, returns=1, unreachable=0, elapsed_us=12592
+  [timing] gen_us=4860, norm_us=6037, interp_us=778, end2end_us=12592, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=164, edges=215, tree=8.086000e+03, seq=105, stars=1, unions=2, atoms=55, sharing=4.930488e+01, roots=56
   [expr-profile] with_expr=56, missing_expr=0, total_unique_nodes=6807, total_shared_refs=1181, total_unions=51, total_concats=3890, total_stars=50, max_nodes=160@i54, max_depth=100@i54
@@ -6366,8 +6366,8 @@ FUNC sqlite3DeleteTriggerStep
   i55 IN: w1:
 FUNC sqlite3UpsertDelete
   [client:affine]
-  [cfg] args=2, blocks=3, insts=33, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=4095
-  [timing] gen_us=825, norm_us=2616, interp_us=518, end2end_us=4095, runs=1
+  [cfg] args=2, blocks=3, insts=33, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=4575
+  [timing] gen_us=602, norm_us=2877, interp_us=942, end2end_us=4575, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=90, edges=114, tree=1.027000e+03, seq=56, stars=0, unions=1, atoms=32, sharing=1.141111e+01, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=1026, total_shared_refs=1, total_unions=1, total_concats=496, total_stars=0, max_nodes=64@i32, max_depth=31@i31
@@ -6406,8 +6406,8 @@ FUNC sqlite3UpsertDelete
   i32 IN: w1:
 FUNC btreeLeaveAll
   [client:affine]
-  [cfg] args=1, blocks=7, insts=33, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=11127
-  [timing] gen_us=1144, norm_us=4387, interp_us=5316, end2end_us=11127, runs=1
+  [cfg] args=1, blocks=7, insts=33, edges=8, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=10988
+  [timing] gen_us=1155, norm_us=4429, interp_us=5097, end2end_us=10988, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=110, edges=153, tree=2.890000e+03, seq=68, stars=1, unions=8, atoms=32, sharing=2.627273e+01, roots=33
   [expr-profile] with_expr=33, missing_expr=0, total_unique_nodes=2287, total_shared_refs=479, total_unions=60, total_concats=1293, total_stars=27, max_nodes=95@i28, max_depth=41@i26
@@ -6446,8 +6446,8 @@ FUNC btreeLeaveAll
   i32 IN: w32:
 FUNC sqlite3BtreeLeave
   [client:affine]
-  [cfg] args=1, blocks=5, insts=22, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3960
-  [timing] gen_us=306, norm_us=2117, interp_us=1444, end2end_us=3960, runs=1
+  [cfg] args=1, blocks=5, insts=22, edges=6, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=4044
+  [timing] gen_us=314, norm_us=2143, interp_us=1475, end2end_us=4044, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=62, edges=80, tree=4.480000e+02, seq=37, stars=0, unions=3, atoms=21, sharing=7.225806e+00, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=445, total_shared_refs=3, total_unions=3, total_concats=210, total_stars=0, max_nodes=43@i21, max_depth=19@i19
@@ -6475,8 +6475,8 @@ FUNC sqlite3BtreeLeave
   i21 IN: w32:
 FUNC unlockBtreeMutex
   [client:affine]
-  [cfg] args=1, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1041
-  [timing] gen_us=165, norm_us=779, interp_us=57, end2end_us=1041, runs=1
+  [cfg] args=1, blocks=1, insts=15, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=969
+  [timing] gen_us=177, norm_us=691, interp_us=56, end2end_us=969, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=28, edges=26, tree=1.970000e+02, seq=13, stars=0, unions=0, atoms=14, sharing=7.035714e+00, roots=15
   [expr-profile] with_expr=15, missing_expr=0, total_unique_nodes=197, total_shared_refs=0, total_unions=0, total_concats=91, total_stars=0, max_nodes=27@i14, max_depth=14@i14
@@ -6497,8 +6497,8 @@ FUNC unlockBtreeMutex
   i14 IN: w64:
 FUNC sqlite3PcachePagecount
   [client:affine]
-  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=511
-  [timing] gen_us=66, norm_us=325, interp_us=88, end2end_us=511, runs=1
+  [cfg] args=1, blocks=1, insts=8, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=491
+  [timing] gen_us=71, norm_us=295, interp_us=90, end2end_us=491, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=14, edges=12, tree=5.000000e+01, seq=6, stars=0, unions=0, atoms=7, sharing=3.571429e+00, roots=8
   [expr-profile] with_expr=8, missing_expr=0, total_unique_nodes=50, total_shared_refs=0, total_unions=0, total_concats=21, total_stars=0, max_nodes=13@i7, max_depth=7@i7
@@ -6512,8 +6512,8 @@ FUNC sqlite3PcachePagecount
   i7 IN: w32:
 FUNC btreeEnterAll
   [client:affine]
-  [cfg] args=1, blocks=8, insts=47, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=29057
-  [timing] gen_us=2111, norm_us=8995, interp_us=17349, end2end_us=29057, runs=1
+  [cfg] args=1, blocks=8, insts=47, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=30502
+  [timing] gen_us=3047, norm_us=8949, interp_us=17481, end2end_us=30502, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=167, edges=239, tree=5.570000e+03, seq=105, stars=1, unions=14, atoms=46, sharing=3.335329e+01, roots=47
   [expr-profile] with_expr=47, missing_expr=0, total_unique_nodes=4355, total_shared_refs=999, total_unions=128, total_concats=2506, total_stars=39, max_nodes=127@i37, max_depth=48@i35
@@ -6566,8 +6566,8 @@ FUNC btreeEnterAll
   i46 IN: w32:
 FUNC sqlite3BtreeEnter
   [client:affine]
-  [cfg] args=1, blocks=6, insts=23, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3260
-  [timing] gen_us=309, norm_us=2041, interp_us=807, end2end_us=3260, runs=1
+  [cfg] args=1, blocks=6, insts=23, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=3379
+  [timing] gen_us=352, norm_us=2095, interp_us=818, end2end_us=3379, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=57, edges=68, tree=4.510000e+02, seq=32, stars=0, unions=2, atoms=22, sharing=7.912281e+00, roots=23
   [expr-profile] with_expr=23, missing_expr=0, total_unique_nodes=451, total_shared_refs=0, total_unions=2, total_concats=212, total_stars=0, max_nodes=43@i22, max_depth=19@i21
@@ -6596,10 +6596,10 @@ FUNC sqlite3BtreeEnter
   i22 IN: w32:
 FUNC btreeLockCarefully
   [client:affine]
-  [cfg] args=1, blocks=15, insts=70, edges=19, branching_blocks=5, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=30904
-  [timing] gen_us=2813, norm_us=12134, interp_us=15191, end2end_us=30904, runs=1
+  [cfg] args=1, blocks=15, insts=70, edges=19, branching_blocks=5, max_succs=2, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=26624
+  [timing] gen_us=2609, norm_us=12467, interp_us=10812, end2end_us=26624, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
-  [dagstats] nodes=249, edges=356, tree=6.176000e+03, seq=158, stars=2, unions=19, atoms=69, sharing=2.480321e+01, roots=70
+  [dagstats] nodes=217, edges=292, tree=6.196000e+03, seq=126, stars=2, unions=19, atoms=69, sharing=2.855300e+01, roots=70
   [expr-profile] with_expr=70, missing_expr=0, total_unique_nodes=5161, total_shared_refs=747, total_unions=135, total_concats=2754, total_stars=60, max_nodes=163@i69, max_depth=38@i62
   i0 IN: w1:0,0,0,0,1,0,0,0,0,1,0;0,0,0,1,0,0,0,0,1,0,0;0,0,1,0,0,0,0,1,0,0,0;0,1,0,0,0,0,1,0,0,0,0;1,0,0,0,0,1,0,0,0,0,0
   i1 IN: w1:0,0,0,0,1,0,0,0,0,1,0;0,0,0,1,0,0,0,0,1,0,0;0,0,1,0,0,0,0,1,0,0,0;0,1,0,0,0,0,1,0,0,0,0;1,0,0,0,0,1,0,0,0,0,0
@@ -6673,8 +6673,8 @@ FUNC btreeLockCarefully
   i69 IN: w1:
 FUNC sqlite3_mutex_try
   [client:affine]
-  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2416
-  [timing] gen_us=252, norm_us=1351, interp_us=726, end2end_us=2416, runs=1
+  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=2551
+  [timing] gen_us=242, norm_us=1348, interp_us=857, end2end_us=2551, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=45, edges=54, tree=2.660000e+02, seq=25, stars=0, unions=2, atoms=17, sharing=5.911111e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=263, total_shared_refs=3, total_unions=2, total_concats=122, total_stars=0, max_nodes=35@i17, max_depth=12@i12
@@ -6698,8 +6698,8 @@ FUNC sqlite3_mutex_try
   i17 IN: w32:
 FUNC lockBtreeMutex
   [client:affine]
-  [cfg] args=1, blocks=1, insts=20, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1361
-  [timing] gen_us=194, norm_us=1027, interp_us=81, end2end_us=1361, runs=1
+  [cfg] args=1, blocks=1, insts=20, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1465
+  [timing] gen_us=263, norm_us=1053, interp_us=80, end2end_us=1465, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=38, edges=36, tree=3.620000e+02, seq=18, stars=0, unions=0, atoms=19, sharing=9.526316e+00, roots=20
   [expr-profile] with_expr=20, missing_expr=0, total_unique_nodes=362, total_shared_refs=0, total_unions=0, total_concats=171, total_stars=0, max_nodes=37@i19, max_depth=19@i19
@@ -6725,8 +6725,8 @@ FUNC lockBtreeMutex
   i19 IN: w64:
 FUNC countLookasideSlots
   [client:affine]
-  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=2753
-  [timing] gen_us=348, norm_us=1219, interp_us=1081, end2end_us=2753, runs=1
+  [cfg] args=1, blocks=4, insts=18, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=2611
+  [timing] gen_us=367, norm_us=1016, interp_us=1126, end2end_us=2611, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=50, edges=63, tree=6.090000e+02, seq=29, stars=1, unions=2, atoms=17, sharing=1.218000e+01, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=524, total_shared_refs=63, total_unions=14, total_concats=264, total_stars=13, max_nodes=44@i15, max_depth=24@i15
@@ -6750,8 +6750,8 @@ FUNC countLookasideSlots
   i17 IN: w32:
 FUNC sqlite3_vfs_find
   [client:affine]
-  [cfg] args=1, blocks=12, insts=49, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=16922
-  [timing] gen_us=1330, norm_us=8847, interp_us=6362, end2end_us=16922, runs=1
+  [cfg] args=1, blocks=12, insts=49, edges=15, branching_blocks=4, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=16557
+  [timing] gen_us=1189, norm_us=8009, interp_us=6909, end2end_us=16557, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=195, edges=291, tree=3.353000e+03, seq=127, stars=1, unions=18, atoms=48, sharing=1.719487e+01, roots=49
   [expr-profile] with_expr=49, missing_expr=0, total_unique_nodes=2975, total_shared_refs=340, total_unions=45, total_concats=1574, total_stars=28, max_nodes=127@i48, max_depth=40@i41
@@ -6806,8 +6806,8 @@ FUNC sqlite3_vfs_find
   i48 IN: w1:
 FUNC sqlite3_initialize
   [client:affine]
-  [cfg] args=0, blocks=30, insts=120, edges=44, branching_blocks=15, max_succs=2, phis=0, calls=18, returns=1, unreachable=0, elapsed_us=9312732
-  [timing] gen_us=6592, norm_us=154971, interp_us=9148199, end2end_us=9312732, runs=1
+  [cfg] args=0, blocks=30, insts=120, edges=44, branching_blocks=15, max_succs=2, phis=0, calls=18, returns=1, unreachable=0, elapsed_us=9677238
+  [timing] gen_us=6947, norm_us=214658, interp_us=9451770, end2end_us=9677238, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2117, edges=3994, tree=2.521280e+05, seq=1402, stars=0, unions=595, atoms=119, sharing=1.190968e+02, roots=120
   [expr-profile] with_expr=120, missing_expr=0, total_unique_nodes=16370, total_shared_refs=3798, total_unions=601, total_concats=9423, total_stars=0, max_nodes=324@i119, max_depth=42@i118
@@ -6933,8 +6933,8 @@ FUNC sqlite3_initialize
   i119 IN: w32:
 FUNC sqlite3MutexAlloc
   [client:affine]
-  [cfg] args=1, blocks=4, insts=15, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1852
-  [timing] gen_us=160, norm_us=1092, interp_us=513, end2end_us=1852, runs=1
+  [cfg] args=1, blocks=4, insts=15, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1987
+  [timing] gen_us=217, norm_us=1145, interp_us=523, end2end_us=1987, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=38, edges=46, tree=1.830000e+02, seq=21, stars=0, unions=2, atoms=14, sharing=4.815789e+00, roots=15
   [expr-profile] with_expr=15, missing_expr=0, total_unique_nodes=180, total_shared_refs=3, total_unions=2, total_concats=82, total_stars=0, max_nodes=29@i14, max_depth=10@i12
@@ -6955,8 +6955,8 @@ FUNC sqlite3MutexAlloc
   i14 IN: w32:1,0,4294967295,0,0
 FUNC sqlite3MemoryBarrier
   [client:affine]
-  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=159
-  [timing] gen_us=37, norm_us=96, interp_us=7, end2end_us=159, runs=1
+  [cfg] args=0, blocks=1, insts=2, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=0, returns=1, unreachable=0, elapsed_us=170
+  [timing] gen_us=46, norm_us=91, interp_us=8, end2end_us=170, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=2, edges=0, tree=2.000000e+00, seq=0, stars=0, unions=0, atoms=1, sharing=1.000000e+00, roots=2
   [expr-profile] with_expr=2, missing_expr=0, total_unique_nodes=2, total_shared_refs=0, total_unions=0, total_concats=0, total_stars=0, max_nodes=1@i0, max_depth=1@i0
@@ -6964,8 +6964,8 @@ FUNC sqlite3MemoryBarrier
   i1 IN: w64:
 FUNC sqlite3MutexInit
   [client:affine]
-  [cfg] args=0, blocks=6, insts=79, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=49335
-  [timing] gen_us=2986, norm_us=39353, interp_us=6277, end2end_us=49335, runs=1
+  [cfg] args=0, blocks=6, insts=79, edges=7, branching_blocks=2, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=48916
+  [timing] gen_us=4310, norm_us=37713, interp_us=6128, end2end_us=48916, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=368, edges=578, tree=1.001300e+04, seq=221, stars=0, unions=68, atoms=78, sharing=2.720924e+01, roots=79
   [expr-profile] with_expr=79, missing_expr=0, total_unique_nodes=8040, total_shared_refs=1973, total_unions=68, total_concats=4899, total_stars=0, max_nodes=223@i78, max_depth=69@i78
@@ -7050,8 +7050,8 @@ FUNC sqlite3MutexInit
   i78 IN: w32:
 FUNC sqlite3MallocInit
   [client:affine]
-  [cfg] args=0, blocks=9, insts=32, edges=13, branching_blocks=5, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=34001
-  [timing] gen_us=726, norm_us=16095, interp_us=16857, end2end_us=34001, runs=1
+  [cfg] args=0, blocks=9, insts=32, edges=13, branching_blocks=5, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=40541
+  [timing] gen_us=654, norm_us=21402, interp_us=18206, end2end_us=40541, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=280, edges=496, tree=2.786000e+03, seq=181, stars=0, unions=67, atoms=31, sharing=9.950000e+00, roots=32
   [expr-profile] with_expr=32, missing_expr=0, total_unique_nodes=1397, total_shared_refs=435, total_unions=67, total_concats=833, total_stars=0, max_nodes=99@i31, max_depth=20@i29
@@ -7089,8 +7089,8 @@ FUNC sqlite3MallocInit
   i31 IN: w32:
 FUNC sqlite3RegisterBuiltinFunctions
   [client:affine]
-  [cfg] args=0, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=394
-  [timing] gen_us=73, norm_us=266, interp_us=21, end2end_us=394, runs=1
+  [cfg] args=0, blocks=1, insts=5, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=348
+  [timing] gen_us=75, norm_us=217, interp_us=22, end2end_us=348, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=8, edges=6, tree=1.700000e+01, seq=3, stars=0, unions=0, atoms=4, sharing=2.125000e+00, roots=5
   [expr-profile] with_expr=5, missing_expr=0, total_unique_nodes=17, total_shared_refs=0, total_unions=0, total_concats=6, total_stars=0, max_nodes=7@i4, max_depth=4@i4
@@ -7101,8 +7101,8 @@ FUNC sqlite3RegisterBuiltinFunctions
   i4 IN: w64:
 FUNC sqlite3PcacheInitialize
   [client:affine]
-  [cfg] args=0, blocks=3, insts=9, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1561
-  [timing] gen_us=90, norm_us=1180, interp_us=240, end2end_us=1561, runs=1
+  [cfg] args=0, blocks=3, insts=9, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=1499
+  [timing] gen_us=94, norm_us=1103, interp_us=251, end2end_us=1499, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=31, edges=44, tree=8.300000e+01, seq=18, stars=0, unions=4, atoms=8, sharing=2.677419e+00, roots=9
   [expr-profile] with_expr=9, missing_expr=0, total_unique_nodes=74, total_shared_refs=9, total_unions=4, total_concats=33, total_stars=0, max_nodes=19@i8, max_depth=8@i8
@@ -7117,8 +7117,8 @@ FUNC sqlite3PcacheInitialize
   i8 IN: w32:
 FUNC sqlite3OsInit
   [client:affine]
-  [cfg] args=0, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1999
-  [timing] gen_us=195, norm_us=1243, interp_us=502, end2end_us=1999, runs=1
+  [cfg] args=0, blocks=4, insts=16, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=1993
+  [timing] gen_us=168, norm_us=1294, interp_us=463, end2end_us=1993, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=40, edges=48, tree=2.120000e+02, seq=22, stars=0, unions=2, atoms=15, sharing=5.300000e+00, roots=16
   [expr-profile] with_expr=16, missing_expr=0, total_unique_nodes=209, total_shared_refs=3, total_unions=2, total_concats=96, total_stars=0, max_nodes=31@i15, max_depth=11@i13
@@ -7140,8 +7140,8 @@ FUNC sqlite3OsInit
   i15 IN: w32:
 FUNC sqlite3PCacheBufferSetup
   [client:affine]
-  [cfg] args=3, blocks=13, insts=68, edges=17, branching_blocks=5, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=501209
-  [timing] gen_us=2642, norm_us=37258, interp_us=460091, end2end_us=501209, runs=1
+  [cfg] args=3, blocks=13, insts=68, edges=17, branching_blocks=5, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=513001
+  [timing] gen_us=2435, norm_us=43458, interp_us=465826, end2end_us=513001, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=554, edges=971, tree=2.333000e+04, seq=357, stars=1, unions=128, atoms=67, sharing=4.211191e+01, roots=68
   [expr-profile] with_expr=68, missing_expr=0, total_unique_nodes=6350, total_shared_refs=1376, total_unions=156, total_concats=3661, total_stars=24, max_nodes=193@i63, max_depth=48@i63
@@ -7215,8 +7215,8 @@ FUNC sqlite3PCacheBufferSetup
   i67 IN: w32:0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC sqlite3_mutex_free
   [client:affine]
-  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=897
-  [timing] gen_us=131, norm_us=567, interp_us=141, end2end_us=897, runs=1
+  [cfg] args=1, blocks=3, insts=10, edges=3, branching_blocks=1, max_succs=2, phis=0, calls=1, returns=1, unreachable=0, elapsed_us=1098
+  [timing] gen_us=122, norm_us=752, interp_us=148, end2end_us=1098, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=23, edges=26, tree=8.400000e+01, seq=12, stars=0, unions=1, atoms=9, sharing=3.652174e+00, roots=10
   [expr-profile] with_expr=10, missing_expr=0, total_unique_nodes=83, total_shared_refs=1, total_unions=1, total_concats=36, total_stars=0, max_nodes=18@i9, max_depth=8@i8
@@ -7232,8 +7232,8 @@ FUNC sqlite3_mutex_free
   i9 IN: w1:
 FUNC sqlite3_malloc
   [client:affine]
-  [cfg] args=1, blocks=7, insts=21, edges=8, branching_blocks=2, max_succs=2, phis=1, calls=2, returns=1, unreachable=0, elapsed_us=5606
-  [timing] gen_us=259, norm_us=2671, interp_us=2582, end2end_us=5606, runs=1
+  [cfg] args=1, blocks=7, insts=21, edges=8, branching_blocks=2, max_succs=2, phis=1, calls=2, returns=1, unreachable=0, elapsed_us=5956
+  [timing] gen_us=290, norm_us=2503, interp_us=3038, end2end_us=5956, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=69, edges=96, tree=3.830000e+02, seq=41, stars=0, unions=7, atoms=20, sharing=5.550725e+00, roots=21
   [expr-profile] with_expr=21, missing_expr=0, total_unique_nodes=366, total_shared_refs=17, total_unions=7, total_concats=174, total_stars=0, max_nodes=46@i20, max_depth=13@i20
@@ -7260,8 +7260,8 @@ FUNC sqlite3_malloc
   i20 IN: w32:1,0,0,0,4294967295,0,0,0,0
 FUNC sqlite3_os_init
   [client:affine]
-  [cfg] args=0, blocks=5, insts=22, edges=5, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=6451
-  [timing] gen_us=541, norm_us=1655, interp_us=4071, end2end_us=6451, runs=1
+  [cfg] args=0, blocks=5, insts=22, edges=5, branching_blocks=1, max_succs=2, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=5024
+  [timing] gen_us=418, norm_us=1299, interp_us=3145, end2end_us=5024, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=63, edges=81, tree=1.071000e+03, seq=38, stars=1, unions=2, atoms=21, sharing=1.700000e+01, roots=22
   [expr-profile] with_expr=22, missing_expr=0, total_unique_nodes=905, total_shared_refs=134, total_unions=20, total_concats=479, total_stars=19, max_nodes=55@i18, max_depth=34@i18
@@ -7289,8 +7289,8 @@ FUNC sqlite3_os_init
   i21 IN: w32:
 FUNC sqlite3_vfs_register
   [client:affine]
-  [cfg] args=2, blocks=8, insts=51, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=30032
-  [timing] gen_us=1358, norm_us=10381, interp_us=17926, end2end_us=30032, runs=1
+  [cfg] args=2, blocks=8, insts=51, edges=10, branching_blocks=3, max_succs=2, phis=0, calls=5, returns=1, unreachable=0, elapsed_us=29987
+  [timing] gen_us=960, norm_us=10588, interp_us=17985, end2end_us=29987, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=193, edges=284, tree=2.371000e+03, seq=121, stars=0, unions=21, atoms=50, sharing=1.228497e+01, roots=51
   [expr-profile] with_expr=51, missing_expr=0, total_unique_nodes=2257, total_shared_refs=114, total_unions=21, total_concats=1139, total_stars=0, max_nodes=120@i50, max_depth=34@i44
@@ -7347,8 +7347,8 @@ FUNC sqlite3_vfs_register
   i50 IN: w32:1,0,0,0,0,0,4294967295,0,0,0,0,0,0
 FUNC vfsUnlink
   [client:affine]
-  [cfg] args=1, blocks=16, insts=57, edges=21, branching_blocks=6, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=45504
-  [timing] gen_us=1956, norm_us=13569, interp_us=29457, end2end_us=45504, runs=1
+  [cfg] args=1, blocks=16, insts=57, edges=21, branching_blocks=6, max_succs=2, phis=1, calls=0, returns=1, unreachable=0, elapsed_us=50668
+  [timing] gen_us=2015, norm_us=15948, interp_us=31838, end2end_us=50668, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=269, edges=423, tree=4.940000e+03, seq=175, stars=1, unions=36, atoms=56, sharing=1.836431e+01, roots=57
   [expr-profile] with_expr=57, missing_expr=0, total_unique_nodes=3703, total_shared_refs=607, total_unions=105, total_concats=2004, total_stars=35, max_nodes=143@i56, max_depth=31@i56
@@ -7413,8 +7413,8 @@ FUNC unixOpen
   [skipped] reason=too_large insts=352
 FUNC unixDelete
   [client:affine]
-  [cfg] args=3, blocks=14, insts=61, edges=18, branching_blocks=5, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=193768
-  [timing] gen_us=1572, norm_us=12171, interp_us=179341, end2end_us=193768, runs=1
+  [cfg] args=3, blocks=14, insts=61, edges=18, branching_blocks=5, max_succs=2, phis=0, calls=7, returns=1, unreachable=0, elapsed_us=198269
+  [timing] gen_us=2150, norm_us=12635, interp_us=182764, end2end_us=198269, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=232, edges=342, tree=2.981000e+03, seq=144, stars=0, unions=27, atoms=60, sharing=1.284914e+01, roots=61
   [expr-profile] with_expr=61, missing_expr=0, total_unique_nodes=2884, total_shared_refs=97, total_unions=27, total_concats=1433, total_stars=0, max_nodes=146@i60, max_depth=36@i49
@@ -7481,8 +7481,8 @@ FUNC unixDelete
   i60 IN: w32:1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 FUNC unixAccess
   [client:affine]
-  [cfg] args=4, blocks=8, insts=45, edges=10, branching_blocks=3, max_succs=2, phis=2, calls=2, returns=1, unreachable=0, elapsed_us=34521
-  [timing] gen_us=938, norm_us=7432, interp_us=25811, end2end_us=34521, runs=1
+  [cfg] args=4, blocks=8, insts=45, edges=10, branching_blocks=3, max_succs=2, phis=2, calls=2, returns=1, unreachable=0, elapsed_us=33519
+  [timing] gen_us=1194, norm_us=6579, interp_us=25283, end2end_us=33519, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=159, edges=228, tree=1.653000e+03, seq=99, stars=0, unions=15, atoms=44, sharing=1.039623e+01, roots=45
   [expr-profile] with_expr=45, missing_expr=0, total_unique_nodes=1597, total_shared_refs=56, total_unions=15, total_concats=789, total_stars=0, max_nodes=102@i44, max_depth=27@i27
@@ -7529,6 +7529,5 @@ FUNC unixAccess
   i40 IN: w32:0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0;0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0
   i41 IN: w32:0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0
   i42 IN: w32:0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0
-  i43 IN: w32:0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0,0
-  i44 IN: w32:1,0,0,0
+  i43 IN: w32:0,0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0;0,0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0;0,0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0;0,0,1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0;1,0,0,0,0,0,0,0,4294967295,0,0,0,0,0,0,0
 [TIMEOUT] 40s

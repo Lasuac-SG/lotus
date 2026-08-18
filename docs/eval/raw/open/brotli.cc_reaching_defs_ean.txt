@@ -1,8 +1,9 @@
-[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=1502
 FUNC ParseInt
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -101,6 +102,7 @@ FUNC NextFile
   [skipped] reason=too_large insts=157
 FUNC OpenFiles
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -170,6 +172,7 @@ FUNC OpenFiles
   i66 IN: arg0,i1,i10,i12,i13,i14,i16,i17,i18,i19,i2,i20,i24,i25,i26,i28,i29,i3,i30,i31,i32,i37,i39,i40,i42,i43,i44,i46,i48,i49,i50,i51,i52,i54,i55,i56,i58,i59,i60,i61,i62,i64,i7,i9
 FUNC PrintFileProcessingProgress
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -246,6 +249,7 @@ FUNC CloseFiles
   [skipped] reason=too_large insts=162
 FUNC BrotliEncoderSetParameter
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -298,6 +302,7 @@ FUNC BrotliEncoderSetParameter
   i49 IN: arg0,arg1,arg2,i11,i12,i14,i15,i17,i18,i20,i22,i23,i24,i25,i27,i28,i29,i3,i31,i32,i33,i34,i36,i37,i39,i4,i40,i42,i44,i45,i46,i48,i5,i8,i9
 FUNC BrotliEncoderCreateInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -367,6 +372,7 @@ FUNC BrotliEncoderCreateInstance
   i66 IN: arg0,arg1,arg2,i10,i14,i16,i17,i19,i20,i22,i23,i25,i26,i27,i3,i30,i31,i33,i34,i36,i37,i39,i41,i43,i44,i45,i46,i48,i49,i5,i51,i52,i55,i56,i60,i62,i65,i7,i9
 FUNC BrotliEncoderDestroyInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -452,6 +458,7 @@ FUNC BrotliEncoderDestroyInstance
   i82 IN: arg0,i1,i10,i11,i12,i17,i18,i23,i24,i25,i30,i31,i32,i37,i38,i39,i4,i44,i45,i46,i51,i52,i53,i56,i57,i58,i6,i61,i62,i63,i66,i67,i68,i7,i71,i72,i77,i79
 FUNC BrotliEncoderMaxCompressedSize
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0
@@ -477,6 +484,7 @@ FUNC ExtendLastCommand
   [skipped] reason=too_large insts=337
 FUNC UpdateLastProcessedPos
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -512,6 +520,7 @@ FUNC UpdateLastProcessedPos
   i32 IN: arg0,i1,i10,i11,i12,i15,i16,i18,i2,i21,i22,i23,i24,i25,i26,i29,i30,i31,i4,i7,i8,i9
 FUNC BrotliEncoderIsFinished
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -527,6 +536,7 @@ FUNC BrotliEncoderIsFinished
   i12 IN: arg0,i1,i11,i2,i3,i6,i7,i8,i9
 FUNC BrotliEncoderHasMoreOutput
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -535,6 +545,7 @@ FUNC BrotliEncoderHasMoreOutput
   i5 IN: arg0,i1,i2,i3,i4
 FUNC BrotliEncoderTakeOutput
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -578,9 +589,11 @@ FUNC BrotliEncoderTakeOutput
   i40 IN: arg0,arg1,i10,i11,i15,i17,i18,i2,i20,i22,i23,i24,i27,i28,i29,i3,i30,i31,i36,i37,i38,i5,i6,i8,i9
 FUNC BrotliEncoderVersion
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
 FUNC BrotliEncoderPrepareDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6
   i1 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6
   i2 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6
@@ -633,6 +646,7 @@ FUNC BrotliEncoderPrepareDictionary
   i49 IN: arg0,arg1,arg2,arg3,arg4,arg5,arg6,i10,i12,i14,i15,i17,i18,i19,i20,i22,i24,i25,i26,i27,i28,i30,i32,i34,i36,i41,i42,i46,i48,i8
 FUNC BrotliEncoderDestroyPreparedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -665,6 +679,7 @@ FUNC BrotliEncoderDestroyPreparedDictionary
   i29 IN: arg0,i1,i10,i11,i13,i15,i16,i19,i20,i22,i23,i3,i5,i6,i7,i9
 FUNC BrotliEncoderAttachPreparedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -791,6 +806,7 @@ FUNC BrotliEncoderGetPreparedDictionarySize
   [skipped] reason=too_large insts=186
 FUNC BrotliTrieSub
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -833,6 +849,7 @@ FUNC BrotliTrieSub
   i39 IN: arg0,arg1,arg2,i11,i12,i13,i14,i15,i16,i18,i19,i20,i22,i23,i24,i25,i26,i27,i29,i3,i30,i31,i33,i34,i35,i36,i38,i4,i5,i7,i8,i9
 FUNC BrotliInitSharedEncoderDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -902,6 +919,7 @@ FUNC BrotliTrieAdd
   [skipped] reason=too_large insts=386
 FUNC BrotliCleanupSharedEncoderDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -997,6 +1015,7 @@ FUNC BrotliCleanupSharedEncoderDictionary
   i92 IN: arg0,arg1,i10,i11,i13,i15,i16,i18,i19,i22,i26,i27,i28,i3,i30,i31,i33,i34,i35,i37,i38,i39,i41,i42,i43,i45,i48,i5,i50,i52,i55,i56,i57,i59,i6,i60,i62,i63,i64,i66,i67,i68,i70,i71,i72,i74,i77,i78,i8,i80,i82,i83,i85,i86,i88,i89
 FUNC BrotliCreateManagedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -1019,6 +1038,7 @@ FUNC BrotliCreateManagedDictionary
   i19 IN: arg0,arg1,arg2,i11,i12,i14,i15,i16,i18,i3,i5,i7,i9
 FUNC BrotliDestroyManagedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -1029,6 +1049,7 @@ FUNC BrotliDestroyManagedDictionary
   i7 IN: arg0,i1,i3,i4
 FUNC BrotliInitMemoryManager
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -1046,6 +1067,7 @@ FUNC BrotliInitMemoryManager
   i14 IN: arg0,arg1,arg2,arg3,i10,i12,i13,i4,i5,i6,i7,i8
 FUNC BrotliAllocate
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -1061,6 +1083,7 @@ FUNC BrotliAllocate
   i12 IN: arg0,arg1,i2,i3,i4,i5,i6,i8
 FUNC BrotliFree
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -1071,10 +1094,12 @@ FUNC BrotliFree
   i7 IN: arg0,arg1,i2,i3,i4,i5
 FUNC BrotliWipeOutMemoryManager
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
 FUNC BrotliBootstrapAlloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -1093,6 +1118,7 @@ FUNC BrotliBootstrapAlloc
   i15 IN: arg0,arg1,arg2,arg3,i10,i12,i14,i4,i5,i6,i8
 FUNC BrotliBootstrapFree
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -1108,6 +1134,7 @@ FUNC BrotliBootstrapFree
   i12 IN: arg0,arg1,i2,i4,i5,i7,i8
 FUNC BrotliInitDistanceParams
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -1234,6 +1261,7 @@ FUNC ContextBlockSplitterFinishBlock
   [skipped] reason=too_large insts=1151
 FUNC BrotliOptimizeHistograms
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0
@@ -1297,6 +1325,7 @@ FUNC BrotliOptimizeHistograms
   i60 IN: arg0,arg1,i0,i10,i12,i14,i16,i17,i19,i21,i23,i24,i26,i28,i29,i3,i31,i33,i34,i36,i37,i39,i41,i42,i44,i46,i47,i49,i51,i52,i54,i56,i57,i7,i9
 FUNC BrotliIsMostlyUTF8
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4
   i2 IN: arg0,arg1,arg2,arg3,arg4
@@ -1427,6 +1456,7 @@ FUNC BrotliIsMostlyUTF8
   i127 IN: arg0,arg1,arg2,arg3,arg4,i10,i100,i101,i102,i103,i104,i106,i108,i109,i111,i114,i115,i116,i118,i120,i122,i123,i124,i125,i126,i13,i14,i15,i16,i20,i21,i22,i23,i24,i25,i27,i29,i30,i32,i33,i34,i35,i36,i38,i39,i40,i41,i42,i44,i46,i47,i49,i50,i51,i52,i53,i55,i56,i57,i58,i59,i61,i62,i63,i64,i65,i66,i67,i68,i7,i70,i71,i72,i73,i75,i76,i77,i78,i79,i81,i82,i83,i84,i85,i87,i88,i89,i9,i90,i91,i93,i94,i95,i96,i97,i98,i99
 FUNC BrotliCreateBackwardReferences
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg10,arg11,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
   i1 IN: arg0,arg1,arg10,arg11,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
   i2 IN: arg0,arg1,arg10,arg11,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
@@ -1526,6 +1556,7 @@ FUNC CreateBackwardReferencesNH65
   [skipped] reason=too_large insts=2941
 FUNC BrotliInitZopfliNodes
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -1588,6 +1619,7 @@ FUNC BrotliZopfliComputeShortestPath
   [skipped] reason=too_large insts=2605
 FUNC ZopfliCostModelSetFromLiteralCosts
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -1730,6 +1762,7 @@ FUNC EvaluateNode
   [skipped] reason=too_large insts=268
 FUNC BrotliCreateZopfliBackwardReferences
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg10,arg11,arg12,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
   i1 IN: arg0,arg1,arg10,arg11,arg12,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
   i2 IN: arg0,arg1,arg10,arg11,arg12,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9
@@ -1825,12 +1858,14 @@ FUNC BrotliPopulationCostDistance
   [skipped] reason=too_large insts=771
 FUNC BrotliInitBlockSplit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
   i3 IN: arg0,i1
 FUNC BrotliDestroyBlockSplit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -1889,6 +1924,7 @@ FUNC BrotliHistogramCombineCommand
   [skipped] reason=too_large insts=366
 FUNC BrotliHistogramBitCostDistanceCommand
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2015,6 +2051,7 @@ FUNC BrotliHistogramCombineDistance
   [skipped] reason=too_large insts=366
 FUNC BrotliHistogramBitCostDistanceDistance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2139,6 +2176,7 @@ FUNC CreatePreparedDictionary
   [skipped] reason=too_large insts=441
 FUNC DestroyPreparedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -2150,6 +2188,7 @@ FUNC DestroyPreparedDictionary
   i8 IN: arg0,arg1,i2,i4
 FUNC AttachPreparedDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
@@ -2231,6 +2270,7 @@ FUNC BuildAndStoreLiteralPrefixCode
   [skipped] reason=too_large insts=223
 FUNC EmitUncompressedMetaBlock
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4
   i2 IN: arg0,arg1,arg2,arg3,arg4
@@ -2387,6 +2427,7 @@ FUNC BrotliCompressFragmentTwoPassImpl17
   [skipped] reason=too_large insts=1999
 FUNC BrotliSetDepth
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0
@@ -2471,6 +2512,7 @@ FUNC BrotliFindAllStaticDictionaryMatchesFor
   [skipped] reason=too_large insts=3082
 FUNC BrotliDecoderSetParameter
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2499,6 +2541,7 @@ FUNC BrotliDecoderSetParameter
   i25 IN: arg0,arg1,arg2,i10,i11,i12,i13,i14,i16,i17,i18,i19,i20,i21,i22,i24,i3,i4,i5,i8,i9
 FUNC BrotliDecoderCreateInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2534,6 +2577,7 @@ FUNC BrotliDecoderCreateInstance
   i32 IN: arg0,arg1,arg2,i11,i13,i16,i17,i19,i21,i22,i27,i31,i4,i5,i6,i8
 FUNC BrotliDecoderDestroyInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -2550,6 +2594,7 @@ FUNC BrotliDecoderDestroyInstance
   i13 IN: arg0,i1,i10,i3,i4,i6,i7
 FUNC BrotliDecoderAttachDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -2654,6 +2699,7 @@ FUNC BrotliDecoderAttachDictionary
   i101 IN: arg0,arg1,arg2,arg3,i100,i11,i12,i14,i15,i17,i19,i20,i21,i22,i24,i25,i26,i27,i29,i30,i32,i33,i34,i35,i39,i4,i41,i42,i44,i46,i47,i48,i5,i50,i52,i54,i56,i57,i59,i60,i62,i63,i65,i66,i68,i69,i7,i71,i73,i75,i76,i77,i79,i8,i80,i82,i84,i85,i86,i87,i89,i9,i90,i91,i92,i94,i95,i96,i97,i98
 FUNC BrotliDecoderDecompress
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3,i0
   i2 IN: arg0,arg1,arg2,arg3,i0,i1
@@ -2718,6 +2764,7 @@ FUNC BrotliDecoderDecompressStream
   [skipped] reason=too_large insts=1677
 FUNC SaveErrorCode
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2733,6 +2780,7 @@ FUNC SaveErrorCode
   i12 IN: arg0,arg1,arg2,i10,i11,i3,i5,i6,i7,i8,i9
 FUNC WriteRingBuffer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4
   i2 IN: arg0,arg1,arg2,arg3,arg4
@@ -2832,6 +2880,7 @@ FUNC DecodeMetaBlockLength
   [skipped] reason=too_large insts=527
 FUNC BrotliCalculateRingBufferSize
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -2887,6 +2936,7 @@ FUNC ReadHuffmanCode
   [skipped] reason=too_large insts=1221
 FUNC SafeDecodeSymbol
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -2965,6 +3015,7 @@ FUNC SafeDecodeSymbol
   i75 IN: arg0,arg1,arg2,i10,i11,i12,i14,i16,i17,i19,i20,i21,i23,i24,i26,i27,i28,i29,i3,i31,i35,i37,i39,i4,i42,i43,i44,i45,i46,i48,i50,i51,i52,i53,i54,i55,i57,i58,i59,i6,i60,i64,i65,i67,i69,i70,i71,i72,i74,i8
 FUNC CopyUncompressedBlockToOutput
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -3097,6 +3148,7 @@ FUNC CopyUncompressedBlockToOutput
   i129 IN: arg0,arg1,arg2,arg3,i10,i100,i102,i103,i104,i105,i106,i107,i11,i111,i112,i114,i116,i118,i119,i12,i120,i121,i123,i128,i13,i14,i15,i16,i17,i18,i19,i21,i25,i26,i27,i28,i29,i30,i31,i32,i34,i35,i36,i38,i39,i4,i40,i41,i42,i43,i45,i46,i47,i48,i5,i54,i55,i56,i57,i59,i60,i61,i64,i66,i67,i68,i7,i72,i73,i75,i77,i79,i8,i80,i81,i82,i84,i85,i86,i88,i9,i92,i93,i95,i96,i99
 FUNC SkipMetadataBlock
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0
@@ -3244,6 +3296,7 @@ FUNC DecodeContextMap
   [skipped] reason=too_large insts=553
 FUNC BrotliEnsureRingBuffer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3309,6 +3362,7 @@ FUNC SafeProcessCommands
   [skipped] reason=too_large insts=1684
 FUNC WrapRingBuffer
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3344,6 +3398,7 @@ FUNC InverseMoveToFrontTransform
   [skipped] reason=too_large insts=182
 FUNC BrotliDecoderHasMoreOutput
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3377,6 +3432,7 @@ FUNC BrotliDecoderHasMoreOutput
   i30 IN: arg0,i1,i11,i12,i13,i14,i15,i17,i18,i19,i2,i21,i22,i23,i24,i25,i26,i27,i29,i3,i5,i6,i7
 FUNC BrotliDecoderTakeOutput
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -3430,6 +3486,7 @@ FUNC BrotliDecoderTakeOutput
   i50 IN: arg0,arg1,i0,i1,i10,i11,i12,i16,i17,i18,i20,i21,i22,i29,i31,i32,i34,i36,i38,i4,i40,i42,i47,i8
 FUNC BrotliDecoderIsUsed
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3444,6 +3501,7 @@ FUNC BrotliDecoderIsUsed
   i11 IN: arg0,i1,i10,i2,i3,i5,i6,i7,i8
 FUNC BrotliDecoderIsFinished
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3482,12 +3540,14 @@ FUNC BrotliDecoderIsFinished
   i35 IN: arg0,i1,i10,i11,i12,i16,i17,i18,i19,i2,i20,i22,i23,i24,i26,i27,i28,i29,i3,i30,i31,i32,i34,i6,i7,i8
 FUNC BrotliDecoderGetErrorCode
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
   i3 IN: arg0,i1,i2
 FUNC BrotliDecoderErrorString
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3500,9 +3560,11 @@ FUNC BrotliDecoderErrorString
   i9 IN: arg0,i1,i2,i4,i5,i6,i8
 FUNC BrotliDecoderVersion
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
 FUNC BrotliDecoderSetMetadataCallbacks
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -3522,6 +3584,7 @@ FUNC BrotliBuildSimpleHuffmanTable
   [skipped] reason=too_large insts=360
 FUNC BrotliDecoderStateInit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -3610,6 +3673,7 @@ FUNC BrotliDecoderStateInit
   i85 IN: arg0,arg1,arg2,arg3,i10,i12,i14,i16,i18,i20,i21,i22,i24,i26,i28,i29,i30,i31,i33,i35,i37,i39,i4,i40,i42,i43,i44,i45,i46,i47,i49,i5,i51,i53,i55,i57,i6,i60,i62,i64,i66,i67,i69,i7,i70,i73,i75,i76,i77,i78,i8,i80,i81,i84
 FUNC BrotliDecoderStateMetablockBegin
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3640,6 +3704,7 @@ FUNC BrotliDecoderStateMetablockBegin
   i27 IN: arg0,i1,i10,i12,i13,i14,i15,i16,i17,i19,i21,i23,i25,i3,i4,i6,i7,i9
 FUNC BrotliDecoderStateCleanupAfterMetablock
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3685,6 +3750,7 @@ FUNC BrotliDecoderStateCleanupAfterMetablock
   i42 IN: arg0,i1,i10,i11,i12,i15,i16,i17,i18,i2,i21,i22,i23,i24,i25,i28,i29,i3,i30,i31,i32,i35,i36,i37,i38,i39,i4,i41,i5,i6,i9
 FUNC BrotliDecoderStateCleanup
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0
@@ -3755,6 +3821,7 @@ FUNC BrotliDecoderStateCleanup
   i67 IN: arg0,i10,i11,i12,i13,i16,i17,i18,i19,i2,i22,i23,i24,i25,i26,i29,i3,i30,i31,i32,i33,i36,i37,i38,i39,i4,i40,i43,i44,i45,i46,i47,i5,i50,i51,i54,i55,i56,i57,i6,i60,i61,i62,i63,i64,i66,i7
 FUNC BrotliDecoderHuffmanTreeGroupInit
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3,arg4
   i1 IN: arg0,arg1,arg2,arg3,arg4
   i2 IN: arg0,arg1,arg2,arg3,arg4
@@ -3796,6 +3863,7 @@ FUNC BrotliDecoderHuffmanTreeGroupInit
   i38 IN: arg0,arg1,arg2,arg3,arg4,i12,i13,i14,i15,i16,i17,i18,i19,i21,i22,i24,i25,i27,i28,i30,i32,i33,i34,i35,i36,i37,i5,i6,i8,i9
 FUNC BrotliInitBitReader
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -3804,6 +3872,7 @@ FUNC BrotliInitBitReader
   i5 IN: arg0,i1,i3,i4
 FUNC BrotliWarmupBitReader
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0
@@ -3837,6 +3906,7 @@ FUNC BrotliWarmupBitReader
   i30 IN: arg0,i10,i12,i13,i14,i16,i17,i18,i19,i20,i21,i24,i26,i27,i29,i3,i4,i5,i8,i9
 FUNC BrotliSafeReadBits32Slow
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -3970,25 +4040,30 @@ FUNC BrotliSafeReadBits32Slow
   i130 IN: arg0,arg1,arg2,i10,i103,i105,i106,i112,i113,i114,i115,i116,i117,i118,i12,i121,i125,i126,i127,i129,i13,i15,i16,i22,i23,i25,i26,i27,i28,i30,i32,i34,i35,i36,i37,i39,i41,i43,i46,i47,i49,i50,i51,i52,i58,i59,i6,i60,i61,i64,i66,i7,i71,i72,i74,i75,i76,i77,i79,i81,i83,i84,i85,i86,i88,i9,i90,i92,i95,i96
 FUNC BrotliGetDictionary
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
 FUNC BrotliSetDictionaryData
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
 FUNC BrotliDefaultAllocFunc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
   i3 IN: arg0,arg1,i2
 FUNC BrotliDefaultFreeFunc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1
   i2 IN: arg0,arg1
   i3 IN: arg0,arg1
 FUNC BrotliSharedDictionaryDestroyInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0
   i2 IN: arg0,i1
@@ -4016,6 +4091,7 @@ FUNC BrotliSharedDictionaryDestroyInstance
   i24 IN: arg0,i1,i10,i11,i13,i14,i15,i17,i18,i19,i21,i3,i4,i6,i7,i9
 FUNC BrotliSharedDictionaryAttach
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2,arg3
   i1 IN: arg0,arg1,arg2,arg3
   i2 IN: arg0,arg1,arg2,arg3
@@ -4159,6 +4235,7 @@ FUNC ParseDictionary
   [skipped] reason=too_large insts=1161
 FUNC BrotliSharedDictionaryCreateInstance
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -4210,11 +4287,13 @@ FUNC BrotliSharedDictionaryCreateInstance
   i48 IN: arg0,arg1,arg2,i11,i13,i16,i18,i20,i22,i25,i27,i28,i29,i31,i32,i33,i35,i36,i37,i39,i4,i40,i41,i43,i44,i45,i47,i5,i6,i8
 FUNC BrotliGetTransforms
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
 FUNC BrotliTransformDictionaryWord
   [skipped] reason=too_large insts=813
 FUNC Shift
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2
   i2 IN: arg0,arg1,arg2
@@ -4347,4 +4426,4 @@ FUNC Shift
   i129 IN: arg0,arg1,arg2,i10,i100,i101,i102,i103,i104,i106,i107,i108,i109,i11,i111,i112,i113,i114,i115,i117,i118,i119,i120,i121,i123,i124,i125,i126,i127,i14,i15,i16,i17,i19,i21,i23,i25,i26,i27,i28,i29,i3,i30,i31,i32,i34,i35,i36,i37,i39,i4,i40,i41,i42,i43,i45,i47,i49,i5,i50,i51,i52,i53,i54,i55,i56,i57,i58,i59,i6,i60,i61,i62,i64,i65,i66,i67,i69,i7,i70,i71,i72,i73,i75,i76,i77,i78,i79,i81,i83,i85,i86,i87,i88,i89,i9,i90,i91,i92,i93,i94,i95,i96,i97,i98,i99
   i130 IN: arg0,arg1,arg2,i10,i100,i101,i102,i103,i104,i106,i107,i108,i109,i11,i111,i112,i113,i114,i115,i117,i118,i119,i120,i121,i123,i124,i125,i126,i127,i129,i14,i15,i16,i17,i19,i21,i23,i25,i26,i27,i28,i29,i3,i30,i31,i32,i34,i35,i36,i37,i39,i4,i40,i41,i42,i43,i45,i47,i49,i5,i50,i51,i52,i53,i54,i55,i56,i57,i58,i59,i6,i60,i61,i62,i64,i65,i66,i67,i69,i7,i70,i71,i72,i73,i75,i76,i77,i78,i79,i81,i83,i85,i86,i87,i88,i89,i9,i90,i91,i92,i93,i94,i95,i96,i97,i98,i99
 [summary] skipped_functions=122
-[mem] peak_rss_kb=89512
+[mem] peak_rss_kb=90444

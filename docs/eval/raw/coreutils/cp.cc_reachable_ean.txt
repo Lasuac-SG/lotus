@@ -1,6 +1,7 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC usage
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -85,12 +86,14 @@ FUNC usage
   i81 IN: true
 FUNC emit_mandatory_arg_note
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC emit_backup_suffix_note
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -100,6 +103,7 @@ FUNC emit_backup_suffix_note
   i6 IN: true
 FUNC emit_ancillary_info
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -189,6 +193,7 @@ FUNC main
   [skipped] reason=too_large insts=408
 FUNC cp_option_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -310,6 +315,7 @@ FUNC re_protect
   [skipped] reason=too_large insts=214
 FUNC set_process_security_ctx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -462,6 +468,7 @@ FUNC set_process_security_ctx
   i149 IN: true
 FUNC errno_unsupported
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -475,6 +482,7 @@ FUNC errno_unsupported
   i10 IN: true
 FUNC defaultcon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -489,6 +497,7 @@ FUNC defaultcon
   i11 IN: true
 FUNC ignorable_ctx_err
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -502,6 +511,7 @@ FUNC ignorable_ctx_err
   i10 IN: true
 FUNC set_file_security_ctx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -575,6 +585,7 @@ FUNC set_file_security_ctx
   i70 IN: true
 FUNC restorecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -590,6 +601,7 @@ FUNC restorecon
   i12 IN: true
 FUNC dest_info_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -607,6 +619,7 @@ FUNC dest_info_init
   i14 IN: true
 FUNC src_info_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -624,6 +637,7 @@ FUNC src_info_init
   i14 IN: true
 FUNC copy
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -673,6 +687,7 @@ FUNC copy
   i46 IN: true
 FUNC valid_options
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -751,6 +766,7 @@ FUNC copy_internal
   [skipped] reason=too_large insts=2225
 FUNC follow_fstatat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -775,6 +791,7 @@ FUNC follow_fstatat
   i21 IN: true
 FUNC should_dereference
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -803,6 +820,7 @@ FUNC same_file_ok
   [skipped] reason=too_large insts=436
 FUNC create_hard_link
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -892,6 +910,7 @@ FUNC create_hard_link
   i86 IN: true
 FUNC abandon_move
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -956,6 +975,7 @@ FUNC abandon_move
   i61 IN: true
 FUNC overwrite_ok
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1030,6 +1050,7 @@ FUNC overwrite_ok
   i71 IN: true
 FUNC dot_or_dotdot
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1070,6 +1091,7 @@ FUNC dot_or_dotdot
   i37 IN: true
 FUNC source_is_dst_backup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1170,6 +1192,7 @@ FUNC source_is_dst_backup
   i97 IN: true
 FUNC emit_verbose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1196,6 +1219,7 @@ FUNC emit_verbose
   i23 IN: true
 FUNC subst_suffix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1239,6 +1263,7 @@ FUNC subst_suffix
   i40 IN: true
 FUNC is_ancestor
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1283,6 +1308,7 @@ FUNC copy_reg
   [skipped] reason=too_large insts=912
 FUNC restore_default_fscreatecon_or_die
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1294,6 +1320,7 @@ FUNC restore_default_fscreatecon_or_die
   i8 IN: true
 FUNC chown_failure_ok
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1317,6 +1344,7 @@ FUNC set_owner
   [skipped] reason=too_large insts=210
 FUNC copy_attr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1335,6 +1363,7 @@ FUNC copy_attr
   i15 IN: true
 FUNC set_author
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1350,6 +1379,7 @@ FUNC set_author
   i12 IN: true
 FUNC cached_umask
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1362,6 +1392,7 @@ FUNC cached_umask
   i9 IN: true
 FUNC owner_failure_ok
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1383,6 +1414,7 @@ FUNC owner_failure_ok
   i18 IN: true
 FUNC clone_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1395,6 +1427,7 @@ FUNC clone_file
   i9 IN: true
 FUNC handle_clone_fail
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1488,6 +1521,7 @@ FUNC handle_clone_fail
   i90 IN: true
 FUNC fchmod_or_lchmod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1519,6 +1553,7 @@ FUNC fchmod_or_lchmod
   i28 IN: true
 FUNC io_blksize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1600,6 +1635,7 @@ FUNC io_blksize
   i78 IN: true
 FUNC infer_scantype
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1669,6 +1705,7 @@ FUNC sparse_copy
   [skipped] reason=too_large insts=412
 FUNC emit_debug
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1698,6 +1735,7 @@ FUNC emit_debug
   i26 IN: true
 FUNC copy_debug_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1718,6 +1756,7 @@ FUNC copy_debug_string
   i17 IN: true
 FUNC copy_debug_sparse_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1736,6 +1775,7 @@ FUNC copy_debug_sparse_string
   i15 IN: true
 FUNC is_CLONENOTSUP
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1770,6 +1810,7 @@ FUNC is_CLONENOTSUP
   i31 IN: true
 FUNC is_nul
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1847,6 +1888,7 @@ FUNC is_nul
   i74 IN: true
 FUNC create_hole
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1903,6 +1945,7 @@ FUNC create_hole
   i53 IN: true
 FUNC punch_hole
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1937,6 +1980,7 @@ FUNC punch_hole
   i31 IN: true
 FUNC is_ENOTSUP
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1948,6 +1992,7 @@ FUNC is_ENOTSUP
   i8 IN: true
 FUNC write_zeros
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2004,6 +2049,7 @@ FUNC write_zeros
   i53 IN: true
 FUNC is_terminal_error
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2023,6 +2069,7 @@ FUNC is_terminal_error
   i16 IN: true
 FUNC writable_destination
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2047,6 +2094,7 @@ FUNC writable_destination
   i21 IN: true
 FUNC cp_options_default
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2069,6 +2117,7 @@ FUNC cp_options_default
   i19 IN: true
 FUNC forget_created
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2102,6 +2151,7 @@ FUNC forget_created
   i30 IN: true
 FUNC src_to_dest_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2119,6 +2169,7 @@ FUNC src_to_dest_free
   i14 IN: true
 FUNC src_to_dest_lookup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2152,6 +2203,7 @@ FUNC src_to_dest_lookup
   i30 IN: true
 FUNC remember_copied
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2211,6 +2263,7 @@ FUNC remember_copied
   i56 IN: true
 FUNC hash_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2221,6 +2274,7 @@ FUNC hash_init
   i7 IN: true
 FUNC src_to_dest_hash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2240,6 +2294,7 @@ FUNC src_to_dest_hash
   i16 IN: true
 FUNC src_to_dest_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2279,6 +2334,7 @@ FUNC src_to_dest_compare
   i36 IN: true
 FUNC force_linkat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2400,6 +2456,7 @@ FUNC force_linkat
   i118 IN: true
 FUNC samedir_template
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2452,6 +2509,7 @@ FUNC samedir_template
   i49 IN: true
 FUNC try_link
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2480,6 +2538,7 @@ FUNC try_link
   i25 IN: true
 FUNC force_symlinkat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2587,6 +2646,7 @@ FUNC force_symlinkat
   i104 IN: true
 FUNC try_symlink
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2609,6 +2669,7 @@ FUNC try_symlink
   i19 IN: true
 FUNC copy_acl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2653,6 +2714,7 @@ FUNC copy_acl
   i41 IN: true
 FUNC set_acl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2683,6 +2745,7 @@ FUNC set_acl
   i27 IN: true
 FUNC alignfree
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2691,6 +2754,7 @@ FUNC alignfree
   i5 IN: true
 FUNC alignalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2718,10 +2782,12 @@ FUNC areadlinkat_with_size
   [skipped] reason=too_large insts=164
 FUNC __argmatch_die
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC argmatch
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2821,6 +2887,7 @@ FUNC argmatch
   i96 IN: true
 FUNC argmatch_exact
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2860,6 +2927,7 @@ FUNC argmatch_exact
   i36 IN: true
 FUNC argmatch_invalid
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2889,6 +2957,7 @@ FUNC argmatch_invalid
   i26 IN: true
 FUNC argmatch_valid
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2959,6 +3028,7 @@ FUNC argmatch_valid
   i67 IN: true
 FUNC __xargmatch_internal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3021,6 +3091,7 @@ FUNC __xargmatch_internal
   i59 IN: true
 FUNC argmatch_to_argument
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3071,6 +3142,7 @@ FUNC argmatch_to_argument
   i47 IN: true
 FUNC set_simple_backup_suffix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3105,6 +3177,7 @@ FUNC numbered_backup
   [skipped] reason=too_large insts=325
 FUNC check_extension
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3245,6 +3318,7 @@ FUNC check_extension
   i137 IN: true
 FUNC backup_file_rename
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3261,6 +3335,7 @@ FUNC backup_file_rename
   i13 IN: true
 FUNC find_backup_file_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3286,6 +3361,7 @@ FUNC find_backup_file_name
   i22 IN: true
 FUNC get_version
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3315,6 +3391,7 @@ FUNC get_version
   i26 IN: true
 FUNC xget_version
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3343,6 +3420,7 @@ FUNC xget_version
   i25 IN: true
 FUNC last_component
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3398,6 +3476,7 @@ FUNC last_component
   i52 IN: true
 FUNC base_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3433,6 +3512,7 @@ FUNC base_len
   i32 IN: true
 FUNC buffer_lcm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3527,6 +3607,7 @@ FUNC buffer_lcm
   i91 IN: true
 FUNC chmodat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3543,6 +3624,7 @@ FUNC chmodat
   i13 IN: true
 FUNC lchmodat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3559,6 +3641,7 @@ FUNC lchmodat
   i13 IN: true
 FUNC chownat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3579,6 +3662,7 @@ FUNC chownat
   i17 IN: true
 FUNC lchownat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3599,6 +3683,7 @@ FUNC lchownat
   i17 IN: true
 FUNC close_stdin_set_file_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3607,6 +3692,7 @@ FUNC close_stdin_set_file_name
   i5 IN: true
 FUNC close_stdin
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3664,6 +3750,7 @@ FUNC close_stdin
   i54 IN: true
 FUNC close_stdout_set_file_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3672,6 +3759,7 @@ FUNC close_stdout_set_file_name
   i5 IN: true
 FUNC close_stdout_set_ignore_EPIPE
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3683,6 +3771,7 @@ FUNC close_stdout_set_ignore_EPIPE
   i8 IN: true
 FUNC close_stdout
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3726,6 +3815,7 @@ FUNC close_stdout
   i40 IN: true
 FUNC count_leading_zeros
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3742,6 +3832,7 @@ FUNC count_leading_zeros
   i13 IN: true
 FUNC count_leading_zeros_l
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3759,6 +3850,7 @@ FUNC count_leading_zeros_l
   i14 IN: true
 FUNC count_leading_zeros_ll
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3776,6 +3868,7 @@ FUNC count_leading_zeros_ll
   i14 IN: true
 FUNC dir_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3793,6 +3886,7 @@ FUNC dir_name
   i14 IN: true
 FUNC dir_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3849,6 +3943,7 @@ FUNC dir_len
   i53 IN: true
 FUNC mdir_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3907,6 +4002,7 @@ FUNC mdir_name
   i55 IN: true
 FUNC strip_trailing_slashes
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3944,6 +4040,7 @@ FUNC strip_trailing_slashes
   i34 IN: true
 FUNC fdadvise
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3964,6 +4061,7 @@ FUNC fdadvise
   i17 IN: true
 FUNC fadvise
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3981,6 +4079,7 @@ FUNC fadvise
   i14 IN: true
 FUNC open_safer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4032,6 +4131,7 @@ FUNC open_safer
   i48 IN: true
 FUNC fdutimensat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4089,6 +4189,7 @@ FUNC fdutimensat
   i54 IN: true
 FUNC rpl_fflush
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4114,6 +4215,7 @@ FUNC rpl_fflush
   i22 IN: true
 FUNC clear_ungetc_buffer_preserving_position
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4129,6 +4231,7 @@ FUNC clear_ungetc_buffer_preserving_position
   i12 IN: true
 FUNC record_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4188,6 +4291,7 @@ FUNC record_file
   i56 IN: true
 FUNC seen_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4230,6 +4334,7 @@ FUNC seen_file
   i39 IN: true
 FUNC strmode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4367,6 +4472,7 @@ FUNC strmode
   i134 IN: true
 FUNC ftypelet
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4419,6 +4525,7 @@ FUNC ftypelet
   i49 IN: true
 FUNC filemodestring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4475,6 +4582,7 @@ FUNC filemodestring
   i53 IN: true
 FUNC file_name_concat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4500,6 +4608,7 @@ FUNC file_name_concat
   i22 IN: true
 FUNC mfile_name_concat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4625,6 +4734,7 @@ FUNC mfile_name_concat
   i122 IN: true
 FUNC freadahead
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4673,6 +4783,7 @@ FUNC freadahead
   i45 IN: true
 FUNC rpl_fseeko
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4738,6 +4849,7 @@ FUNC rpl_fseeko
   i62 IN: true
 FUNC full_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4792,6 +4904,7 @@ FUNC full_write
   i51 IN: true
 FUNC hash_get_n_buckets
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4801,6 +4914,7 @@ FUNC hash_get_n_buckets
   i6 IN: true
 FUNC hash_get_n_buckets_used
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4810,6 +4924,7 @@ FUNC hash_get_n_buckets_used
   i6 IN: true
 FUNC hash_get_n_entries
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4819,6 +4934,7 @@ FUNC hash_get_n_entries
   i6 IN: true
 FUNC hash_get_max_bucket_length
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4879,6 +4995,7 @@ FUNC hash_get_max_bucket_length
   i57 IN: true
 FUNC hash_table_ok
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4955,6 +5072,7 @@ FUNC hash_table_ok
   i73 IN: true
 FUNC hash_print_statistics
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5002,6 +5120,7 @@ FUNC hash_print_statistics
   i44 IN: true
 FUNC hash_lookup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5062,6 +5181,7 @@ FUNC hash_lookup
   i57 IN: true
 FUNC safe_hasher
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5095,6 +5215,7 @@ FUNC safe_hasher
   i30 IN: true
 FUNC hash_get_first
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5141,6 +5262,7 @@ FUNC hash_get_first
   i43 IN: true
 FUNC hash_get_next
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5211,6 +5333,7 @@ FUNC hash_get_next
   i67 IN: true
 FUNC hash_get_entries
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5285,6 +5408,7 @@ FUNC hash_get_entries
   i71 IN: true
 FUNC hash_do_for_each
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5356,6 +5480,7 @@ FUNC hash_do_for_each
   i68 IN: true
 FUNC hash_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5390,6 +5515,7 @@ FUNC hash_string
   i31 IN: true
 FUNC hash_reset_tuning
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5399,6 +5525,7 @@ FUNC hash_reset_tuning
   i6 IN: true
 FUNC hash_initialize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5518,6 +5645,7 @@ FUNC hash_initialize
   i116 IN: true
 FUNC raw_hasher
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5536,6 +5664,7 @@ FUNC raw_hasher
   i15 IN: true
 FUNC raw_comparator
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5548,6 +5677,7 @@ FUNC raw_comparator
   i9 IN: true
 FUNC check_tuning
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5627,6 +5757,7 @@ FUNC check_tuning
   i76 IN: true
 FUNC compute_bucket_size
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5672,6 +5803,7 @@ FUNC compute_bucket_size
   i42 IN: true
 FUNC next_prime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5701,6 +5833,7 @@ FUNC next_prime
   i26 IN: true
 FUNC is_prime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5747,6 +5880,7 @@ FUNC is_prime
   i43 IN: true
 FUNC hash_clear
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5848,6 +5982,7 @@ FUNC hash_clear
   i98 IN: true
 FUNC hash_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5978,6 +6113,7 @@ FUNC transfer_entries
   [skipped] reason=too_large insts=163
 FUNC free_entry
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6000,6 +6136,7 @@ FUNC free_entry
   i19 IN: true
 FUNC allocate_entry
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6033,6 +6170,7 @@ FUNC hash_find_entry
   [skipped] reason=too_large insts=151
 FUNC hash_insert
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6064,6 +6202,7 @@ FUNC hash_insert
   i28 IN: true
 FUNC hash_remove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6211,6 +6350,7 @@ FUNC hash_remove
   i144 IN: true
 FUNC hash_delete
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6223,6 +6363,7 @@ FUNC hash_delete
   i9 IN: true
 FUNC triple_hash_no_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6242,6 +6383,7 @@ FUNC triple_hash_no_name
   i16 IN: true
 FUNC triple_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6289,6 +6431,7 @@ FUNC triple_compare
   i44 IN: true
 FUNC triple_hash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6318,6 +6461,7 @@ FUNC triple_hash
   i26 IN: true
 FUNC triple_compare_ino_str
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6366,6 +6510,7 @@ FUNC triple_compare_ino_str
   i45 IN: true
 FUNC triple_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6384,11 +6529,13 @@ FUNC triple_free
   i15 IN: true
 FUNC _gl_alloc_nomem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC imalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6404,6 +6551,7 @@ FUNC imalloc
   i12 IN: true
 FUNC irealloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6429,6 +6577,7 @@ FUNC irealloc
   i22 IN: true
 FUNC icalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6467,6 +6616,7 @@ FUNC icalloc
   i35 IN: true
 FUNC ireallocarray
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6502,6 +6652,7 @@ FUNC ireallocarray
   i32 IN: true
 FUNC openat_safer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6557,6 +6708,7 @@ FUNC openat_safer
   i52 IN: true
 FUNC opendirat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6617,6 +6769,7 @@ FUNC opendirat
   i57 IN: true
 FUNC set_program_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6676,6 +6829,7 @@ FUNC set_program_name
   i56 IN: true
 FUNC qcopy_acl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6718,6 +6872,7 @@ FUNC qcopy_acl
   i39 IN: true
 FUNC qset_acl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6745,6 +6900,7 @@ FUNC qset_acl
   i24 IN: true
 FUNC clone_quoting_options
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6773,6 +6929,7 @@ FUNC clone_quoting_options
   i25 IN: true
 FUNC get_quoting_style
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6788,6 +6945,7 @@ FUNC get_quoting_style
   i12 IN: true
 FUNC set_quoting_style
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6807,6 +6965,7 @@ FUNC set_quoting_style
   i16 IN: true
 FUNC set_char_quoting
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6865,6 +7024,7 @@ FUNC set_char_quoting
   i55 IN: true
 FUNC set_quoting_flags
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6890,6 +7050,7 @@ FUNC set_quoting_flags
   i22 IN: true
 FUNC set_custom_quoting
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6926,6 +7087,7 @@ FUNC set_custom_quoting
   i33 IN: true
 FUNC quotearg_buffer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6988,6 +7150,7 @@ FUNC quotearg_buffer_restyled
   [skipped] reason=too_large insts=1308
 FUNC gettext_quote
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7047,6 +7210,7 @@ FUNC gettext_quote
   i56 IN: true
 FUNC quotearg_alloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7063,6 +7227,7 @@ FUNC quotearg_alloc
   i13 IN: true
 FUNC quotearg_alloc_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7159,6 +7324,7 @@ FUNC quotearg_alloc_mem
   i93 IN: true
 FUNC quotearg_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7209,6 +7375,7 @@ FUNC quotearg_free
   i47 IN: true
 FUNC quotearg_n
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7223,6 +7390,7 @@ FUNC quotearg_n_options
   [skipped] reason=too_large insts=187
 FUNC quotearg_n_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7239,6 +7407,7 @@ FUNC quotearg_n_mem
   i13 IN: true
 FUNC quotearg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7247,6 +7416,7 @@ FUNC quotearg
   i5 IN: true
 FUNC quotearg_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7259,6 +7429,7 @@ FUNC quotearg_mem
   i9 IN: true
 FUNC quotearg_n_style
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7278,6 +7449,7 @@ FUNC quotearg_n_style
   i16 IN: true
 FUNC quoting_options_from_style
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7295,6 +7467,7 @@ FUNC quoting_options_from_style
   i14 IN: true
 FUNC quotearg_n_style_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7318,6 +7491,7 @@ FUNC quotearg_n_style_mem
   i20 IN: true
 FUNC quotearg_style
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7330,6 +7504,7 @@ FUNC quotearg_style
   i9 IN: true
 FUNC quotearg_style_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7346,6 +7521,7 @@ FUNC quotearg_style_mem
   i13 IN: true
 FUNC quotearg_char_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7367,6 +7543,7 @@ FUNC quotearg_char_mem
   i18 IN: true
 FUNC quotearg_char
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7379,6 +7556,7 @@ FUNC quotearg_char
   i9 IN: true
 FUNC quotearg_colon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7387,6 +7565,7 @@ FUNC quotearg_colon
   i5 IN: true
 FUNC quotearg_colon_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7399,6 +7578,7 @@ FUNC quotearg_colon_mem
   i9 IN: true
 FUNC quotearg_n_style_colon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7423,6 +7603,7 @@ FUNC quotearg_n_style_colon
   i21 IN: true
 FUNC quotearg_n_custom
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7443,6 +7624,7 @@ FUNC quotearg_n_custom
   i17 IN: true
 FUNC quotearg_n_custom_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7472,6 +7654,7 @@ FUNC quotearg_n_custom_mem
   i26 IN: true
 FUNC quotearg_custom
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7488,6 +7671,7 @@ FUNC quotearg_custom
   i13 IN: true
 FUNC quotearg_custom_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7508,6 +7692,7 @@ FUNC quotearg_custom_mem
   i17 IN: true
 FUNC quote_n_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7524,6 +7709,7 @@ FUNC quote_n_mem
   i13 IN: true
 FUNC quote_mem
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7536,6 +7722,7 @@ FUNC quote_mem
   i9 IN: true
 FUNC quote_n
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7548,6 +7735,7 @@ FUNC quote_n
   i9 IN: true
 FUNC quote
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7558,6 +7746,7 @@ FUNC renameatu
   [skipped] reason=too_large insts=240
 FUNC errno_fail
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7567,6 +7756,7 @@ FUNC errno_fail
   i6 IN: true
 FUNC renameat2ish
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7590,6 +7780,7 @@ FUNC renameat2ish
   i20 IN: true
 FUNC safe_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7638,6 +7829,7 @@ FUNC safe_write
   i45 IN: true
 FUNC same_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7650,6 +7842,7 @@ FUNC same_name
   i9 IN: true
 FUNC same_nameat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7775,6 +7968,7 @@ FUNC streamsavedir
   [skipped] reason=too_large insts=238
 FUNC direntry_cmp_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7801,6 +7995,7 @@ FUNC direntry_cmp_name
   i23 IN: true
 FUNC direntry_cmp_inode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7837,6 +8032,7 @@ FUNC direntry_cmp_inode
   i33 IN: true
 FUNC savedir
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7875,6 +8071,7 @@ FUNC savedir
   i35 IN: true
 FUNC selabel_lookup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7892,6 +8089,7 @@ FUNC selabel_lookup
   i14 IN: true
 FUNC selabel_open
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7906,6 +8104,7 @@ FUNC selabel_open
   i11 IN: true
 FUNC selabel_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7914,6 +8113,7 @@ FUNC selabel_close
   i5 IN: true
 FUNC getcon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7922,12 +8122,14 @@ FUNC getcon
   i5 IN: true
 FUNC freecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC getfscreatecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7936,6 +8138,7 @@ FUNC getfscreatecon
   i5 IN: true
 FUNC setfscreatecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7944,6 +8147,7 @@ FUNC setfscreatecon
   i5 IN: true
 FUNC matchpathcon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7958,6 +8162,7 @@ FUNC matchpathcon
   i11 IN: true
 FUNC getfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7969,6 +8174,7 @@ FUNC getfilecon
   i8 IN: true
 FUNC lgetfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7980,6 +8186,7 @@ FUNC lgetfilecon
   i8 IN: true
 FUNC fgetfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7991,6 +8198,7 @@ FUNC fgetfilecon
   i8 IN: true
 FUNC setfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8002,6 +8210,7 @@ FUNC setfilecon
   i8 IN: true
 FUNC lsetfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8013,6 +8222,7 @@ FUNC lsetfilecon
   i8 IN: true
 FUNC fsetfilecon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8024,6 +8234,7 @@ FUNC fsetfilecon
   i8 IN: true
 FUNC security_check_context
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8032,6 +8243,7 @@ FUNC security_check_context
   i5 IN: true
 FUNC security_check_context_raw
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8040,6 +8252,7 @@ FUNC security_check_context_raw
   i5 IN: true
 FUNC setexeccon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8048,6 +8261,7 @@ FUNC setexeccon
   i5 IN: true
 FUNC security_compute_create
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8065,6 +8279,7 @@ FUNC security_compute_create
   i14 IN: true
 FUNC string_to_security_class
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8073,6 +8288,7 @@ FUNC string_to_security_class
   i5 IN: true
 FUNC matchpathcon_init_prefix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8084,6 +8300,7 @@ FUNC matchpathcon_init_prefix
   i8 IN: true
 FUNC get_stat_atime_ns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8094,6 +8311,7 @@ FUNC get_stat_atime_ns
   i7 IN: true
 FUNC get_stat_ctime_ns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8104,6 +8322,7 @@ FUNC get_stat_ctime_ns
   i7 IN: true
 FUNC get_stat_mtime_ns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8114,12 +8333,14 @@ FUNC get_stat_mtime_ns
   i7 IN: true
 FUNC get_stat_birthtime_ns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC get_stat_atime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8134,6 +8355,7 @@ FUNC get_stat_atime
   i11 IN: true
 FUNC get_stat_ctime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8148,6 +8370,7 @@ FUNC get_stat_ctime
   i11 IN: true
 FUNC get_stat_mtime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8162,6 +8385,7 @@ FUNC get_stat_mtime
   i11 IN: true
 FUNC get_stat_birthtime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8176,6 +8400,7 @@ FUNC get_stat_birthtime
   i11 IN: true
 FUNC stat_time_normalize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8186,6 +8411,7 @@ FUNC stat_time_normalize
   i7 IN: true
 FUNC target_dirfd_valid
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8194,6 +8420,7 @@ FUNC target_dirfd_valid
   i5 IN: true
 FUNC target_directory_operand
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8229,6 +8456,7 @@ FUNC target_directory_operand
   i32 IN: true
 FUNC must_be_working_directory
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8274,6 +8502,7 @@ FUNC must_be_working_directory
   i42 IN: true
 FUNC gen_tempname_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8303,6 +8532,7 @@ FUNC try_tempname_len
   [skipped] reason=too_large insts=161
 FUNC random_bits
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8345,6 +8575,7 @@ FUNC random_bits
   i39 IN: true
 FUNC mix_random_values
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8359,6 +8590,7 @@ FUNC mix_random_values
   i11 IN: true
 FUNC try_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8381,6 +8613,7 @@ FUNC try_file
   i19 IN: true
 FUNC try_dir
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8392,6 +8625,7 @@ FUNC try_dir
   i8 IN: true
 FUNC try_nocreate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8419,6 +8653,7 @@ FUNC try_nocreate
   i24 IN: true
 FUNC gen_tempname
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8439,6 +8674,7 @@ FUNC gen_tempname
   i17 IN: true
 FUNC try_tempname
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8459,6 +8695,7 @@ FUNC try_tempname
   i17 IN: true
 FUNC fd_safer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8490,6 +8727,7 @@ FUNC fd_safer
   i28 IN: true
 FUNC utimecmp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8512,6 +8750,7 @@ FUNC utimecmpat
   [skipped] reason=too_large insts=532
 FUNC dev_info_hash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8531,6 +8770,7 @@ FUNC dev_info_hash
   i16 IN: true
 FUNC dev_info_compare
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8559,6 +8799,7 @@ FUNC version_etc_arn
   [skipped] reason=too_large insts=248
 FUNC version_etc_ar
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8599,6 +8840,7 @@ FUNC version_etc_ar
   i37 IN: true
 FUNC version_etc_va
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8665,6 +8907,7 @@ FUNC version_etc_va
   i63 IN: true
 FUNC version_etc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8694,6 +8937,7 @@ FUNC version_etc
   i26 IN: true
 FUNC emit_bug_reporting_address
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8705,6 +8949,7 @@ FUNC emit_bug_reporting_address
   i8 IN: true
 FUNC can_write_any_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8726,6 +8971,7 @@ FUNC can_write_any_file
   i18 IN: true
 FUNC xalignalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8747,6 +8993,7 @@ FUNC xalignalloc
   i18 IN: true
 FUNC xnrealloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8763,6 +9010,7 @@ FUNC xnrealloc
   i13 IN: true
 FUNC xreallocarray
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8797,6 +9045,7 @@ FUNC xreallocarray
   i31 IN: true
 FUNC xmalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8806,6 +9055,7 @@ FUNC xmalloc
   i6 IN: true
 FUNC nonnull
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8818,6 +9068,7 @@ FUNC nonnull
   i9 IN: true
 FUNC ximalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8827,6 +9078,7 @@ FUNC ximalloc
   i6 IN: true
 FUNC xcharalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8835,6 +9087,7 @@ FUNC xcharalloc
   i5 IN: true
 FUNC xrealloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8862,6 +9115,7 @@ FUNC xrealloc
   i24 IN: true
 FUNC xirealloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8875,6 +9129,7 @@ FUNC xirealloc
   i10 IN: true
 FUNC xireallocarray
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8892,6 +9147,7 @@ FUNC xireallocarray
   i14 IN: true
 FUNC xnmalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8904,6 +9160,7 @@ FUNC xnmalloc
   i9 IN: true
 FUNC xinmalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8916,6 +9173,7 @@ FUNC xinmalloc
   i9 IN: true
 FUNC x2realloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8928,6 +9186,7 @@ FUNC x2realloc
   i9 IN: true
 FUNC x2nrealloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8985,6 +9244,7 @@ FUNC x2nrealloc
   i54 IN: true
 FUNC xpalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9107,6 +9367,7 @@ FUNC xpalloc
   i119 IN: true
 FUNC xzalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9115,6 +9376,7 @@ FUNC xzalloc
   i5 IN: true
 FUNC xcalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9128,6 +9390,7 @@ FUNC xcalloc
   i10 IN: true
 FUNC xizalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9136,6 +9399,7 @@ FUNC xizalloc
   i5 IN: true
 FUNC xicalloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9149,6 +9413,7 @@ FUNC xicalloc
   i10 IN: true
 FUNC xmemdup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9163,6 +9428,7 @@ FUNC xmemdup
   i11 IN: true
 FUNC ximemdup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9177,6 +9443,7 @@ FUNC ximemdup
   i11 IN: true
 FUNC ximemdup0
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9200,6 +9467,7 @@ FUNC ximemdup0
   i20 IN: true
 FUNC xstrdup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9211,6 +9479,7 @@ FUNC xstrdup
   i8 IN: true
 FUNC xalloc_die
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9218,6 +9487,7 @@ FUNC xalloc_die
   i4 IN: true
 FUNC yesno
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9263,12 +9533,14 @@ FUNC yesno
   i42 IN: true
 FUNC free_permission_context
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC get_permissions
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9291,6 +9563,7 @@ FUNC get_permissions
   i19 IN: true
 FUNC chmod_or_fchmod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9318,6 +9591,7 @@ FUNC chmod_or_fchmod
   i24 IN: true
 FUNC set_permissions
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9396,6 +9670,7 @@ FUNC set_permissions
   i75 IN: true
 FUNC rotl64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9416,6 +9691,7 @@ FUNC rotl64
   i17 IN: true
 FUNC rotr64
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9436,6 +9712,7 @@ FUNC rotr64
   i17 IN: true
 FUNC rotl32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9454,6 +9731,7 @@ FUNC rotl32
   i15 IN: true
 FUNC rotr32
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9472,6 +9750,7 @@ FUNC rotr32
   i15 IN: true
 FUNC rotl_sz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9492,6 +9771,7 @@ FUNC rotl_sz
   i17 IN: true
 FUNC rotr_sz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9512,6 +9792,7 @@ FUNC rotr_sz
   i17 IN: true
 FUNC rotl16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9533,6 +9814,7 @@ FUNC rotl16
   i18 IN: true
 FUNC rotr16
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9554,6 +9836,7 @@ FUNC rotr16
   i18 IN: true
 FUNC rotl8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9575,6 +9858,7 @@ FUNC rotl8
   i18 IN: true
 FUNC rotr8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9596,6 +9880,7 @@ FUNC rotr8
   i18 IN: true
 FUNC c_strcasecmp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9663,6 +9948,7 @@ FUNC c_strcasecmp
   i64 IN: true
 FUNC close_stream
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9715,6 +10001,7 @@ FUNC close_stream
   i49 IN: true
 FUNC opendir_safer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9780,6 +10067,7 @@ FUNC opendir_safer
   i62 IN: true
 FUNC rpl_fclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9837,6 +10125,7 @@ FUNC rpl_fclose
   i54 IN: true
 FUNC rpl_fcntl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9982,6 +10271,7 @@ FUNC rpl_fcntl
   i142 IN: true
 FUNC rpl_fcntl_DUPFD
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9998,6 +10288,7 @@ FUNC rpl_fcntl_DUPFD
   i13 IN: true
 FUNC rpl_fcntl_DUPFD_CLOEXEC
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10075,6 +10366,7 @@ FUNC rpl_fcntl_DUPFD_CLOEXEC
   i74 IN: true
 FUNC hash_pjw
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10114,6 +10406,7 @@ FUNC hash_pjw
   i36 IN: true
 FUNC locale_charset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10135,6 +10428,7 @@ FUNC locale_charset
   i18 IN: true
 FUNC rpl_mbrtowc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10189,6 +10483,7 @@ FUNC rpl_mbrtowc
   i51 IN: true
 FUNC dup_safer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10197,6 +10492,7 @@ FUNC dup_safer
   i5 IN: true
 FUNC c_isalnum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10211,6 +10507,7 @@ FUNC c_isalnum
   i11 IN: true
 FUNC c_isalpha
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10225,6 +10522,7 @@ FUNC c_isalpha
   i11 IN: true
 FUNC c_isascii
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10239,6 +10537,7 @@ FUNC c_isascii
   i11 IN: true
 FUNC c_isblank
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10252,6 +10551,7 @@ FUNC c_isblank
   i10 IN: true
 FUNC c_iscntrl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10266,6 +10566,7 @@ FUNC c_iscntrl
   i11 IN: true
 FUNC c_isdigit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10280,6 +10581,7 @@ FUNC c_isdigit
   i11 IN: true
 FUNC c_isgraph
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10294,6 +10596,7 @@ FUNC c_isgraph
   i11 IN: true
 FUNC c_islower
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10308,6 +10611,7 @@ FUNC c_islower
   i11 IN: true
 FUNC c_isprint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10322,6 +10626,7 @@ FUNC c_isprint
   i11 IN: true
 FUNC c_ispunct
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10336,6 +10641,7 @@ FUNC c_ispunct
   i11 IN: true
 FUNC c_isspace
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10350,6 +10656,7 @@ FUNC c_isspace
   i11 IN: true
 FUNC c_isupper
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10364,6 +10671,7 @@ FUNC c_isupper
   i11 IN: true
 FUNC c_isxdigit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10378,6 +10686,7 @@ FUNC c_isxdigit
   i11 IN: true
 FUNC c_tolower
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10396,6 +10705,7 @@ FUNC c_tolower
   i15 IN: true
 FUNC c_toupper
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10414,6 +10724,7 @@ FUNC c_toupper
   i15 IN: true
 FUNC hard_locale
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10443,6 +10754,7 @@ FUNC hard_locale
   i26 IN: true
 FUNC setlocale_null_r
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10459,6 +10771,7 @@ FUNC setlocale_null_r
   i13 IN: true
 FUNC setlocale_null_unlocked
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10522,6 +10835,7 @@ FUNC setlocale_null_unlocked
   i60 IN: true
 FUNC setlocale_null_androidfix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10534,6 +10848,7 @@ FUNC setlocale_null_androidfix
   i9 IN: true
 FUNC setlocale_null
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10541,4 +10856,4 @@ FUNC setlocale_null
   i4 IN: true
   i5 IN: true
 [summary] skipped_functions=27
-[mem] peak_rss_kb=26636
+[mem] peak_rss_kb=27688

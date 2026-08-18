@@ -1,6 +1,7 @@
-[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC stdbuf
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: 
   i1 IN: i0
   i2 IN: i0,i1
@@ -37,6 +38,7 @@ FUNC stdbuf
   i33 IN: i0,i1,i10,i11,i12,i13,i15,i16,i19,i2,i20,i22,i23,i26,i27,i29,i30,i4,i7
 FUNC apply_mode
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -126,6 +128,7 @@ FUNC apply_mode
   i86 IN: arg0,arg1,i0,i1,i15,i16,i17,i18,i2,i22,i23,i24,i25,i3,i31,i32,i34,i35,i37,i38,i39,i4,i40,i42,i43,i44,i45,i46,i47,i48,i5,i50,i51,i53,i54,i57,i59,i60,i62,i63,i64,i65,i69,i70,i71,i72,i73,i74,i76,i77,i78,i79,i80,i81,i82,i83
 FUNC fileno_to_name
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -145,4 +148,4 @@ FUNC fileno_to_name
   i16 IN: arg0,i0,i1,i10,i12,i14,i6,i8
   i17 IN: arg0,i0,i1,i10,i12,i14,i16,i6,i8
 [summary] skipped_functions=0
-[mem] peak_rss_kb=15472
+[mem] peak_rss_kb=16676

@@ -1,6 +1,7 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC slist_wc_append
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -27,6 +28,7 @@ FUNC slist_wc_append
   i23 IN: true
 FUNC slist_wc_free_all
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -44,6 +46,7 @@ FUNC tool_progress_cb
   [skipped] reason=too_large insts=201
 FUNC progressbarinit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -114,6 +117,7 @@ FUNC progressbarinit
   i67 IN: true
 FUNC tool_read_cb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -136,6 +140,7 @@ FUNC tool_read_cb
   i19 IN: true
 FUNC tool_seek_cb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -144,6 +149,7 @@ FUNC tool_seek_cb
   i5 IN: true
 FUNC tool_create_output_file
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -195,6 +201,7 @@ FUNC tool_create_output_file
   i48 IN: true
 FUNC tool_write_cb
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -264,6 +271,7 @@ FUNC tool_write_cb
   i66 IN: true
 FUNC config_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -289,6 +297,7 @@ FUNC config_free
   [skipped] reason=too_large insts=333
 FUNC create_dir_hierarchy
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -346,6 +355,7 @@ FUNC create_dir_hierarchy
   i54 IN: true
 FUNC easysrc_add
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -358,6 +368,7 @@ FUNC easysrc_add
   i9 IN: true
 FUNC easysrc_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -376,6 +387,7 @@ FUNC easysrc_free
   i15 IN: true
 FUNC easysrc_addf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -393,10 +405,12 @@ FUNC easysrc_addf
   i14 IN: true
 FUNC easysrc_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC easysrc_perform
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -451,6 +465,7 @@ FUNC easysrc_perform
   i51 IN: true
 FUNC easysrc_cleanup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -460,6 +475,7 @@ FUNC easysrc_cleanup
   i6 IN: true
 FUNC dumpeasysrc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -565,6 +581,7 @@ FUNC dumpeasysrc
   i102 IN: true
 FUNC getfiletime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -586,6 +603,7 @@ FUNC getfiletime
   i18 IN: true
 FUNC setfiletime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -613,6 +631,7 @@ FUNC setfiletime
   i24 IN: true
 FUNC tool_mime_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -656,6 +675,7 @@ FUNC tool_mime_free
   i40 IN: true
 FUNC tool_mime_stdin_read
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -716,6 +736,7 @@ FUNC tool_mime_stdin_read
   i57 IN: true
 FUNC tool_mime_stdin_seek
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -748,6 +769,7 @@ FUNC tool_mime_stdin_seek
   i29 IN: true
 FUNC tool2curlmime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -768,6 +790,7 @@ FUNC tool2curlmime
   i17 IN: true
 FUNC tool2curlparts
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -860,6 +883,7 @@ FUNC get_param_part
   [skipped] reason=too_large insts=552
 FUNC tool_mime_new_parts
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -880,6 +904,7 @@ FUNC tool_mime_new_parts
   i17 IN: true
 FUNC tool_mime_new_filedata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1019,6 +1044,7 @@ FUNC tool_mime_new_filedata
   i136 IN: true
 FUNC get_param_word
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1094,6 +1120,7 @@ FUNC getparameter
   [skipped] reason=too_large insts=2487
 FUNC GetSizeParameter
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1149,6 +1176,7 @@ FUNC GetSizeParameter
   i52 IN: true
 FUNC GetFileAndPassword
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1226,6 +1254,7 @@ FUNC GetFileAndPassword
   i74 IN: true
 FUNC parse_args
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1340,6 +1369,7 @@ FUNC parse_args
   i111 IN: true
 FUNC getpass_r
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1367,6 +1397,7 @@ FUNC getpass_r
   i24 IN: true
 FUNC tool_help
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1381,6 +1412,7 @@ FUNC tool_help
   i11 IN: true
 FUNC tool_version_info
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1453,6 +1485,7 @@ FUNC tool_version_info
   i69 IN: true
 FUNC featcomp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1461,6 +1494,7 @@ FUNC featcomp
   i5 IN: true
 FUNC tool_list_engines
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1489,6 +1523,7 @@ FUNC tool_list_engines
   i25 IN: true
 FUNC param2text
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1500,6 +1535,7 @@ FUNC param2text
   i8 IN: true
 FUNC SetHTTPrequest
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1535,6 +1571,7 @@ FUNC SetHTTPrequest
   i32 IN: true
 FUNC customrequest_helper
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1571,6 +1608,7 @@ FUNC customrequest_helper
   i33 IN: true
 FUNC homedir
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1594,6 +1632,7 @@ FUNC homedir
   i20 IN: true
 FUNC GetEnv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1606,6 +1645,7 @@ FUNC GetEnv
   i9 IN: true
 FUNC hugehelp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1649,16 +1689,19 @@ FUNC hugehelp
   i40 IN: true
 FUNC zalloc_func
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC zfree_func
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC get_libcurl_info
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1701,6 +1744,7 @@ FUNC get_libcurl_info
   i39 IN: true
 FUNC main
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1822,6 +1866,7 @@ FUNC main
   i118 IN: true
 FUNC notef
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1838,6 +1883,7 @@ FUNC notef
   i13 IN: true
 FUNC voutf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1888,6 +1934,7 @@ FUNC voutf
   i47 IN: true
 FUNC warnf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1899,6 +1946,7 @@ FUNC warnf
   i8 IN: true
 FUNC helpf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1915,6 +1963,7 @@ FUNC helpf
   i13 IN: true
 FUNC operate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2024,6 +2073,7 @@ FUNC operate_do
   [skipped] reason=too_large insts=2489
 FUNC clean_getout
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2050,6 +2100,7 @@ FUNC clean_getout
   i23 IN: true
 FUNC output_expected
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2062,6 +2113,7 @@ FUNC output_expected
   i9 IN: true
 FUNC stdin_upload
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2072,6 +2124,7 @@ FUNC stdin_upload
   i7 IN: true
 FUNC add_file_name_to_url
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2111,6 +2164,7 @@ FUNC add_file_name_to_url
   i36 IN: true
 FUNC get_url_file_name
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2134,6 +2188,7 @@ FUNC get_url_file_name
   i20 IN: true
 FUNC new_getout
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2156,6 +2211,7 @@ FUNC new_getout
   i19 IN: true
 FUNC file2string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2200,6 +2256,7 @@ FUNC file2string
   i41 IN: true
 FUNC file2memory
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2253,9 +2310,11 @@ FUNC file2memory
   i50 IN: true
 FUNC cleanarg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC str2num
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2285,6 +2344,7 @@ FUNC str2num
   i26 IN: true
 FUNC str2unum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2296,6 +2356,7 @@ FUNC str2unum
   i8 IN: true
 FUNC str2udouble
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2330,6 +2391,7 @@ FUNC str2udouble
   i31 IN: true
 FUNC proto2num
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2411,6 +2473,7 @@ FUNC proto2num
   i78 IN: true
 FUNC check_protocol
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2432,6 +2495,7 @@ FUNC check_protocol
   i18 IN: true
 FUNC str2offset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2461,6 +2525,7 @@ FUNC str2offset
   i26 IN: true
 FUNC add2list
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2471,6 +2536,7 @@ FUNC add2list
   i7 IN: true
 FUNC ftpfilemethod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2488,6 +2554,7 @@ FUNC ftpfilemethod
   i14 IN: true
 FUNC ftpcccmethod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2502,6 +2569,7 @@ FUNC ftpcccmethod
   i11 IN: true
 FUNC delegation
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2519,6 +2587,7 @@ FUNC delegation
   i14 IN: true
 FUNC get_args
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2558,6 +2627,7 @@ FUNC get_args
   i36 IN: true
 FUNC checkpasswd
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2616,6 +2686,7 @@ FUNC checkpasswd
   i55 IN: true
 FUNC str2tls_max
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2637,6 +2708,7 @@ FUNC parseconfig
   [skipped] reason=too_large insts=279
 FUNC tool_setopt_enum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2676,6 +2748,7 @@ FUNC tool_setopt_enum
   i36 IN: true
 FUNC tool_setopt_flags
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2733,6 +2806,7 @@ FUNC tool_setopt_flags
   i54 IN: true
 FUNC tool_setopt_bitmask
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2790,6 +2864,7 @@ FUNC tool_setopt_bitmask
   i54 IN: true
 FUNC tool_setopt_mimepost
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2816,6 +2891,7 @@ FUNC tool_setopt_mimepost
   i23 IN: true
 FUNC libcurl_generate_mime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2855,6 +2931,7 @@ FUNC libcurl_generate_mime
   i36 IN: true
 FUNC libcurl_generate_mime_part
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2999,6 +3076,7 @@ FUNC libcurl_generate_mime_part
   i141 IN: true
 FUNC c_escape
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3050,6 +3128,7 @@ FUNC c_escape
   i48 IN: true
 FUNC libcurl_generate_slist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3095,6 +3174,7 @@ FUNC libcurl_generate_slist
   i42 IN: true
 FUNC tool_setopt_slist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3122,6 +3202,7 @@ FUNC tool_setopt_slist
   i24 IN: true
 FUNC tool_setopt
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3260,6 +3341,7 @@ FUNC tool_setopt
   i135 IN: true
 FUNC tool_go_sleep
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3267,6 +3349,7 @@ FUNC glob_url
   [skipped] reason=too_large insts=544
 FUNC glob_cleanup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3331,6 +3414,7 @@ FUNC glob_cleanup
   i61 IN: true
 FUNC glob_next_url
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3471,6 +3555,7 @@ FUNC glob_next_url
   i137 IN: true
 FUNC glob_match_url
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3580,6 +3665,7 @@ FUNC glob_match_url
   i106 IN: true
 FUNC tvnow
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3611,6 +3697,7 @@ FUNC tvnow
   i28 IN: true
 FUNC tvdiff
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3621,6 +3708,7 @@ FUNC ourWriteOut
   [skipped] reason=too_large insts=289
 FUNC fwrite_xattr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3689,6 +3777,7 @@ FUNC fwrite_xattr
   i65 IN: true
 FUNC curlx_strtoofft
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3735,6 +3824,7 @@ FUNC curlx_strtoofft
   i43 IN: true
 FUNC curlx_nonblock
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3744,68 +3834,84 @@ FUNC curlx_nonblock
   i6 IN: true
 FUNC curlx_ultous
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_ultouc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_ultosi
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC curlx_uztoso
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_uztosi
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC curlx_uztoul
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC curlx_uztoui
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_sltosi
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC curlx_sltoui
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_sltous
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_uztosz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_sotouz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
 FUNC curlx_sztosi
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC curlx_uitous
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC curlx_sitouz
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC Curl_isspace
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3818,6 +3924,7 @@ FUNC Curl_isspace
   i9 IN: true
 FUNC Curl_isdigit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3830,6 +3937,7 @@ FUNC Curl_isdigit
   i9 IN: true
 FUNC Curl_isalnum
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3842,6 +3950,7 @@ FUNC Curl_isalnum
   i9 IN: true
 FUNC Curl_isxdigit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3854,6 +3963,7 @@ FUNC Curl_isxdigit
   i9 IN: true
 FUNC Curl_isgraph
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3868,6 +3978,7 @@ FUNC Curl_isgraph
   i11 IN: true
 FUNC Curl_isprint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3880,6 +3991,7 @@ FUNC Curl_isprint
   i9 IN: true
 FUNC Curl_isalpha
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3892,6 +4004,7 @@ FUNC Curl_isalpha
   i9 IN: true
 FUNC Curl_isupper
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3904,6 +4017,7 @@ FUNC Curl_isupper
   i9 IN: true
 FUNC Curl_islower
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3916,6 +4030,7 @@ FUNC Curl_islower
   i9 IN: true
 FUNC Curl_iscntrl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3927,4 +4042,4 @@ FUNC Curl_iscntrl
   i8 IN: true
   i9 IN: true
 [summary] skipped_functions=11
-[mem] peak_rss_kb=26860
+[mem] peak_rss_kb=28236

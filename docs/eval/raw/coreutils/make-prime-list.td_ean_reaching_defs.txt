@@ -1,9 +1,9 @@
-[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=200
+[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=3, ean_min_nodes=0, interp_repeat=1, max_func_insts=300
 FUNC main
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=2, blocks=22, insts=155, edges=29, branching_blocks=8, max_succs=2, phis=1, calls=24, returns=1, unreachable=0, elapsed_us=374382
-  [timing] gen_us=10782, norm_us=52232, interp_us=307136, end2end_us=374382, runs=1
+  [cfg] args=2, blocks=22, insts=155, edges=29, branching_blocks=8, max_succs=2, phis=1, calls=24, returns=1, unreachable=0, elapsed_us=536728
+  [timing] gen_us=14984, norm_us=73538, interp_us=439517, end2end_us=536728, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=1932, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=768, edges=1223, tree=6.228100e+04, seq=492, stars=3, unions=118, atoms=154, sharing=8.109505e+01, roots=155
   [expr-profile] with_expr=155, missing_expr=0, total_unique_nodes=32972, total_shared_refs=7331, total_unions=548, total_concats=19397, total_stars=258, max_nodes=381@i154, max_depth=91@i124
@@ -165,8 +165,8 @@ FUNC main
 FUNC xalloc
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=1, blocks=3, insts=17, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=864
-  [timing] gen_us=170, norm_us=569, interp_us=75, end2end_us=864, runs=1
+  [cfg] args=1, blocks=3, insts=17, edges=2, branching_blocks=1, max_succs=2, phis=0, calls=5, returns=1, unreachable=1, elapsed_us=984
+  [timing] gen_us=192, norm_us=628, interp_us=108, end2end_us=984, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=30, edges=28, tree=2.410000e+02, seq=14, stars=0, unions=0, atoms=15, sharing=8.033333e+00, roots=17
   [expr-profile] with_expr=17, missing_expr=0, total_unique_nodes=241, total_shared_refs=0, total_unions=0, total_concats=112, total_stars=0, max_nodes=27@i16, max_depth=14@i16
@@ -190,8 +190,8 @@ FUNC xalloc
 FUNC process_prime
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=2, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=1654
-  [timing] gen_us=280, norm_us=1048, interp_us=246, end2end_us=1654, runs=1
+  [cfg] args=2, blocks=1, insts=27, edges=0, branching_blocks=0, max_succs=0, phis=0, calls=4, returns=1, unreachable=0, elapsed_us=2164
+  [timing] gen_us=416, norm_us=1265, interp_us=382, end2end_us=2164, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=52, edges=50, tree=6.770000e+02, seq=25, stars=0, unions=0, atoms=26, sharing=1.301923e+01, roots=27
   [expr-profile] with_expr=27, missing_expr=0, total_unique_nodes=677, total_shared_refs=0, total_unions=0, total_concats=325, total_stars=0, max_nodes=51@i26, max_depth=26@i26
@@ -225,8 +225,8 @@ FUNC process_prime
 FUNC output_primes
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=2, blocks=25, insts=168, edges=31, branching_blocks=8, max_succs=2, phis=1, calls=16, returns=1, unreachable=1, elapsed_us=366610
-  [timing] gen_us=16592, norm_us=34921, interp_us=307401, end2end_us=366610, runs=1
+  [cfg] args=2, blocks=25, insts=168, edges=31, branching_blocks=8, max_succs=2, phis=1, calls=16, returns=1, unreachable=1, elapsed_us=527456
+  [timing] gen_us=23326, norm_us=45202, interp_us=445998, end2end_us=527456, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=1008, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=698, edges=1058, tree=6.963000e+04, seq=459, stars=4, unions=68, atoms=166, sharing=9.975645e+01, roots=168
   [expr-profile] with_expr=168, missing_expr=0, total_unique_nodes=47758, total_shared_refs=11517, total_unions=701, total_concats=28656, total_stars=393, max_nodes=479@i159, max_depth=117@i159
@@ -401,8 +401,8 @@ FUNC output_primes
 FUNC print_wide_uint
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=3, blocks=10, insts=84, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=21395
-  [timing] gen_us=2112, norm_us=13604, interp_us=5030, end2end_us=21395, runs=1
+  [cfg] args=3, blocks=10, insts=84, edges=13, branching_blocks=4, max_succs=2, phis=0, calls=13, returns=1, unreachable=0, elapsed_us=33062
+  [timing] gen_us=3406, norm_us=19985, interp_us=8166, end2end_us=33062, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=321, edges=474, tree=6.666000e+03, seq=199, stars=0, unions=38, atoms=83, sharing=2.076636e+01, roots=84
   [expr-profile] with_expr=84, missing_expr=0, total_unique_nodes=6260, total_shared_refs=254, total_unions=38, total_concats=3177, total_stars=0, max_nodes=193@i83, max_depth=48@i48
@@ -493,8 +493,8 @@ FUNC print_wide_uint
 FUNC binvert
   [client:reaching_defs]
   [interp] mode=generic
-  [cfg] args=1, blocks=4, insts=34, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=4873
-  [timing] gen_us=801, norm_us=2040, interp_us=1810, end2end_us=4873, runs=1
+  [cfg] args=1, blocks=4, insts=34, edges=4, branching_blocks=1, max_succs=2, phis=0, calls=3, returns=1, unreachable=0, elapsed_us=6147
+  [timing] gen_us=1003, norm_us=1964, interp_us=2902, end2end_us=6147, runs=3
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=38, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=88, edges=107, tree=1.819000e+03, seq=51, stars=1, unions=2, atoms=33, sharing=2.067045e+01, roots=34
   [expr-profile] with_expr=34, missing_expr=0, total_unique_nodes=1619, total_shared_refs=166, total_unions=20, total_concats=846, total_stars=19, max_nodes=82@i30, max_depth=36@i33
@@ -533,4 +533,4 @@ FUNC binvert
   i32 IN: arg0,i0,i1,i10,i11,i12,i16,i17,i18,i19,i2,i20,i21,i22,i23,i24,i25,i26,i27,i31,i6,i7,i8,i9
   i33 IN: arg0,i0,i1,i10,i11,i12,i16,i17,i18,i19,i2,i20,i21,i22,i23,i25,i26,i27,i31,i32,i6,i7,i8,i9
 [summary] skipped_functions=0
-[mem] peak_rss_kb=20828
+[mem] peak_rss_kb=21572

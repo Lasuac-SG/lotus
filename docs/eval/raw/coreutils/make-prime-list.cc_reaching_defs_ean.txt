@@ -1,8 +1,9 @@
-[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reaching_defs, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=155
 FUNC xalloc
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -22,6 +23,7 @@ FUNC xalloc
   i16 IN: arg0,i0,i1,i13,i14,i5,i6,i8,i9
 FUNC process_prime
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1
   i1 IN: arg0,arg1,i0
   i2 IN: arg0,arg1,i0,i1
@@ -53,6 +55,7 @@ FUNC output_primes
   [skipped] reason=too_large insts=168
 FUNC print_wide_uint
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0,arg1,arg2
   i1 IN: arg0,arg1,arg2,i0
   i2 IN: arg0,arg1,arg2,i0,i1
@@ -139,6 +142,7 @@ FUNC print_wide_uint
   i83 IN: arg0,arg1,arg2,i0,i1,i16,i17,i2,i20,i21,i22,i23,i24,i25,i26,i28,i29,i3,i30,i31,i34,i35,i36,i37,i38,i39,i4,i40,i41,i42,i44,i45,i47,i49,i5,i50,i51,i52,i53,i54,i55,i57,i58,i6,i60,i61,i62,i64,i65,i67,i68,i70,i71,i72,i73,i74,i75,i76,i80,i81,i82
 FUNC binvert
   [client:reaching_defs]
+  [interp] mode=generic
   i0 IN: arg0
   i1 IN: arg0,i0
   i2 IN: arg0,i0,i1
@@ -174,4 +178,4 @@ FUNC binvert
   i32 IN: arg0,i0,i1,i10,i11,i12,i16,i17,i18,i19,i2,i20,i21,i22,i23,i24,i25,i26,i27,i31,i6,i7,i8,i9
   i33 IN: arg0,i0,i1,i10,i11,i12,i16,i17,i18,i19,i2,i20,i21,i22,i23,i25,i26,i27,i31,i32,i6,i7,i8,i9
 [summary] skipped_functions=2
-[mem] peak_rss_kb=15276
+[mem] peak_rss_kb=16424

@@ -1,6 +1,7 @@
-[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=reachable, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -44,6 +45,7 @@ FUNC pmain
   [skipped] reason=too_large insts=427
 FUNC report
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -69,6 +71,7 @@ FUNC report
   i22 IN: true
 FUNC dochunk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -95,6 +98,7 @@ FUNC dochunk
   i23 IN: true
 FUNC msghandler
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -118,6 +122,7 @@ FUNC msghandler
   i20 IN: true
 FUNC laction
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -128,6 +133,7 @@ FUNC doREPL
   [skipped] reason=too_large insts=155
 FUNC dofile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -135,6 +141,7 @@ FUNC dofile
   i4 IN: true
 FUNC pushline
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -197,6 +204,7 @@ FUNC pushline
   i59 IN: true
 FUNC lstop
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -204,6 +212,7 @@ FUNC lstop
   i4 IN: true
 FUNC lua_checkstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -250,6 +259,7 @@ FUNC lua_checkstack
   i43 IN: true
 FUNC lua_xmove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -361,6 +371,7 @@ FUNC lua_xmove
   i108 IN: true
 FUNC lua_atpanic
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -372,10 +383,12 @@ FUNC lua_atpanic
   i8 IN: true
 FUNC lua_version
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
 FUNC lua_absindex
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -398,6 +411,7 @@ FUNC lua_absindex
   i19 IN: true
 FUNC lua_gettop
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -414,6 +428,7 @@ FUNC lua_gettop
   i13 IN: true
 FUNC lua_settop
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -488,6 +503,7 @@ FUNC lua_copy
   [skipped] reason=too_large insts=180
 FUNC lua_pushvalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -571,6 +587,7 @@ FUNC lua_pushvalue
   i80 IN: true
 FUNC lua_type
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -655,6 +672,7 @@ FUNC lua_type
   i81 IN: true
 FUNC lua_typename
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -664,6 +682,7 @@ FUNC lua_typename
   i6 IN: true
 FUNC lua_iscfunction
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -741,6 +760,7 @@ FUNC lua_iscfunction
   i74 IN: true
 FUNC lua_isinteger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -816,6 +836,7 @@ FUNC lua_isinteger
   i72 IN: true
 FUNC lua_isnumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -899,6 +920,7 @@ FUNC lua_isnumber
   i80 IN: true
 FUNC lua_isstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -976,6 +998,7 @@ FUNC lua_isstring
   i74 IN: true
 FUNC lua_isuserdata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1055,6 +1078,7 @@ FUNC lua_rawequal
   [skipped] reason=too_large insts=157
 FUNC lua_arith
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1091,6 +1115,7 @@ FUNC lua_compare
   [skipped] reason=too_large insts=168
 FUNC lua_stringtonumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1107,6 +1132,7 @@ FUNC lua_stringtonumber
   i13 IN: true
 FUNC lua_tonumberx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1205,6 +1231,7 @@ FUNC lua_tonumberx
   i95 IN: true
 FUNC lua_tointegerx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1303,6 +1330,7 @@ FUNC lua_tointegerx
   i95 IN: true
 FUNC lua_toboolean
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1383,6 +1411,7 @@ FUNC lua_tolstring
   [skipped] reason=too_large insts=170
 FUNC lua_rawlen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1480,6 +1509,7 @@ FUNC lua_rawlen
   i94 IN: true
 FUNC lua_tocfunction
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1564,6 +1594,7 @@ FUNC lua_tocfunction
   i81 IN: true
 FUNC lua_touserdata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1657,6 +1688,7 @@ FUNC lua_touserdata
   i90 IN: true
 FUNC lua_tothread
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1736,6 +1768,7 @@ FUNC lua_tothread
   i76 IN: true
 FUNC lua_topointer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1841,6 +1874,7 @@ FUNC lua_topointer
   i102 IN: true
 FUNC lua_pushnil
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1853,6 +1887,7 @@ FUNC lua_pushnil
   i9 IN: true
 FUNC lua_pushnumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1869,6 +1904,7 @@ FUNC lua_pushnumber
   i13 IN: true
 FUNC lua_pushinteger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1885,6 +1921,7 @@ FUNC lua_pushinteger
   i13 IN: true
 FUNC lua_pushlstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1923,6 +1960,7 @@ FUNC lua_pushlstring
   i35 IN: true
 FUNC lua_pushstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1967,6 +2005,7 @@ FUNC lua_pushstring
   i41 IN: true
 FUNC lua_pushvfstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -1983,6 +2022,7 @@ FUNC lua_pushvfstring
   i13 IN: true
 FUNC lua_pushfstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2006,6 +2046,7 @@ FUNC lua_pushfstring
   i20 IN: true
 FUNC lua_pushcclosure
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2131,6 +2172,7 @@ FUNC lua_pushcclosure
   i122 IN: true
 FUNC lua_pushboolean
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2147,6 +2189,7 @@ FUNC lua_pushboolean
   i13 IN: true
 FUNC lua_pushlightuserdata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2163,6 +2206,7 @@ FUNC lua_pushlightuserdata
   i13 IN: true
 FUNC lua_pushthread
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2185,6 +2229,7 @@ FUNC lua_pushthread
   i19 IN: true
 FUNC lua_getglobal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2257,6 +2302,7 @@ FUNC lua_getglobal
   i69 IN: true
 FUNC lua_gettable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2370,6 +2416,7 @@ FUNC lua_gettable
   i110 IN: true
 FUNC lua_getfield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2501,6 +2548,7 @@ FUNC lua_getfield
   i128 IN: true
 FUNC lua_geti
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2635,6 +2683,7 @@ FUNC lua_geti
   i131 IN: true
 FUNC lua_rawget
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2744,6 +2793,7 @@ FUNC lua_rawget
   i106 IN: true
 FUNC lua_rawgeti
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2850,6 +2900,7 @@ FUNC lua_rawgeti
   i103 IN: true
 FUNC lua_rawgetp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -2966,6 +3017,7 @@ FUNC lua_rawgetp
   i113 IN: true
 FUNC lua_createtable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3000,6 +3052,7 @@ FUNC lua_createtable
   i31 IN: true
 FUNC lua_getmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3114,6 +3167,7 @@ FUNC lua_getmetatable
   i111 IN: true
 FUNC lua_getiuservalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3233,6 +3287,7 @@ FUNC lua_getiuservalue
   i116 IN: true
 FUNC lua_setglobal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3246,6 +3301,7 @@ FUNC lua_setglobal
   i10 IN: true
 FUNC auxsetstr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3330,6 +3386,7 @@ FUNC auxsetstr
   i81 IN: true
 FUNC lua_settable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3462,6 +3519,7 @@ FUNC lua_settable
   i129 IN: true
 FUNC lua_setfield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3534,6 +3592,7 @@ FUNC lua_setfield
   i69 IN: true
 FUNC lua_seti
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3686,6 +3745,7 @@ FUNC lua_seti
   i149 IN: true
 FUNC lua_rawset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3695,6 +3755,7 @@ FUNC lua_rawset
   i6 IN: true
 FUNC aux_rawset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3819,6 +3880,7 @@ FUNC aux_rawset
   i121 IN: true
 FUNC lua_rawsetp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3836,6 +3898,7 @@ FUNC lua_rawsetp
   i14 IN: true
 FUNC lua_rawseti
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -3942,6 +4005,7 @@ FUNC lua_rawseti
   i103 IN: true
 FUNC lua_setmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4091,6 +4155,7 @@ FUNC lua_setmetatable
   i146 IN: true
 FUNC lua_setiuservalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4214,6 +4279,7 @@ FUNC lua_setiuservalue
   i120 IN: true
 FUNC lua_callk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4256,6 +4322,7 @@ FUNC lua_callk
   i39 IN: true
 FUNC lua_pcallk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4378,6 +4445,7 @@ FUNC lua_pcallk
   i119 IN: true
 FUNC f_call
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4390,6 +4458,7 @@ FUNC f_call
   i9 IN: true
 FUNC lua_load
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4463,6 +4532,7 @@ FUNC lua_load
   i70 IN: true
 FUNC lua_dump
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4488,6 +4558,7 @@ FUNC lua_dump
   i22 IN: true
 FUNC lua_status
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4497,6 +4568,7 @@ FUNC lua_gc
   [skipped] reason=too_large insts=325
 FUNC lua_error
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4521,6 +4593,7 @@ FUNC lua_error
   i21 IN: true
 FUNC lua_next
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4607,6 +4680,7 @@ FUNC lua_next
   i83 IN: true
 FUNC lua_toclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4649,6 +4723,7 @@ FUNC lua_toclose
   i39 IN: true
 FUNC lua_concat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4683,6 +4758,7 @@ FUNC lua_concat
   i31 IN: true
 FUNC lua_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4760,6 +4836,7 @@ FUNC lua_len
   i74 IN: true
 FUNC lua_getallocf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4778,6 +4855,7 @@ FUNC lua_getallocf
   i15 IN: true
 FUNC lua_setallocf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4790,6 +4868,7 @@ FUNC lua_setallocf
   i9 IN: true
 FUNC lua_setwarnf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4802,6 +4881,7 @@ FUNC lua_setwarnf
   i9 IN: true
 FUNC lua_warning
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4809,6 +4889,7 @@ FUNC lua_warning
   i4 IN: true
 FUNC lua_newuserdatauv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4846,6 +4927,7 @@ FUNC lua_newuserdatauv
   i34 IN: true
 FUNC lua_getupvalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -4994,6 +5076,7 @@ FUNC luaG_getfuncline
   [skipped] reason=too_large insts=155
 FUNC lua_sethook
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5040,24 +5123,28 @@ FUNC lua_sethook
   i43 IN: true
 FUNC lua_gethook
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC lua_gethookmask
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC lua_gethookcount
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC lua_getstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5101,6 +5188,7 @@ FUNC lua_getstack
   i40 IN: true
 FUNC luaG_findlocal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5202,6 +5290,7 @@ FUNC luaG_findlocal
   i98 IN: true
 FUNC lua_getlocal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5342,6 +5431,7 @@ FUNC lua_getlocal
   i137 IN: true
 FUNC lua_setlocal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5469,6 +5559,7 @@ FUNC getobjname
   [skipped] reason=too_large insts=339
 FUNC luaG_typeerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5479,6 +5570,7 @@ FUNC luaG_typeerror
   i7 IN: true
 FUNC varinfo
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5598,6 +5690,7 @@ FUNC luaG_runerror
   [skipped] reason=too_large insts=235
 FUNC luaG_errormsg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5643,6 +5736,7 @@ FUNC luaG_errormsg
   i42 IN: true
 FUNC luaG_forerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5651,6 +5745,7 @@ FUNC luaG_forerror
   i5 IN: true
 FUNC luaG_concaterror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5665,6 +5760,7 @@ FUNC luaG_concaterror
   i11 IN: true
 FUNC luaG_opinterror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5679,6 +5775,7 @@ FUNC luaG_opinterror
   i11 IN: true
 FUNC luaG_tointerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5706,6 +5803,7 @@ FUNC luaG_tointerror
   i24 IN: true
 FUNC luaG_ordererror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5722,6 +5820,7 @@ FUNC luaG_ordererror
   i13 IN: true
 FUNC luaG_addinfo
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5758,6 +5857,7 @@ FUNC luaG_traceexec
   [skipped] reason=too_large insts=592
 FUNC luaD_seterrorobj
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5804,6 +5904,7 @@ FUNC luaD_seterrorobj
   i43 IN: true
 FUNC luaD_throw
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5911,6 +6012,7 @@ FUNC luaD_throw
   i104 IN: true
 FUNC luaD_rawrunprotected
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5944,6 +6046,7 @@ FUNC luaD_reallocstack
   [skipped] reason=too_large insts=161
 FUNC luaD_growstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -5992,6 +6095,7 @@ FUNC luaD_growstack
   i45 IN: true
 FUNC luaD_shrinkstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6060,6 +6164,7 @@ FUNC luaD_shrinkstack
   i65 IN: true
 FUNC luaD_inctop
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6111,6 +6216,7 @@ FUNC luaD_inctop
   i48 IN: true
 FUNC luaD_hook
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6243,6 +6349,7 @@ FUNC luaD_hook
   i129 IN: true
 FUNC luaD_hookcall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6283,6 +6390,7 @@ FUNC luaD_hookcall
   i37 IN: true
 FUNC luaD_tryfuncTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6340,6 +6448,7 @@ FUNC luaD_precall
   [skipped] reason=too_large insts=417
 FUNC luaD_call
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6370,6 +6479,7 @@ FUNC luaD_call
   i27 IN: true
 FUNC luaD_callnoyield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6402,6 +6512,7 @@ FUNC lua_resume
   [skipped] reason=too_large insts=317
 FUNC resume
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6477,6 +6588,7 @@ FUNC resume
   i72 IN: true
 FUNC unroll
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6576,6 +6688,7 @@ FUNC unroll
   i96 IN: true
 FUNC lua_isyieldable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6584,6 +6697,7 @@ FUNC lua_isyieldable
   i5 IN: true
 FUNC lua_yieldk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6628,6 +6742,7 @@ FUNC lua_yieldk
   i41 IN: true
 FUNC luaD_pcall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6672,6 +6787,7 @@ FUNC luaD_protectedparser
   [skipped] reason=too_large insts=212
 FUNC f_parser
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6748,6 +6864,7 @@ FUNC dumpFunction
   [skipped] reason=too_large insts=1257
 FUNC dumpString
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6876,6 +6993,7 @@ FUNC dumpString
   i125 IN: true
 FUNC luaF_newCclosure
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6891,6 +7009,7 @@ FUNC luaF_newCclosure
   i12 IN: true
 FUNC luaF_newLclosure
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6927,6 +7046,7 @@ FUNC luaF_newLclosure
   i33 IN: true
 FUNC luaF_initupvals
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -6973,6 +7093,7 @@ FUNC luaF_initupvals
   i43 IN: true
 FUNC luaF_findupval
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7051,6 +7172,7 @@ FUNC luaF_findupval
   i75 IN: true
 FUNC luaF_newtbcupval
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7104,6 +7226,7 @@ FUNC luaF_newtbcupval
   i50 IN: true
 FUNC trynewtbcupval
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7150,6 +7273,7 @@ FUNC trynewtbcupval
   i43 IN: true
 FUNC prepclosingmethod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7201,6 +7325,7 @@ FUNC prepclosingmethod
   i48 IN: true
 FUNC callclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7210,6 +7335,7 @@ FUNC callclose
   i6 IN: true
 FUNC luaF_unlinkupval
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7228,6 +7354,7 @@ FUNC luaF_close
   [skipped] reason=too_large insts=256
 FUNC luaF_newproto
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7272,6 +7399,7 @@ FUNC luaF_newproto
   i41 IN: true
 FUNC luaF_freeproto
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7333,6 +7461,7 @@ FUNC luaF_freeproto
   i58 IN: true
 FUNC luaF_getlocalname
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7378,6 +7507,7 @@ FUNC luaF_getlocalname
   i42 IN: true
 FUNC luaC_barrier_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7416,6 +7546,7 @@ FUNC luaC_barrier_
   i35 IN: true
 FUNC reallymarkobject
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7509,6 +7640,7 @@ FUNC reallymarkobject
   i90 IN: true
 FUNC luaC_barrierback_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7558,6 +7690,7 @@ FUNC luaC_barrierback_
   i46 IN: true
 FUNC luaC_fix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7579,6 +7712,7 @@ FUNC luaC_fix
   i18 IN: true
 FUNC luaC_newobj
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7608,6 +7742,7 @@ FUNC luaC_checkfinalizer
   [skipped] reason=too_large insts=157
 FUNC freeobj
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7695,6 +7830,7 @@ FUNC freeobj
   i84 IN: true
 FUNC luaC_changemode
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7821,6 +7957,7 @@ FUNC atomic2gen
   [skipped] reason=too_large insts=233
 FUNC finishgencycle
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7894,6 +8031,7 @@ FUNC finishgencycle
   i70 IN: true
 FUNC correctgraylist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -7959,6 +8097,7 @@ FUNC correctgraylist
   i62 IN: true
 FUNC GCTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8083,6 +8222,7 @@ FUNC GCTM
   i121 IN: true
 FUNC dothecall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8092,6 +8232,7 @@ FUNC dothecall
   i6 IN: true
 FUNC markmt
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8227,6 +8368,7 @@ FUNC traverseephemeron
   [skipped] reason=too_large insts=200
 FUNC clearbyvalues
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8347,6 +8489,7 @@ FUNC clearbyvalues
   i117 IN: true
 FUNC genlink
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8392,6 +8535,7 @@ FUNC luaC_freeallobjects
   [skipped] reason=too_large insts=191
 FUNC luaC_runtilstate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8416,6 +8560,7 @@ FUNC luaC_step
   [skipped] reason=too_large insts=793
 FUNC fullgen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8530,6 +8675,7 @@ FUNC luaC_fullgc
   [skipped] reason=too_large insts=158
 FUNC luaM_growaux_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8610,6 +8756,7 @@ FUNC luaM_growaux_
   i77 IN: true
 FUNC tryagain
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8633,6 +8780,7 @@ FUNC tryagain
   i20 IN: true
 FUNC luaM_saferealloc_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8678,6 +8826,7 @@ FUNC luaM_saferealloc_
   i42 IN: true
 FUNC luaM_shrinkvector_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8753,11 +8902,13 @@ FUNC luaM_shrinkvector_
   i72 IN: true
 FUNC luaM_toobig
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC luaM_free_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8776,6 +8927,7 @@ FUNC luaM_free_
   i15 IN: true
 FUNC luaM_realloc_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8811,6 +8963,7 @@ FUNC luaM_realloc_
   i32 IN: true
 FUNC luaM_malloc_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8845,6 +8998,7 @@ FUNC luaM_malloc_
   i31 IN: true
 FUNC luaO_ceillog2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8874,6 +9028,7 @@ FUNC luaO_rawarith
   [skipped] reason=too_large insts=180
 FUNC intarith
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8908,6 +9063,7 @@ FUNC intarith
   i31 IN: true
 FUNC luaO_arith
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8923,6 +9079,7 @@ FUNC luaO_arith
   i12 IN: true
 FUNC luaO_hexavalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8939,6 +9096,7 @@ FUNC luaO_str2num
   [skipped] reason=too_large insts=291
 FUNC luaO_utf8esc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -8984,6 +9142,7 @@ FUNC luaO_utf8esc
   i42 IN: true
 FUNC luaO_tostring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9044,6 +9203,7 @@ FUNC luaO_pushvfstring
   [skipped] reason=too_large insts=438
 FUNC addstr2buff
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9163,6 +9323,7 @@ FUNC addstr2buff
   i116 IN: true
 FUNC addnum2buff
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9252,6 +9413,7 @@ FUNC addnum2buff
   i86 IN: true
 FUNC luaO_pushfstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9267,6 +9429,7 @@ FUNC luaO_pushfstring
   i12 IN: true
 FUNC luaO_chunkid
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9333,6 +9496,7 @@ FUNC luaO_chunkid
   i63 IN: true
 FUNC luaY_nvarstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9375,6 +9539,7 @@ FUNC luaY_parser
   [skipped] reason=too_large insts=333
 FUNC errorlimit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9403,6 +9568,7 @@ FUNC statement
   [skipped] reason=too_large insts=2306
 FUNC error_expected
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9413,6 +9579,7 @@ FUNC error_expected
   i7 IN: true
 FUNC close_func
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9537,6 +9704,7 @@ FUNC createlabel
   [skipped] reason=too_large insts=191
 FUNC undefgoto
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9567,6 +9735,7 @@ FUNC undefgoto
   i27 IN: true
 FUNC jumpscopeerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9606,6 +9775,7 @@ FUNC subexpr
   [skipped] reason=too_large insts=212
 FUNC check_match
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9637,6 +9807,7 @@ FUNC forbody
   [skipped] reason=too_large insts=185
 FUNC adjust_assign
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9677,6 +9848,7 @@ FUNC adjust_assign
   i37 IN: true
 FUNC singlevar
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9728,6 +9900,7 @@ FUNC body
   [skipped] reason=too_large insts=432
 FUNC explist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9762,6 +9935,7 @@ FUNC explist
   i31 IN: true
 FUNC suffixedexp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -9898,6 +10072,7 @@ FUNC restassign
   [skipped] reason=too_large insts=268
 FUNC funcargs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10014,6 +10189,7 @@ FUNC constructor
   [skipped] reason=too_large insts=170
 FUNC recfield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10111,6 +10287,7 @@ FUNC singlevaraux
   [skipped] reason=too_large insts=323
 FUNC luaE_setdebt
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10129,11 +10306,13 @@ FUNC luaE_setdebt
   i15 IN: true
 FUNC lua_setcstacklimit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC luaE_extendCI
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10159,6 +10338,7 @@ FUNC luaE_extendCI
   i22 IN: true
 FUNC luaE_freeCI
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10189,6 +10369,7 @@ FUNC luaE_freeCI
   i27 IN: true
 FUNC luaE_shrinkCI
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10231,6 +10412,7 @@ FUNC luaE_shrinkCI
   i39 IN: true
 FUNC luaE_checkcstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10246,6 +10428,7 @@ FUNC luaE_checkcstack
   i12 IN: true
 FUNC luaE_incCstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10261,6 +10444,7 @@ FUNC lua_newthread
   [skipped] reason=too_large insts=177
 FUNC luaE_freethread
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10322,6 +10506,7 @@ FUNC luaE_freethread
   i58 IN: true
 FUNC lua_resetthread
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10365,6 +10550,7 @@ FUNC lua_newstate
   [skipped] reason=too_large insts=161
 FUNC f_luaopen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10482,6 +10668,7 @@ FUNC f_luaopen
   i114 IN: true
 FUNC close_state
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10556,6 +10743,7 @@ FUNC close_state
   i71 IN: true
 FUNC lua_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10566,6 +10754,7 @@ FUNC lua_close
   i7 IN: true
 FUNC luaE_warning
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10583,6 +10772,7 @@ FUNC luaE_warning
   i14 IN: true
 FUNC luaE_warnerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10666,6 +10856,7 @@ FUNC luaE_warnerror
   i80 IN: true
 FUNC luaS_eqlngstr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10687,6 +10878,7 @@ FUNC luaS_eqlngstr
   i18 IN: true
 FUNC luaS_hash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10752,6 +10944,7 @@ FUNC luaS_hash
   i62 IN: true
 FUNC luaS_hashlongstr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10834,6 +11027,7 @@ FUNC luaS_hashlongstr
   i79 IN: true
 FUNC luaS_resize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -10958,6 +11152,7 @@ FUNC luaS_resize
   i121 IN: true
 FUNC tablerehash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11016,6 +11211,7 @@ FUNC tablerehash
   i55 IN: true
 FUNC luaS_clearcache
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11055,6 +11251,7 @@ FUNC luaS_clearcache
   i36 IN: true
 FUNC luaS_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11116,6 +11313,7 @@ FUNC luaS_newlstr
   [skipped] reason=too_large insts=220
 FUNC luaS_createlngstrobj
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11146,6 +11344,7 @@ FUNC luaS_createlngstrobj
   i27 IN: true
 FUNC luaS_remove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11186,6 +11385,7 @@ FUNC luaS_remove
   i37 IN: true
 FUNC luaS_new
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11229,6 +11429,7 @@ FUNC luaS_new
   i40 IN: true
 FUNC luaS_newudata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11309,6 +11510,7 @@ FUNC luaS_newudata
   i77 IN: true
 FUNC luaH_realasize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11344,6 +11546,7 @@ FUNC luaH_next
   [skipped] reason=too_large insts=168
 FUNC getgeneric
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11437,6 +11640,7 @@ FUNC getgeneric
   i90 IN: true
 FUNC mainposition
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11593,6 +11797,7 @@ FUNC luaH_newkey
   [skipped] reason=too_large insts=477
 FUNC freehash
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11615,6 +11820,7 @@ FUNC luaH_get
   [skipped] reason=too_large insts=236
 FUNC luaH_setint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11738,6 +11944,7 @@ FUNC luaH_setint
   i120 IN: true
 FUNC luaH_resizearray
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11756,6 +11963,7 @@ FUNC luaH_resizearray
   i15 IN: true
 FUNC luaH_new
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11785,6 +11993,7 @@ FUNC luaH_new
   i26 IN: true
 FUNC luaH_free
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11845,6 +12054,7 @@ FUNC luaH_free
   i57 IN: true
 FUNC luaH_set
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11860,6 +12070,7 @@ FUNC luaH_set
   i12 IN: true
 FUNC luaH_getint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11949,6 +12160,7 @@ FUNC luaH_getint
   i86 IN: true
 FUNC luaH_getshortstr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -11990,6 +12202,7 @@ FUNC luaH_getshortstr
   i38 IN: true
 FUNC luaH_getstr
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12053,6 +12266,7 @@ FUNC luaH_getn
   [skipped] reason=too_large insts=514
 FUNC luaT_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12077,6 +12291,7 @@ FUNC luaT_init
   i21 IN: true
 FUNC luaT_gettm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12098,6 +12313,7 @@ FUNC luaT_gettm
   i18 IN: true
 FUNC luaT_gettmbyobj
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12140,6 +12356,7 @@ FUNC luaT_gettmbyobj
   i39 IN: true
 FUNC luaT_objtypename
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12186,6 +12403,7 @@ FUNC luaT_objtypename
   i43 IN: true
 FUNC luaT_callTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12253,6 +12471,7 @@ FUNC luaT_callTM
   i64 IN: true
 FUNC luaT_callTMres
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12336,6 +12555,7 @@ FUNC luaT_callTMres
   i80 IN: true
 FUNC luaT_trybinTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12366,6 +12586,7 @@ FUNC callbinTM
   [skipped] reason=too_large insts=174
 FUNC luaT_tryconcatTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12381,6 +12602,7 @@ FUNC luaT_tryconcatTM
   i12 IN: true
 FUNC luaT_trybinassocTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12442,6 +12664,7 @@ FUNC luaT_trybinassocTM
   i58 IN: true
 FUNC luaT_trybiniTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12462,6 +12685,7 @@ FUNC luaT_trybiniTM
   i17 IN: true
 FUNC luaT_callorderTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12513,6 +12737,7 @@ FUNC luaT_callorderTM
   i48 IN: true
 FUNC luaT_callorderiTM
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12548,6 +12773,7 @@ FUNC luaT_callorderiTM
   i32 IN: true
 FUNC luaT_adjustvarargs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12646,6 +12872,7 @@ FUNC luaT_adjustvarargs
   i95 IN: true
 FUNC luaT_getvarargs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12786,6 +13013,7 @@ FUNC luaU_undump
   [skipped] reason=too_large insts=314
 FUNC error
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12800,6 +13028,7 @@ FUNC loadFunction
   [skipped] reason=too_large insts=1266
 FUNC loadStringN
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12923,6 +13152,7 @@ FUNC loadStringN
   i120 IN: true
 FUNC luaV_tonumber_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -12979,6 +13209,7 @@ FUNC luaV_tonumber_
   i53 IN: true
 FUNC luaV_flttointeger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13005,6 +13236,7 @@ FUNC luaV_flttointeger
   i23 IN: true
 FUNC luaV_tointegerns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13043,6 +13275,7 @@ FUNC luaV_tointegerns
   i35 IN: true
 FUNC luaV_tointeger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13121,6 +13354,7 @@ FUNC luaV_tointeger
   i75 IN: true
 FUNC luaV_finishget
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13215,6 +13449,7 @@ FUNC luaV_finishset
   [skipped] reason=too_large insts=153
 FUNC luaV_lessthan
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13312,6 +13547,7 @@ FUNC luaV_lessthan
   i94 IN: true
 FUNC lessthanothers
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13405,6 +13641,7 @@ FUNC lessthanothers
   i90 IN: true
 FUNC luaV_lessequal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13502,6 +13739,7 @@ FUNC luaV_lessequal
   i94 IN: true
 FUNC lessequalothers
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13603,6 +13841,7 @@ FUNC luaV_concat
   [skipped] reason=too_large insts=237
 FUNC luaV_objlen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13675,6 +13914,7 @@ FUNC luaV_objlen
   i69 IN: true
 FUNC luaV_idiv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13701,6 +13941,7 @@ FUNC luaV_idiv
   i23 IN: true
 FUNC luaV_mod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13724,6 +13965,7 @@ FUNC luaV_mod
   i20 IN: true
 FUNC luaV_modf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13745,6 +13987,7 @@ FUNC luaV_modf
   i18 IN: true
 FUNC luaV_shiftl
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13762,6 +14005,7 @@ FUNC luaV_shiftl
   i14 IN: true
 FUNC luaV_finishOp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13886,6 +14130,7 @@ FUNC luaV_execute
   [skipped] reason=too_large insts=6065
 FUNC luaZ_fill
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13920,6 +14165,7 @@ FUNC luaZ_fill
   i31 IN: true
 FUNC luaZ_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -13935,6 +14181,7 @@ FUNC luaZ_init
   i12 IN: true
 FUNC luaZ_read
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14001,6 +14248,7 @@ FUNC luaL_traceback
   [skipped] reason=too_large insts=283
 FUNC prepbuffsize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14133,6 +14381,7 @@ FUNC prepbuffsize
   i129 IN: true
 FUNC pushglobalfuncname
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14161,6 +14410,7 @@ FUNC pushglobalfuncname
   i25 IN: true
 FUNC findfield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14199,6 +14449,7 @@ FUNC findfield
   i35 IN: true
 FUNC luaL_error
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14235,6 +14486,7 @@ FUNC luaL_error
   i33 IN: true
 FUNC luaL_newmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14251,6 +14503,7 @@ FUNC luaL_newmetatable
   i13 IN: true
 FUNC luaL_setfuncs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14306,6 +14559,7 @@ FUNC luaL_setfuncs
   i52 IN: true
 FUNC boxgc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14333,6 +14587,7 @@ FUNC boxgc
   i24 IN: true
 FUNC luaL_buffinit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14346,6 +14601,7 @@ FUNC luaL_buffinit
   i10 IN: true
 FUNC luaL_addstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14365,12 +14621,14 @@ FUNC luaL_addstring
   i16 IN: true
 FUNC luaL_prepbuffsize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC luaL_addvalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14399,6 +14657,7 @@ FUNC luaL_addvalue
   i25 IN: true
 FUNC luaL_pushresult
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14419,6 +14678,7 @@ FUNC luaL_pushresult
   i17 IN: true
 FUNC luaL_argerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14467,6 +14727,7 @@ FUNC luaL_argerror
   i45 IN: true
 FUNC luaL_typeerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14505,6 +14766,7 @@ FUNC luaL_typeerror
   i35 IN: true
 FUNC luaL_getmetafield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14526,6 +14788,7 @@ FUNC luaL_getmetafield
   i18 IN: true
 FUNC luaL_where
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14549,6 +14812,7 @@ FUNC luaL_where
   i20 IN: true
 FUNC luaL_fileresult
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14574,6 +14838,7 @@ FUNC luaL_fileresult
   i22 IN: true
 FUNC luaL_execresult
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14624,6 +14889,7 @@ FUNC luaL_execresult
   i47 IN: true
 FUNC luaL_setmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14631,6 +14897,7 @@ FUNC luaL_setmetatable
   i4 IN: true
 FUNC luaL_testudata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14652,6 +14919,7 @@ FUNC luaL_testudata
   i18 IN: true
 FUNC luaL_checkudata
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14678,6 +14946,7 @@ FUNC luaL_checkudata
   i23 IN: true
 FUNC luaL_checkoption
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14735,6 +15004,7 @@ FUNC luaL_checkoption
   i54 IN: true
 FUNC luaL_optlstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14768,6 +15038,7 @@ FUNC luaL_optlstring
   i30 IN: true
 FUNC luaL_checklstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14784,6 +15055,7 @@ FUNC luaL_checklstring
   i13 IN: true
 FUNC luaL_checkstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14799,6 +15071,7 @@ FUNC luaL_checkstack
   i12 IN: true
 FUNC luaL_checktype
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14814,6 +15087,7 @@ FUNC luaL_checktype
   i12 IN: true
 FUNC luaL_checkany
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14824,6 +15098,7 @@ FUNC luaL_checkany
   i7 IN: true
 FUNC luaL_checknumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14846,6 +15121,7 @@ FUNC luaL_checknumber
   i19 IN: true
 FUNC luaL_optnumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14876,6 +15152,7 @@ FUNC luaL_optnumber
   i27 IN: true
 FUNC luaL_checkinteger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14905,6 +15182,7 @@ FUNC luaL_checkinteger
   i26 IN: true
 FUNC luaL_optinteger
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14942,6 +15220,7 @@ FUNC luaL_optinteger
   i34 IN: true
 FUNC luaL_addlstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14958,6 +15237,7 @@ FUNC luaL_addlstring
   i13 IN: true
 FUNC luaL_pushresultsize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14982,6 +15262,7 @@ FUNC luaL_pushresultsize
   i21 IN: true
 FUNC luaL_buffinitsize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -14999,6 +15280,7 @@ FUNC luaL_buffinitsize
   i14 IN: true
 FUNC luaL_ref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15034,6 +15316,7 @@ FUNC luaL_ref
   i32 IN: true
 FUNC luaL_unref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15050,6 +15333,7 @@ FUNC luaL_unref
   i13 IN: true
 FUNC luaL_loadfilex
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15181,6 +15465,7 @@ FUNC luaL_loadfilex
   i128 IN: true
 FUNC skipcomment
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15239,6 +15524,7 @@ FUNC skipcomment
   i55 IN: true
 FUNC getF
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15268,6 +15554,7 @@ FUNC getF
   i26 IN: true
 FUNC luaL_loadbufferx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15286,6 +15573,7 @@ FUNC luaL_loadbufferx
   i15 IN: true
 FUNC getS
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15305,6 +15593,7 @@ FUNC getS
   i16 IN: true
 FUNC luaL_loadstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15326,6 +15615,7 @@ FUNC luaL_loadstring
   i18 IN: true
 FUNC luaL_callmeta
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15353,6 +15643,7 @@ FUNC luaL_callmeta
   i24 IN: true
 FUNC luaL_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15373,6 +15664,7 @@ FUNC luaL_len
   i17 IN: true
 FUNC luaL_tolstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15443,6 +15735,7 @@ FUNC luaL_tolstring
   i67 IN: true
 FUNC luaL_getsubtable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15460,6 +15753,7 @@ FUNC luaL_getsubtable
   i14 IN: true
 FUNC luaL_requiref
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15498,6 +15792,7 @@ FUNC luaL_requiref
   i35 IN: true
 FUNC luaL_addgsub
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15570,6 +15865,7 @@ FUNC luaL_addgsub
   i69 IN: true
 FUNC luaL_gsub
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15609,6 +15905,7 @@ FUNC luaL_gsub
   i36 IN: true
 FUNC luaL_newstate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15620,6 +15917,7 @@ FUNC luaL_newstate
   i8 IN: true
 FUNC l_alloc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15634,6 +15932,7 @@ FUNC l_alloc
   i11 IN: true
 FUNC panic
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15647,6 +15946,7 @@ FUNC panic
   i10 IN: true
 FUNC warnfoff
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15673,6 +15973,7 @@ FUNC warnfoff
   i23 IN: true
 FUNC warnfon
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15730,6 +16031,7 @@ FUNC warnfon
   i54 IN: true
 FUNC warnfcont
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15752,6 +16054,7 @@ FUNC warnfcont
   i19 IN: true
 FUNC luaL_checkversion_
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15768,6 +16071,7 @@ FUNC luaL_checkversion_
   i13 IN: true
 FUNC luaL_openlibs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15792,6 +16096,7 @@ FUNC luaL_openlibs
   i21 IN: true
 FUNC luaK_semerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15800,6 +16105,7 @@ FUNC luaK_semerror
   i5 IN: true
 FUNC luaK_exp2const
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15872,6 +16178,7 @@ FUNC luaK_exp2const
   i69 IN: true
 FUNC luaK_nil
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -15973,6 +16280,7 @@ FUNC luaK_nil
   i98 IN: true
 FUNC savelineinfo
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16037,6 +16345,7 @@ FUNC savelineinfo
   i61 IN: true
 FUNC luaK_codeABCk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16084,6 +16393,7 @@ FUNC luaK_codeABCk
   i44 IN: true
 FUNC luaK_concat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16141,6 +16451,7 @@ FUNC luaK_concat
   i54 IN: true
 FUNC luaK_jump
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16180,6 +16491,7 @@ FUNC luaK_jump
   i36 IN: true
 FUNC luaK_ret
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16230,6 +16542,7 @@ FUNC luaK_ret
   i47 IN: true
 FUNC luaK_getlabel
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16238,6 +16551,7 @@ FUNC luaK_getlabel
   i5 IN: true
 FUNC luaK_patchlist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16245,6 +16559,7 @@ FUNC luaK_patchlist
   i4 IN: true
 FUNC patchlistaux
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16358,6 +16673,7 @@ FUNC patchlistaux
   i110 IN: true
 FUNC luaK_patchtohere
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16373,6 +16689,7 @@ FUNC luaK_patchtohere
   i12 IN: true
 FUNC luaK_code
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16406,6 +16723,7 @@ FUNC luaK_code
   i30 IN: true
 FUNC luaK_codeABx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16447,6 +16765,7 @@ FUNC luaK_codeABx
   i38 IN: true
 FUNC luaK_codeAsBx
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16490,6 +16809,7 @@ FUNC luaK_codeAsBx
   i40 IN: true
 FUNC luaK_checkstack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16516,6 +16836,7 @@ FUNC luaK_checkstack
   i23 IN: true
 FUNC luaK_reserveregs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16547,6 +16868,7 @@ FUNC luaK_reserveregs
   i28 IN: true
 FUNC luaK_int
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16623,6 +16945,7 @@ FUNC luaK_int
   i73 IN: true
 FUNC addk
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16767,6 +17090,7 @@ FUNC addk
   i141 IN: true
 FUNC luaK_codek
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16870,6 +17194,7 @@ FUNC luaK_codek
   i100 IN: true
 FUNC luaK_setreturns
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16924,6 +17249,7 @@ FUNC luaK_setreturns
   i51 IN: true
 FUNC luaK_setoneret
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -16964,6 +17290,7 @@ FUNC luaK_dischargevars
   [skipped] reason=too_large insts=408
 FUNC luaK_exp2nextreg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17019,6 +17346,7 @@ FUNC discharge2reg
   [skipped] reason=too_large insts=263
 FUNC luaK_exp2anyreg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17050,6 +17378,7 @@ FUNC luaK_exp2anyreg
   i28 IN: true
 FUNC luaK_exp2anyregup
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17088,6 +17417,7 @@ FUNC luaK_exp2anyregup
   i35 IN: true
 FUNC luaK_exp2val
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17123,6 +17453,7 @@ FUNC luaK_exp2val
   i32 IN: true
 FUNC luaK_exp2RK
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17156,6 +17487,7 @@ FUNC luaK_exp2RK
   i30 IN: true
 FUNC luaK_exp2K
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17304,6 +17636,7 @@ FUNC luaK_storevar
   [skipped] reason=too_large insts=328
 FUNC luaK_self
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17452,6 +17785,7 @@ FUNC luaK_self
   i145 IN: true
 FUNC luaK_goiftrue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17573,6 +17907,7 @@ FUNC jumponcond
   [skipped] reason=too_large insts=251
 FUNC luaK_goiffalse
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17662,6 +17997,7 @@ FUNC luaK_goiffalse
   i86 IN: true
 FUNC luaK_isKint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17682,6 +18018,7 @@ FUNC luaK_prefix
   [skipped] reason=too_large insts=394
 FUNC constfolding
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17820,6 +18157,7 @@ FUNC constfolding
   i135 IN: true
 FUNC luaK_infix
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17948,6 +18286,7 @@ FUNC finishbinexpval
   [skipped] reason=too_large insts=250
 FUNC codebinexpval
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -17987,6 +18326,7 @@ FUNC codebinexpval
   i36 IN: true
 FUNC finishbinexpneg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18037,6 +18377,7 @@ FUNC codeorder
   [skipped] reason=too_large insts=364
 FUNC luaK_fixline
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18075,6 +18416,7 @@ FUNC luaK_fixline
   i35 IN: true
 FUNC luaK_settablesize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18115,6 +18457,7 @@ FUNC luaK_settablesize
   i37 IN: true
 FUNC luaK_setlist
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18234,6 +18577,7 @@ FUNC luaK_setlist
   i116 IN: true
 FUNC luaK_finish
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18355,6 +18699,7 @@ FUNC luaK_finish
   i118 IN: true
 FUNC luaX_init
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18380,6 +18725,7 @@ FUNC luaX_init
   i22 IN: true
 FUNC luaX_token2str
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18412,6 +18758,7 @@ FUNC luaX_token2str
   i29 IN: true
 FUNC luaX_syntaxerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18420,6 +18767,7 @@ FUNC luaX_syntaxerror
   i5 IN: true
 FUNC lexerror
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18512,6 +18860,7 @@ FUNC lexerror
   i89 IN: true
 FUNC luaX_newstring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18566,6 +18915,7 @@ FUNC luaX_newstring
   i51 IN: true
 FUNC luaX_setinput
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18608,6 +18958,7 @@ FUNC luaX_setinput
   i39 IN: true
 FUNC luaX_next
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18634,6 +18985,7 @@ FUNC llex
   [skipped] reason=too_large insts=1682
 FUNC inclinenumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18690,6 +19042,7 @@ FUNC inclinenumber
   i53 IN: true
 FUNC skip_sep
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18828,6 +19181,7 @@ FUNC read_long_string
   [skipped] reason=too_large insts=319
 FUNC check_next1
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18858,6 +19212,7 @@ FUNC check_next1
   i27 IN: true
 FUNC gethexa
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -18992,6 +19347,7 @@ FUNC gethexa
   i131 IN: true
 FUNC save
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19035,6 +19391,7 @@ FUNC read_numeral
   [skipped] reason=too_large insts=266
 FUNC check_next2
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19110,6 +19467,7 @@ FUNC check_next2
   i72 IN: true
 FUNC luaX_lookahead
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19118,6 +19476,7 @@ FUNC luaX_lookahead
   i5 IN: true
 FUNC luaopen_base
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19128,6 +19487,7 @@ FUNC luaopen_base
   i7 IN: true
 FUNC luaB_assert
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19145,6 +19505,7 @@ FUNC luaB_assert
   i14 IN: true
 FUNC luaB_collectgarbage
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19218,6 +19579,7 @@ FUNC luaB_collectgarbage
   i70 IN: true
 FUNC luaB_dofile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19238,6 +19600,7 @@ FUNC luaB_dofile
   i17 IN: true
 FUNC luaB_error
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19256,6 +19619,7 @@ FUNC luaB_error
   i15 IN: true
 FUNC luaB_getmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19268,6 +19632,7 @@ FUNC luaB_getmetatable
   i9 IN: true
 FUNC luaB_ipairs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19276,6 +19641,7 @@ FUNC luaB_ipairs
   i5 IN: true
 FUNC luaB_loadfile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19306,6 +19672,7 @@ FUNC luaB_loadfile
   i27 IN: true
 FUNC luaB_load
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19358,6 +19725,7 @@ FUNC luaB_load
   i49 IN: true
 FUNC luaB_next
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19370,6 +19738,7 @@ FUNC luaB_next
   i9 IN: true
 FUNC luaB_pairs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19385,6 +19754,7 @@ FUNC luaB_pairs
   i12 IN: true
 FUNC luaB_pcall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19407,6 +19777,7 @@ FUNC luaB_pcall
   i19 IN: true
 FUNC luaB_print
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19454,6 +19825,7 @@ FUNC luaB_print
   i44 IN: true
 FUNC luaB_warn
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19484,6 +19856,7 @@ FUNC luaB_warn
   i27 IN: true
 FUNC luaB_rawequal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19492,6 +19865,7 @@ FUNC luaB_rawequal
   i5 IN: true
 FUNC luaB_rawlen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19505,6 +19879,7 @@ FUNC luaB_rawlen
   i10 IN: true
 FUNC luaB_rawget
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19513,6 +19888,7 @@ FUNC luaB_rawget
   i5 IN: true
 FUNC luaB_rawset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19522,6 +19898,7 @@ FUNC luaB_rawset
   i6 IN: true
 FUNC luaB_select
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19556,6 +19933,7 @@ FUNC luaB_select
   i31 IN: true
 FUNC luaB_setmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19575,6 +19953,7 @@ FUNC luaB_setmetatable
   i16 IN: true
 FUNC luaB_tonumber
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19719,12 +20098,14 @@ FUNC luaB_tonumber
   i141 IN: true
 FUNC luaB_tostring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC luaB_type
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19737,6 +20118,7 @@ FUNC luaB_type
   i9 IN: true
 FUNC luaB_xpcall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19762,6 +20144,7 @@ FUNC luaB_xpcall
   i22 IN: true
 FUNC finishpcall
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19778,6 +20161,7 @@ FUNC finishpcall
   i13 IN: true
 FUNC generic_reader
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19803,6 +20187,7 @@ FUNC generic_reader
   i22 IN: true
 FUNC ipairsaux
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19814,6 +20199,7 @@ FUNC ipairsaux
   i8 IN: true
 FUNC dofilecont
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19822,6 +20208,7 @@ FUNC dofilecont
   i5 IN: true
 FUNC luaopen_coroutine
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19829,6 +20216,7 @@ FUNC luaopen_coroutine
   i4 IN: true
 FUNC luaB_cocreate
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19838,6 +20226,7 @@ FUNC luaB_cocreate
   i6 IN: true
 FUNC luaB_coresume
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19865,6 +20254,7 @@ FUNC luaB_coresume
   i24 IN: true
 FUNC luaB_corunning
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19872,6 +20262,7 @@ FUNC luaB_corunning
   i4 IN: true
 FUNC luaB_costatus
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19909,6 +20300,7 @@ FUNC luaB_costatus
   i34 IN: true
 FUNC luaB_cowrap
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19920,12 +20312,14 @@ FUNC luaB_cowrap
   i8 IN: true
 FUNC luaB_yield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
   i3 IN: true
 FUNC luaB_yieldable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19944,6 +20338,7 @@ FUNC luaB_yieldable
   i15 IN: true
 FUNC luaB_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -19992,6 +20387,7 @@ FUNC luaB_close
   i45 IN: true
 FUNC luaB_auxwrap
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20020,6 +20416,7 @@ FUNC luaB_auxwrap
   i25 IN: true
 FUNC auxresume
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20061,6 +20458,7 @@ FUNC auxresume
   i38 IN: true
 FUNC luaopen_debug
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20068,6 +20466,7 @@ FUNC luaopen_debug
   i4 IN: true
 FUNC db_debug
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20113,6 +20512,7 @@ FUNC db_debug
   i42 IN: true
 FUNC db_getuservalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20132,6 +20532,7 @@ FUNC db_getuservalue
   i16 IN: true
 FUNC db_gethook
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20223,6 +20624,7 @@ FUNC db_getinfo
   [skipped] reason=too_large insts=223
 FUNC db_getlocal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20289,11 +20691,13 @@ FUNC db_getlocal
   i63 IN: true
 FUNC db_getregistry
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC db_getmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20304,6 +20708,7 @@ FUNC db_getmetatable
   i7 IN: true
 FUNC db_getupvalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20322,6 +20727,7 @@ FUNC db_getupvalue
   i15 IN: true
 FUNC db_upvaluejoin
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20367,6 +20773,7 @@ FUNC db_upvaluejoin
   i42 IN: true
 FUNC db_upvalueid
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20388,6 +20795,7 @@ FUNC db_upvalueid
   i18 IN: true
 FUNC db_setuservalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20403,6 +20811,7 @@ FUNC db_setuservalue
   i12 IN: true
 FUNC db_sethook
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20491,6 +20900,7 @@ FUNC db_sethook
   i85 IN: true
 FUNC db_setlocal
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20550,6 +20960,7 @@ FUNC db_setlocal
   i56 IN: true
 FUNC db_setmetatable
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20561,6 +20972,7 @@ FUNC db_setmetatable
   i8 IN: true
 FUNC db_setupvalue
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20580,6 +20992,7 @@ FUNC db_setupvalue
   i16 IN: true
 FUNC db_traceback
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20616,6 +21029,7 @@ FUNC db_traceback
   i33 IN: true
 FUNC db_setcstacklimit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20627,6 +21041,7 @@ FUNC db_setcstacklimit
   i8 IN: true
 FUNC hookf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20654,6 +21069,7 @@ FUNC hookf
   i24 IN: true
 FUNC luaopen_io
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20723,6 +21139,7 @@ FUNC luaopen_io
   i66 IN: true
 FUNC io_noclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20734,6 +21151,7 @@ FUNC io_noclose
   i8 IN: true
 FUNC f_read
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20752,6 +21170,7 @@ FUNC f_read
   i15 IN: true
 FUNC f_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20772,6 +21191,7 @@ FUNC f_write
   i17 IN: true
 FUNC f_lines
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20788,6 +21208,7 @@ FUNC f_lines
   i13 IN: true
 FUNC f_flush
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20809,6 +21230,7 @@ FUNC f_flush
   i18 IN: true
 FUNC f_seek
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20845,6 +21267,7 @@ FUNC f_seek
   i33 IN: true
 FUNC f_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20875,6 +21298,7 @@ FUNC f_close
   i27 IN: true
 FUNC f_setvbuf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20905,6 +21329,7 @@ FUNC f_setvbuf
   i27 IN: true
 FUNC aux_lines
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20925,6 +21350,7 @@ FUNC aux_lines
   i17 IN: true
 FUNC io_readline
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -20992,6 +21418,7 @@ FUNC g_read
   [skipped] reason=too_large insts=546
 FUNC read_line
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21075,6 +21502,7 @@ FUNC read_line
   i80 IN: true
 FUNC g_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21147,6 +21575,7 @@ FUNC g_write
   i69 IN: true
 FUNC f_gc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21179,6 +21608,7 @@ FUNC f_gc
   i29 IN: true
 FUNC f_tostring
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21197,6 +21627,7 @@ FUNC f_tostring
   i15 IN: true
 FUNC io_close
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21233,6 +21664,7 @@ FUNC io_close
   i33 IN: true
 FUNC io_flush
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21256,11 +21688,13 @@ FUNC io_flush
   i20 IN: true
 FUNC io_input
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC io_lines
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21302,6 +21736,7 @@ FUNC io_lines
   i38 IN: true
 FUNC io_open
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21352,11 +21787,13 @@ FUNC io_open
   i47 IN: true
 FUNC io_output
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC io_popen
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21391,6 +21828,7 @@ FUNC io_popen
   i31 IN: true
 FUNC io_read
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21411,6 +21849,7 @@ FUNC io_read
   i17 IN: true
 FUNC io_tmpfile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21435,6 +21874,7 @@ FUNC io_tmpfile
   i21 IN: true
 FUNC io_type
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21456,6 +21896,7 @@ FUNC io_type
   i18 IN: true
 FUNC io_write
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21476,6 +21917,7 @@ FUNC io_write
   i17 IN: true
 FUNC io_fclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21489,6 +21931,7 @@ FUNC io_fclose
   i10 IN: true
 FUNC io_pclose
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21501,6 +21944,7 @@ FUNC io_pclose
   i9 IN: true
 FUNC g_iofile
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21532,6 +21976,7 @@ FUNC g_iofile
   i28 IN: true
 FUNC opencheck
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21560,6 +22005,7 @@ FUNC opencheck
   i25 IN: true
 FUNC luaopen_math
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21592,6 +22038,7 @@ FUNC math_random
   [skipped] reason=too_large insts=153
 FUNC math_randomseed
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21618,6 +22065,7 @@ FUNC math_randomseed
   i23 IN: true
 FUNC math_abs
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21635,6 +22083,7 @@ FUNC math_abs
   i14 IN: true
 FUNC math_acos
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21642,6 +22091,7 @@ FUNC math_acos
   i4 IN: true
 FUNC math_asin
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21649,6 +22099,7 @@ FUNC math_asin
   i4 IN: true
 FUNC math_atan
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21659,6 +22110,7 @@ FUNC math_atan
   i7 IN: true
 FUNC math_ceil
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21683,6 +22135,7 @@ FUNC math_ceil
   i21 IN: true
 FUNC math_cos
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21690,6 +22143,7 @@ FUNC math_cos
   i4 IN: true
 FUNC math_deg
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21697,6 +22151,7 @@ FUNC math_deg
   i4 IN: true
 FUNC math_exp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21704,6 +22159,7 @@ FUNC math_exp
   i4 IN: true
 FUNC math_toint
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21724,6 +22180,7 @@ FUNC math_toint
   i17 IN: true
 FUNC math_floor
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21748,6 +22205,7 @@ FUNC math_floor
   i21 IN: true
 FUNC math_fmod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21778,6 +22236,7 @@ FUNC math_fmod
   i27 IN: true
 FUNC math_ult
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21789,6 +22248,7 @@ FUNC math_ult
   i8 IN: true
 FUNC math_log
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21821,6 +22281,7 @@ FUNC math_log
   i29 IN: true
 FUNC math_max
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21852,6 +22313,7 @@ FUNC math_max
   i28 IN: true
 FUNC math_min
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21883,6 +22345,7 @@ FUNC math_min
   i28 IN: true
 FUNC math_modf
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21920,6 +22383,7 @@ FUNC math_modf
   i34 IN: true
 FUNC math_rad
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21927,6 +22391,7 @@ FUNC math_rad
   i4 IN: true
 FUNC math_sin
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21934,6 +22399,7 @@ FUNC math_sin
   i4 IN: true
 FUNC math_sqrt
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21941,6 +22407,7 @@ FUNC math_sqrt
   i4 IN: true
 FUNC math_tan
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21948,6 +22415,7 @@ FUNC math_tan
   i4 IN: true
 FUNC math_type
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21963,6 +22431,7 @@ FUNC math_type
   i12 IN: true
 FUNC math_cosh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21970,6 +22439,7 @@ FUNC math_cosh
   i4 IN: true
 FUNC math_sinh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21977,6 +22447,7 @@ FUNC math_sinh
   i4 IN: true
 FUNC math_tanh
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21984,6 +22455,7 @@ FUNC math_tanh
   i4 IN: true
 FUNC math_pow
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -21994,6 +22466,7 @@ FUNC math_pow
   i7 IN: true
 FUNC math_frexp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22010,6 +22483,7 @@ FUNC math_frexp
   i13 IN: true
 FUNC math_ldexp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22021,6 +22495,7 @@ FUNC math_ldexp
   i8 IN: true
 FUNC math_log10
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22028,6 +22503,7 @@ FUNC math_log10
   i4 IN: true
 FUNC luaopen_package
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22077,6 +22553,7 @@ FUNC luaopen_package
   i46 IN: true
 FUNC gctm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22096,6 +22573,7 @@ FUNC gctm
   i16 IN: true
 FUNC searcher_preload
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22111,6 +22589,7 @@ FUNC searcher_preload
   i12 IN: true
 FUNC searcher_Lua
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22145,6 +22624,7 @@ FUNC searcher_Lua
   i31 IN: true
 FUNC searcher_C
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22179,6 +22659,7 @@ FUNC searcher_C
   i31 IN: true
 FUNC searcher_Croot
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22224,6 +22705,7 @@ FUNC searcher_Croot
   i42 IN: true
 FUNC setpath
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22319,6 +22801,7 @@ FUNC setpath
   i92 IN: true
 FUNC ll_require
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22402,6 +22885,7 @@ FUNC ll_require
   i80 IN: true
 FUNC searchpath
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22499,6 +22983,7 @@ FUNC searchpath
   i94 IN: true
 FUNC loadfunc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22531,6 +23016,7 @@ FUNC loadfunc
   i29 IN: true
 FUNC lookforfunc
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22599,6 +23085,7 @@ FUNC lookforfunc
   i65 IN: true
 FUNC ll_loadlib
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22618,6 +23105,7 @@ FUNC ll_loadlib
   i16 IN: true
 FUNC ll_searchpath
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22634,6 +23122,7 @@ FUNC ll_searchpath
   i13 IN: true
 FUNC luaopen_os
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22641,6 +23130,7 @@ FUNC luaopen_os
   i4 IN: true
 FUNC os_clock
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22651,6 +23141,7 @@ FUNC os_date
   [skipped] reason=too_large insts=167
 FUNC os_difftime
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22667,6 +23158,7 @@ FUNC os_difftime
   i13 IN: true
 FUNC os_execute
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22684,6 +23176,7 @@ FUNC os_execute
   i14 IN: true
 FUNC os_exit
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22711,6 +23204,7 @@ FUNC os_exit
   i24 IN: true
 FUNC os_getenv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22718,6 +23212,7 @@ FUNC os_getenv
   i4 IN: true
 FUNC os_remove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22728,6 +23223,7 @@ FUNC os_remove
   i7 IN: true
 FUNC os_rename
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22740,6 +23236,7 @@ FUNC os_rename
   i9 IN: true
 FUNC os_setlocale
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22753,6 +23250,7 @@ FUNC os_setlocale
   i10 IN: true
 FUNC os_time
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22813,6 +23311,7 @@ FUNC os_time
   i57 IN: true
 FUNC os_tmpname
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22834,6 +23333,7 @@ FUNC os_tmpname
   i18 IN: true
 FUNC getfield
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22885,6 +23385,7 @@ FUNC getfield
   i48 IN: true
 FUNC setallfields
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22976,6 +23477,7 @@ FUNC setallfields
   i88 IN: true
 FUNC luaopen_string
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -22993,46 +23495,55 @@ FUNC luaopen_string
   i14 IN: true
 FUNC arith_add
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_sub
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_mul
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_mod
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_pow
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_div
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_idiv
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith_unm
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC arith
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23108,6 +23619,7 @@ FUNC arith
   i72 IN: true
 FUNC str_byte
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23185,6 +23697,7 @@ FUNC str_byte
   i74 IN: true
 FUNC str_char
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23223,6 +23736,7 @@ FUNC str_char
   i35 IN: true
 FUNC str_dump
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23247,6 +23761,7 @@ FUNC str_dump
   i21 IN: true
 FUNC str_find
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23254,6 +23769,7 @@ FUNC str_format
   [skipped] reason=too_large insts=521
 FUNC gmatch
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23338,6 +23854,7 @@ FUNC str_gsub
   [skipped] reason=too_large insts=376
 FUNC str_len
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23351,6 +23868,7 @@ FUNC str_len
   i10 IN: true
 FUNC str_lower
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23398,11 +23916,13 @@ FUNC str_lower
   i44 IN: true
 FUNC str_match
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC str_rep
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23489,6 +24009,7 @@ FUNC str_rep
   i83 IN: true
 FUNC str_reverse
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23531,6 +24052,7 @@ FUNC str_reverse
   i39 IN: true
 FUNC str_sub
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23588,6 +24110,7 @@ FUNC str_sub
   i54 IN: true
 FUNC str_upper
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23637,6 +24160,7 @@ FUNC str_pack
   [skipped] reason=too_large insts=708
 FUNC str_packsize
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23712,6 +24236,7 @@ FUNC str_unpack
   [skipped] reason=too_large insts=524
 FUNC getdetails
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23781,6 +24306,7 @@ FUNC match
   [skipped] reason=too_large insts=546
 FUNC push_onecapture
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23840,6 +24366,7 @@ FUNC push_onecapture
   i56 IN: true
 FUNC match_class
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -23970,6 +24497,7 @@ FUNC match_class
   i127 IN: true
 FUNC singlematch
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24047,6 +24575,7 @@ FUNC singlematch
   i74 IN: true
 FUNC gmatch_aux
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24115,6 +24644,7 @@ FUNC gmatch_aux
   i65 IN: true
 FUNC writer
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24136,6 +24666,7 @@ FUNC writer
   i18 IN: true
 FUNC luaopen_table
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24143,6 +24674,7 @@ FUNC luaopen_table
   i4 IN: true
 FUNC tconcat
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24207,6 +24739,7 @@ FUNC tconcat
   i61 IN: true
 FUNC tinsert
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24242,6 +24775,7 @@ FUNC tinsert
   i32 IN: true
 FUNC tpack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24265,6 +24799,7 @@ FUNC tpack
   i20 IN: true
 FUNC tunpack
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24307,6 +24842,7 @@ FUNC tunpack
   i39 IN: true
 FUNC tremove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24338,6 +24874,7 @@ FUNC tremove
   i28 IN: true
 FUNC tmove
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24408,6 +24945,7 @@ FUNC tmove
   i67 IN: true
 FUNC sort
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24430,6 +24968,7 @@ FUNC sort
   i19 IN: true
 FUNC checktab
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24493,6 +25032,7 @@ FUNC auxsort
   [skipped] reason=too_large insts=222
 FUNC sort_comp
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24515,6 +25055,7 @@ FUNC sort_comp
   i19 IN: true
 FUNC luaopen_utf8
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24524,6 +25065,7 @@ FUNC luaopen_utf8
   i6 IN: true
 FUNC byteoffset
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24672,6 +25214,7 @@ FUNC codepoint
   [skipped] reason=too_large insts=161
 FUNC utfchar
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24719,6 +25262,7 @@ FUNC utflen
   [skipped] reason=too_large insts=168
 FUNC iter_codes
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24731,16 +25275,19 @@ FUNC iter_codes
   i9 IN: true
 FUNC iter_auxstrict
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC iter_auxlax
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
 FUNC iter_aux
   [client:reachable]
+  [interp] mode=generic
   i0 IN: true
   i1 IN: true
   i2 IN: true
@@ -24863,4 +25410,4 @@ FUNC iter_aux
   i119 IN: true
   i120 IN: true
 [summary] skipped_functions=92
-[mem] peak_rss_kb=49048
+[mem] peak_rss_kb=50252

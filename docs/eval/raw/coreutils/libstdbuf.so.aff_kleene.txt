@@ -1,8 +1,8 @@
 [elim] clients=affine, method=state, ordering=default, ean=on, ean_laws=kleene, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=200
 FUNC stdbuf
   [client:affine]
-  [cfg] args=0, blocks=7, insts=34, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=11703
-  [timing] gen_us=555, norm_us=9089, interp_us=1878, end2end_us=11703, runs=1
+  [cfg] args=0, blocks=7, insts=34, edges=9, branching_blocks=3, max_succs=2, phis=0, calls=9, returns=1, unreachable=0, elapsed_us=15820
+  [timing] gen_us=533, norm_us=12854, interp_us=2208, end2end_us=15820, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=102, edges=136, tree=1.138000e+03, seq=65, stars=0, unions=3, atoms=33, sharing=1.115686e+01, roots=34
   [expr-profile] with_expr=34, missing_expr=0, total_unique_nodes=1114, total_shared_refs=24, total_unions=24, total_concats=528, total_stars=0, max_nodes=68@i33, max_depth=18@i18
@@ -42,8 +42,8 @@ FUNC stdbuf
   i33 IN: w1:
 FUNC apply_mode
   [client:affine]
-  [cfg] args=2, blocks=17, insts=87, edges=23, branching_blocks=7, max_succs=2, phis=1, calls=20, returns=1, unreachable=0, elapsed_us=145586
-  [timing] gen_us=2351, norm_us=42535, interp_us=99877, end2end_us=145586, runs=1
+  [cfg] args=2, blocks=17, insts=87, edges=23, branching_blocks=7, max_succs=2, phis=1, calls=20, returns=1, unreachable=0, elapsed_us=148510
+  [timing] gen_us=3450, norm_us=40233, interp_us=103629, end2end_us=148510, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=421, edges=668, tree=7.047000e+03, seq=291, stars=0, unions=43, atoms=86, sharing=1.673872e+01, roots=87
   [expr-profile] with_expr=87, missing_expr=0, total_unique_nodes=6642, total_shared_refs=361, total_unions=79, total_concats=3379, total_stars=0, max_nodes=200@i86, max_depth=43@i55
@@ -136,8 +136,8 @@ FUNC apply_mode
   i86 IN: w32:
 FUNC fileno_to_name
   [client:affine]
-  [cfg] args=1, blocks=6, insts=18, edges=8, branching_blocks=1, max_succs=4, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=2667
-  [timing] gen_us=193, norm_us=1756, interp_us=620, end2end_us=2667, runs=1
+  [cfg] args=1, blocks=6, insts=18, edges=8, branching_blocks=1, max_succs=4, phis=0, calls=2, returns=1, unreachable=0, elapsed_us=2364
+  [timing] gen_us=201, norm_us=1486, interp_us=585, end2end_us=2364, runs=1
   [solver] status=ok, requested=state, executed=state, used_adt=false, fallback=none, star_iters=0, max_star_hit=false, peak_nodes=0
   [dagstats] nodes=41, edges=46, tree=2.420000e+02, seq=20, stars=0, unions=3, atoms=17, sharing=5.902439e+00, roots=18
   [expr-profile] with_expr=18, missing_expr=0, total_unique_nodes=242, total_shared_refs=0, total_unions=6, total_concats=106, total_stars=0, max_nodes=33@i17, max_depth=9@i9
@@ -160,4 +160,4 @@ FUNC fileno_to_name
   i16 IN: w32:1,0,4294967295,0,0
   i17 IN: w32:1,0,4294967295,0,0
 [summary] skipped_functions=0
-[mem] peak_rss_kb=16932
+[mem] peak_rss_kb=16944

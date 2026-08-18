@@ -1,4 +1,4 @@
-[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, max_func_insts=150
+[elim] clients=constant_prop, method=state, ordering=default, ean=on, ean_laws=safe, repeat=1, ean_min_nodes=0, interp_repeat=1, max_func_insts=150
 FUNC main
   [skipped] reason=too_large insts=1077
 FUNC _ZN4llvm8InitLLVMC2ERiRPPcb
@@ -28741,5 +28741,18 @@ FUNC _ZN12_GLOBAL__N_112X86AsmParser21IntelExprStateMachine8onRParenEv
   i8 IN: arg0=overdefined,i6=overdefined
   i9 IN: arg0=overdefined,i6=overdefined
   i10 IN: arg0=lattice,i6=overdefined
-  i11 IN: ar
+  i11 IN: arg0=overdefined,i6=overdefined
+  i12 IN: arg0=overdefined,i6=overdefined
+  i13 IN: arg0=lattice,i6=overdefined
+  i14 IN: arg0=lattice,i6=overdefined
+  i15 IN: arg0=overdefined,i6=overdefined
+  i16 IN: arg0=overdefined,i6=overdefined
+FUNC _ZNK12_GLOBAL__N_112X86AsmParser21IntelExprStateMachine8hadErrorEv
+  [client:constant_prop]
+  i0 IN: 
+  i1 IN: 
+  i2 IN: 
+  i3 IN: 
+  i4 IN: i3=overdefined
+FUNC _ZN12_GLOBAL__N_112X86AsmParser15InfixCalculator12pushOperatorENS0_18InfixCalcul
 [TIMEOUT] 45s
