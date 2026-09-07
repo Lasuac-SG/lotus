@@ -3,9 +3,13 @@
 
 #include "Dataflow/NPA/Core/Domain.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <memory>
 #include <set>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace npa {
@@ -19,23 +23,64 @@ template <class Op, class OpLess = std::less<Op>> struct TransformerLess {
 };
 
 template <class Op, class OpLess = std::less<Op>>
-struct TransformerSummaryValue {
+class TransformerSummaryValue {
+public:
   using transformer_type = std::vector<Op>;
-  std::set<transformer_type, TransformerLess<Op, OpLess>> transformers;
-  bool overflow = false;
-  std::unordered_set<const void *> may_write;
+  using transformer_set =
+      std::set<transformer_type, TransformerLess<Op, OpLess>>;
+  using write_set = std::unordered_set<const void *>;
+
+  struct Storage {
+    transformer_set transformers;
+    bool overflow = false;
+    write_set may_write;
+
+    bool operator==(const Storage &other) const {
+      return overflow == other.overflow &&
+             transformers == other.transformers &&
+             may_write == other.may_write;
+    }
+  };
+
+  TransformerSummaryValue() = default;
+
+  explicit TransformerSummaryValue(std::shared_ptr<const Storage> storage)
+      : storage_(std::move(storage)) {}
+
+  const transformer_set &transformers() const {
+    static const transformer_set empty;
+    return storage_ ? storage_->transformers : empty;
+  }
+
+  bool overflow() const { return storage_ && storage_->overflow; }
+
+  const write_set &mayWrites() const {
+    static const write_set empty;
+    return storage_ ? storage_->may_write : empty;
+  }
+
+  bool mayWrite(const void *value) const {
+    return storage_ && storage_->may_write.count(value) != 0;
+  }
 
   bool operator==(const TransformerSummaryValue &other) const {
-    return overflow == other.overflow && transformers == other.transformers &&
-           may_write == other.may_write;
+    if (storage_ == other.storage_)
+      return true;
+    if (!storage_ || !other.storage_)
+      return false;
+    return *storage_ == *other.storage_;
   }
+
+  bool operator!=(const TransformerSummaryValue &other) const {
+    return !(*this == other);
+  }
+
+private:
+  template <class, class> friend class TransformerSummary;
+  std::shared_ptr<const Storage> storage_;
 };
 
-/// Generic abstract-summary domain for subdistributive analyses.
-///
-/// The current implementation keeps a finite set of summary transformers and an
-/// overflow bit, which preserves the existing CP/IA behavior while decoupling
-/// them from the older PathTransferSummary-specific API.
+/// Bounded, immutable abstract-summary domain for subdistributive analyses.
 template <class Op, class OpLess = std::less<Op>> class TransformerSummary {
 public:
   using value_type = TransformerSummaryValue<Op, OpLess>;
@@ -49,26 +94,39 @@ public:
   static value_type zero() { return {}; }
 
   static value_type one() {
-    value_type out;
-    out.transformers.insert(typename value_type::transformer_type{});
-    return out;
+    typename value_type::Storage storage;
+    storage.transformers.insert(typename value_type::transformer_type{});
+    return freeze(std::move(storage));
   }
 
   static value_type singleton(const Op &op) {
-    value_type out;
-    insertTransformer(out, typename value_type::transformer_type{op});
-    return out;
+    typename value_type::Storage storage;
+    insertTransformer(storage, typename value_type::transformer_type{op});
+    return freeze(std::move(storage));
   }
 
   static bool equal(const value_type &a, const value_type &b) { return a == b; }
 
   static value_type combine(const value_type &a, const value_type &b) {
-    value_type out = a;
-    out.overflow = a.overflow || b.overflow;
-    out.may_write.insert(b.may_write.begin(), b.may_write.end());
-    for (const auto &transformer : b.transformers)
-      insertTransformer(out, transformer);
-    return out;
+    if (equal(a, b))
+      return a;
+    if (isZero(a))
+      return b;
+    if (isZero(b))
+      return a;
+
+    const value_type *base = &a;
+    const value_type *added = &b;
+    if (b.transformers().size() > a.transformers().size())
+      std::swap(base, added);
+
+    typename value_type::Storage storage = *base->storage_;
+    storage.overflow = a.overflow() || b.overflow();
+    storage.may_write.insert(added->mayWrites().begin(),
+                             added->mayWrites().end());
+    for (const auto &transformer : added->transformers())
+      insertTransformer(storage, transformer);
+    return freeze(std::move(storage));
   }
 
   static value_type ndetCombine(const value_type &a, const value_type &b) {
@@ -81,23 +139,27 @@ public:
   }
 
   static value_type extend(const value_type &a, const value_type &b) {
-    if ((a.transformers.empty() && !a.overflow) ||
-        (b.transformers.empty() && !b.overflow))
+    if (isZero(a) || isZero(b))
       return zero();
-    value_type out;
-    out.overflow = a.overflow || b.overflow;
-    out.may_write.insert(a.may_write.begin(), a.may_write.end());
-    out.may_write.insert(b.may_write.begin(), b.may_write.end());
-    for (const auto &inner : b.transformers) {
-      for (const auto &outer : a.transformers) {
+    if (isOne(a))
+      return b;
+    if (isOne(b))
+      return a;
+
+    typename value_type::Storage storage;
+    storage.overflow = a.overflow() || b.overflow();
+    storage.may_write.insert(a.mayWrites().begin(), a.mayWrites().end());
+    storage.may_write.insert(b.mayWrites().begin(), b.mayWrites().end());
+    for (const auto &inner : b.transformers()) {
+      for (const auto &outer : a.transformers()) {
         typename value_type::transformer_type composed;
         composed.reserve(inner.size() + outer.size());
         composed.insert(composed.end(), inner.begin(), inner.end());
         composed.insert(composed.end(), outer.begin(), outer.end());
-        insertTransformer(out, std::move(composed));
+        insertTransformer(storage, std::move(composed));
       }
     }
-    return out;
+    return freeze(std::move(storage));
   }
 
   static value_type extend_lin(const value_type &a, const value_type &b) {
@@ -119,17 +181,6 @@ private:
       : std::integral_constant<
             bool, std::is_pointer<decltype(std::declval<T>().dest)>::value> {};
 
-  template <typename T = Op>
-  static typename std::enable_if<HasPointerDest<T>::value, void>::type
-  noteWrite(value_type &out, const T &op) {
-    if (op.dest)
-      out.may_write.insert(op.dest);
-  }
-
-  template <typename T = Op>
-  static typename std::enable_if<!HasPointerDest<T>::value, void>::type
-  noteWrite(value_type &, const T &) {}
-
   template <typename T, typename = void>
   struct HasSummaryCanBeOverwritten : std::false_type {};
 
@@ -147,19 +198,46 @@ private:
       void_t<decltype(std::declval<const T &>().summaryCanOverwritePrevious())>>
       : std::true_type {};
 
+  static bool isZero(const value_type &value) { return !value.storage_; }
+
+  static bool isOne(const value_type &value) {
+    return !value.overflow() && value.mayWrites().empty() &&
+           value.transformers().size() == 1 &&
+           value.transformers().begin()->empty();
+  }
+
+  static value_type freeze(typename value_type::Storage storage) {
+    if (!storage.overflow && storage.transformers.empty() &&
+        storage.may_write.empty()) {
+      return zero();
+    }
+    return value_type(
+        std::make_shared<const typename value_type::Storage>(
+            std::move(storage)));
+  }
+
+  template <typename T = Op>
+  static typename std::enable_if<HasPointerDest<T>::value, void>::type
+  noteWrite(typename value_type::Storage &storage, const T &op) {
+    if (op.dest)
+      storage.may_write.insert(op.dest);
+  }
+
+  template <typename T = Op>
+  static typename std::enable_if<!HasPointerDest<T>::value, void>::type
+  noteWrite(typename value_type::Storage &, const T &) {}
+
   static typename value_type::transformer_type
   canonicalizeTransformer(typename value_type::transformer_type transformer) {
-    typename value_type::transformer_type out;
-    out.reserve(transformer.size());
-
+    typename value_type::transformer_type result;
+    result.reserve(transformer.size());
     for (const auto &op : transformer) {
-      if (!out.empty() && canFoldTrailingWrite(out.back(), op)) {
-        out.back() = op;
-      } else {
-        out.push_back(op);
-      }
+      if (!result.empty() && canFoldTrailingWrite(result.back(), op))
+        result.back() = op;
+      else
+        result.push_back(op);
     }
-    return out;
+    return result;
   }
 
   template <typename T = Op>
@@ -184,9 +262,9 @@ private:
   }
 
   template <typename T = Op>
-  static
-      typename std::enable_if<!HasSummaryCanBeOverwritten<T>::value, bool>::type
-      summaryCanBeOverwritten(const T &) {
+  static typename std::enable_if<!HasSummaryCanBeOverwritten<T>::value,
+                                 bool>::type
+  summaryCanBeOverwritten(const T &) {
     return false;
   }
 
@@ -204,22 +282,22 @@ private:
     return false;
   }
 
-  static void
-  insertTransformer(value_type &out,
-                    typename value_type::transformer_type transformer) {
+  static void insertTransformer(
+      typename value_type::Storage &storage,
+      typename value_type::transformer_type transformer) {
     transformer = canonicalizeTransformer(std::move(transformer));
     for (const auto &op : transformer)
-      noteWrite(out, op);
+      noteWrite(storage, op);
     if (transformer.size() > max_transformer_length) {
-      out.overflow = true;
+      storage.overflow = true;
       return;
     }
-    if (out.transformers.size() >= max_transformers &&
-        !out.transformers.count(transformer)) {
-      out.overflow = true;
+    if (storage.transformers.size() >= max_transformers &&
+        !storage.transformers.count(transformer)) {
+      storage.overflow = true;
       return;
     }
-    out.transformers.insert(std::move(transformer));
+    storage.transformers.insert(std::move(transformer));
   }
 };
 

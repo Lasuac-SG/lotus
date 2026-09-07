@@ -2,7 +2,7 @@
 #define NPA_TAINT_TRANSFORMER_H
 
 #include "Dataflow/NPA/Core/Domain.h"
-#include "Dataflow/NPA/Domains/GenKillDomain.h"
+#include "Dataflow/NPA/Domains/SparseFactSet.h"
 
 #include <cstddef>
 #include <cstdint>

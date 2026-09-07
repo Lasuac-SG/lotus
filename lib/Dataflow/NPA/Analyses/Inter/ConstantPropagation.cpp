@@ -186,12 +186,12 @@ public:
                         bool *used_summary_overflow) const {
     if (!fact.reachable)
       return {false, {}};
-    if (summary.overflow && used_summary_overflow)
+    if (summary.overflow() && used_summary_overflow)
       *used_summary_overflow = true;
 
     bool first = true;
     FactType joined;
-    for (const auto &transformer : summary.transformers) {
+    for (const auto &transformer : summary.transformers()) {
       FactType current = fact;
       current.reachable = true;
       for (const auto &op : transformer)
@@ -206,7 +206,7 @@ public:
       }
     }
 
-    if (!summary.overflow)
+    if (!summary.overflow())
       return first ? FactType{false, {}} : joined;
 
     FactType overflow = overflowFact(summary, fact);
@@ -243,7 +243,7 @@ public:
   }
 
   bool summaryIsApproximate(const D::value_type &summary) const {
-    return summary.overflow;
+    return summary.overflow();
   }
 
 private:
@@ -252,7 +252,7 @@ private:
     FactType out;
     out.reachable = fact.reachable;
     for (const auto &entry : fact.values)
-      if (!summary.may_write.count(entry.first))
+      if (!summary.mayWrite(entry.first))
         out.values.insert(entry);
     return out;
   }

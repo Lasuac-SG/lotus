@@ -3,7 +3,7 @@
 #include "Dataflow/NPA/Analyses/Inter/LiveVariables.h"
 #include "Dataflow/NPA/Analyses/Inter/MaybeUninitialized.h"
 #include "Dataflow/NPA/Analyses/Inter/ReachingDefinitions.h"
-#include "Dataflow/NPA/Domains/PathTransferSummary.h"
+#include "Dataflow/NPA/Domains/TransformerSummary.h"
 #include "Dataflow/NPA/Domains/PredicateRelationDomain.h"
 #include "Dataflow/NPA/LLVM/BackwardInterEngine.h"
 #include "TestUtils/LLVMHelpers.h"
@@ -94,10 +94,11 @@ npa::TaintTransformer::fact_type unionFactForBlock(
 }
 
 template <typename Op, typename OpLess>
-bool containsPath(const npa::PathTransferSummaryValue<Op, OpLess> &transfer,
+bool containsPath(const npa::TransformerSummaryValue<Op, OpLess> &transfer,
                   std::initializer_list<Op> expected) {
-  typename npa::PathTransferSummaryValue<Op, OpLess>::path_type path(expected);
-  return transfer.paths.count(path) != 0;
+  typename npa::TransformerSummaryValue<Op, OpLess>::transformer_type path(
+      expected);
+  return transfer.transformers().count(path) != 0;
 }
 
 llvm::APInt signedAPInt(unsigned bitWidth, int64_t value) {
@@ -122,7 +123,7 @@ std::vector<std::pair<std::uint64_t, std::uint64_t>> sortedPredicateTransitions(
   return transitions;
 }
 
-using EntryHookDomain = npa::PathTransferSummary<char>;
+using EntryHookDomain = npa::TransformerSummary<char>;
 
 struct ProjectedStringDomain {
   using value_type = std::set<std::string>;
@@ -329,7 +330,7 @@ public:
   }
 };
 
-using RecursiveSummaryDomain = npa::PathTransferSummary<char>;
+using RecursiveSummaryDomain = npa::TransformerSummary<char>;
 
 class RecursivePropagationLimitedForwardAnalysis {
 public:

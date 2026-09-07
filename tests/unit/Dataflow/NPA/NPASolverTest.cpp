@@ -1,6 +1,6 @@
 #include "Dataflow/NPA/Domains/BitSetDomain.h"
 #include "Dataflow/NPA/Domains/GenKillDomain.h"
-#include "Dataflow/NPA/Domains/PathTransferSummary.h"
+#include "Dataflow/NPA/Domains/TaintDomain.h"
 #include "Dataflow/NPA/Domains/TransformerSummary.h"
 #include "Dataflow/NPA/NPA.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorProductLift.h"
@@ -474,7 +474,7 @@ TEST(NPA, SparseFilteredDifferentiationCoversAllNewtonExpressionContexts) {
 }
 
 TEST(NPA, SparseFilteredDifferentiationPreservesNoncommutativeContextOrder) {
-  using D = npa::PathTransferSummary<char>;
+  using D = npa::TransformerSummary<char>;
   using Exp = npa::Exp0<D>;
   using E = npa::E0<D>;
 
@@ -523,6 +523,34 @@ TEST(NPA, SparseDiscoveryRetainsEveryOccurrenceOfTheSameGraphEdge) {
   EXPECT_EQ(result.second.newton_rounds[0].retained_occurrences, 1);
   EXPECT_EQ(result.second.newton_rounds[1].retained_occurrences, 3);
   EXPECT_TRUE(toMap<D>(result.first).at("y"));
+}
+
+TEST(NPA, SparseLazyIndexCoalescesSharedDagLeavesWithoutLosingInfluence) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  E shared = Exp::hole("seed");
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(D::one()));
+  eqns.emplace_back(
+      "result",
+      Exp::ndet(Exp::mul(Exp::term(D::zero()), shared), shared));
+
+  npa::SolveOptions denseOptions;
+  denseOptions.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto dense = npa::NPASolver<D>::solve(eqns, denseOptions);
+
+  npa::SolveOptions sparseOptions = denseOptions;
+  sparseOptions.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+  auto sparse = npa::NPASolver<D>::solve(eqns, sparseOptions);
+
+  EXPECT_EQ(toMap<D>(dense.first), toMap<D>(sparse.first));
+  EXPECT_TRUE(toMap<D>(sparse.first).at("result"));
+  EXPECT_EQ(sparse.second.indexed_derivative_occurrences, 1);
+  ASSERT_FALSE(sparse.second.newton_rounds.empty());
+  EXPECT_EQ(sparse.second.newton_rounds[0].queried_occurrences, 1);
+  EXPECT_EQ(sparse.second.newton_rounds[0].retained_occurrences, 1);
 }
 
 TEST(NPA, SparseGenKillRepresentationComposesAndAppliesExactly) {
@@ -604,6 +632,44 @@ TEST(NPA, PersistentSparseFactSetMatchesFiniteSetOperations) {
   EXPECT_FALSE(unchanged.set(existing));
   EXPECT_FALSE(unchanged.reset(4097));
   EXPECT_EQ(unchanged, lhs);
+}
+
+TEST(NPA, SparseTaintRelationMatchesSequentialAndClosureSemantics) {
+  using D = npa::TaintTransformer;
+
+  auto inner = D::one();
+  D::clearOutput(inner, 2);
+  D::addEdge(inner, 0, 2);
+  D::addGen(inner, 3);
+
+  auto outer = D::one();
+  D::kill(outer, 1);
+  D::addEdge(outer, 2, 4);
+  D::addGen(outer, 5);
+
+  D::fact_type input;
+  input.set(0);
+  input.set(1);
+  input.set(2);
+  auto sequential = D::apply(outer, D::apply(inner, input));
+  auto composed = D::apply(D::extend(outer, inner), input);
+  EXPECT_EQ(composed, sequential);
+
+  auto joinedResult = D::apply(D::combine(outer, inner), input);
+  auto expectedJoin = D::apply(outer, input);
+  expectedJoin |= D::apply(inner, input);
+  EXPECT_EQ(joinedResult, expectedJoin);
+
+  auto step = D::zero();
+  D::addEdge(step, 0, 1);
+  D::addEdge(step, 1, 2);
+  D::fact_type seed;
+  seed.set(0);
+  auto closed = D::apply(D::star(step), seed);
+  EXPECT_TRUE(closed.test(0));
+  EXPECT_TRUE(closed.test(1));
+  EXPECT_TRUE(closed.test(2));
+  EXPECT_EQ(closed.count(), 3u);
 }
 
 TEST(NPA, SparseOracleHonorsDirectionalZeroMapContracts) {
@@ -1185,24 +1251,6 @@ TEST(NPA, ZeroFixpointIterationLimitSkipsVectorUpdate) {
   EXPECT_TRUE(npa::npa_hit_fixpoint_limit());
 }
 
-TEST(NPA, PathTransferSummaryPreservesMayWriteAcrossCombineAndExtend) {
-  using D = npa::PathTransferSummary<WriteOp>;
-
-  static int slot_a = 0;
-  static int slot_b = 0;
-
-  auto a = D::singleton(WriteOp{&slot_a});
-  auto b = D::singleton(WriteOp{&slot_b});
-
-  auto joined = D::combine(a, b);
-  EXPECT_TRUE(joined.may_write.count(&slot_a));
-  EXPECT_TRUE(joined.may_write.count(&slot_b));
-
-  auto composed = D::extend(a, b);
-  EXPECT_TRUE(composed.may_write.count(&slot_a));
-  EXPECT_TRUE(composed.may_write.count(&slot_b));
-}
-
 TEST(NPA, TransformerSummaryPreservesMayWriteAcrossCombineAndExtend) {
   using D = npa::TransformerSummary<WriteOp>;
 
@@ -1213,30 +1261,12 @@ TEST(NPA, TransformerSummaryPreservesMayWriteAcrossCombineAndExtend) {
   auto b = D::singleton(WriteOp{&slot_b});
 
   auto joined = D::combine(a, b);
-  EXPECT_TRUE(joined.may_write.count(&slot_a));
-  EXPECT_TRUE(joined.may_write.count(&slot_b));
+  EXPECT_TRUE(joined.mayWrite(&slot_a));
+  EXPECT_TRUE(joined.mayWrite(&slot_b));
 
   auto composed = D::extend(a, b);
-  EXPECT_TRUE(composed.may_write.count(&slot_a));
-  EXPECT_TRUE(composed.may_write.count(&slot_b));
-}
-
-TEST(NPA, PathTransferSummaryCondCombineRespectsBooleanGuard) {
-  using D = npa::PathTransferSummary<char>;
-
-  auto thenV = D::singleton('t');
-  auto elseV = D::singleton('e');
-
-  auto chosenThen = D::condCombine(true, thenV, elseV);
-  auto chosenElse = D::condCombine(false, thenV, elseV);
-
-  EXPECT_EQ(chosenThen.paths.size(), 1u);
-  EXPECT_TRUE(chosenThen.paths.count(std::vector<char>{'t'}));
-  EXPECT_FALSE(chosenThen.paths.count(std::vector<char>{'e'}));
-
-  EXPECT_EQ(chosenElse.paths.size(), 1u);
-  EXPECT_TRUE(chosenElse.paths.count(std::vector<char>{'e'}));
-  EXPECT_FALSE(chosenElse.paths.count(std::vector<char>{'t'}));
+  EXPECT_TRUE(composed.mayWrite(&slot_a));
+  EXPECT_TRUE(composed.mayWrite(&slot_b));
 }
 
 TEST(NPA, TransformerSummaryCondCombineRespectsBooleanGuard) {
@@ -1248,13 +1278,13 @@ TEST(NPA, TransformerSummaryCondCombineRespectsBooleanGuard) {
   auto chosenThen = D::condCombine(true, thenV, elseV);
   auto chosenElse = D::condCombine(false, thenV, elseV);
 
-  EXPECT_EQ(chosenThen.transformers.size(), 1u);
-  EXPECT_TRUE(chosenThen.transformers.count(std::vector<char>{'t'}));
-  EXPECT_FALSE(chosenThen.transformers.count(std::vector<char>{'e'}));
+  EXPECT_EQ(chosenThen.transformers().size(), 1u);
+  EXPECT_TRUE(chosenThen.transformers().count(std::vector<char>{'t'}));
+  EXPECT_FALSE(chosenThen.transformers().count(std::vector<char>{'e'}));
 
-  EXPECT_EQ(chosenElse.transformers.size(), 1u);
-  EXPECT_TRUE(chosenElse.transformers.count(std::vector<char>{'e'}));
-  EXPECT_FALSE(chosenElse.transformers.count(std::vector<char>{'t'}));
+  EXPECT_EQ(chosenElse.transformers().size(), 1u);
+  EXPECT_TRUE(chosenElse.transformers().count(std::vector<char>{'e'}));
+  EXPECT_FALSE(chosenElse.transformers().count(std::vector<char>{'t'}));
 }
 
 } // namespace

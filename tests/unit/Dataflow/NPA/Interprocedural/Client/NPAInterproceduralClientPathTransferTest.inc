@@ -31,16 +31,16 @@ TEST(NPAInterproceduralClients,
   EXPECT_NE(stderrOutput.find("already left-linear"), std::string::npos);
 }
 
-TEST(NPAInterproceduralClients, PathTransferSummaryPreservesLongPaths) {
-  using Domain = npa::PathTransferSummary<char>;
+TEST(NPAInterproceduralClients, TransformerSummaryPreservesLongPaths) {
+  using Domain = npa::TransformerSummary<char>;
 
   Domain::value_type path = Domain::one();
   for (int i = 0; i < 300; ++i)
     path = Domain::extend(Domain::singleton('a'), path);
 
   std::vector<char> expected(300, 'a');
-  EXPECT_EQ(path.paths.size(), 1u);
-  EXPECT_EQ(path.paths.count(expected), 1u);
+  EXPECT_EQ(path.transformers().size(), 1u);
+  EXPECT_EQ(path.transformers().count(expected), 1u);
 }
 
 

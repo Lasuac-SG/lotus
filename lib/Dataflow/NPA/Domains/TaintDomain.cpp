@@ -81,14 +81,15 @@ TaintTransformer::condCombine(bool phi, const value_type &t,
 
 TaintTransformer::fact_type TaintTransformer::applyRelation(
     const value_type &transfer, const fact_type &input) {
-  fact_type result = transfer.identity ? input : fact_type{};
+  fact_type result;
   for (unsigned source : input) {
     const fact_type *outputs = transfer.rows.find(source);
-    if (!outputs)
+    if (outputs) {
+      result |= *outputs;
       continue;
+    }
     if (transfer.identity)
-      result.reset(source);
-    result |= *outputs;
+      result.set(source);
   }
   return result;
 }

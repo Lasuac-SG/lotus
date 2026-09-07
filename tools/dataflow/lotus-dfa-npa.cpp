@@ -43,6 +43,10 @@ static cl::opt<bool> StdoutOpt(
     "stdout",
     cl::desc("Write analysis results to stdout when --out-dir is not set"),
     cl::init(false));
+static cl::opt<bool> PrintBlockResultsOpt(
+    "print-block-results",
+    cl::desc("Print per-block facts in addition to the analysis profile"),
+    cl::init(false));
 static cl::opt<std::string>
     AnalysisOpt("analysis",
                 cl::desc("Analysis: liveness (default), reaching_defs, "
@@ -350,6 +354,8 @@ void formatBitSet(raw_ostream &OS,
 template <typename Printer>
 void printBlockStates(raw_ostream &OS, const BlockView &View,
                       Printer &&PrintState) {
+  if (!PrintBlockResultsOpt)
+    return;
   for (const BasicBlock *BB : View.OrderedBlocks) {
     OS << "  " << View.BlockToId.at(BB) << " IN: ";
     PrintState(BB);
@@ -402,6 +408,8 @@ void runReachable(raw_ostream &OS, Function &F, npa::SolverStrategy Strategy,
 
 template <typename Printer>
 void printModuleBlockStates(raw_ostream &OS, Module &M, Printer &&PrintState) {
+  if (!PrintBlockResultsOpt)
+    return;
   for (auto &F : M) {
     if (F.isDeclaration())
       continue;

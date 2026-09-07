@@ -50,11 +50,17 @@ Newton also exposes an orthogonal `NewtonRoundStrategy`:
 - **Sparse**: re-evaluate reachable occurrence contexts at the current Newton
   valuation and materialize only occurrences whose zero map cannot be proved.
 
-Sparse discovery remains source-indexed, but materialization is target-wise:
-one fused traversal of each active `Exp0` computes node values and the filtered
-derivative together, using the retained-occurrence mask. Shared occurrence-path
-prefixes and target evaluation contexts are cached within a round, so common
-`Mul`, `Call`, `Concat`, and `Star` structure is not rebuilt per occurrence.
+Sparse discovery remains source-indexed, but its occurrence index is lazy and
+DAG-aware. The up-front plan stores only source-to-target candidates. When
+demand first reaches a target, shared `Exp0` nodes are indexed once; each round
+performs one bottom-up influence traversal per demanded target. Contexts that
+meet at a shared node are conservatively joined, so DAG compression may retain
+extra terms but never removes a potentially non-zero contribution.
+
+Materialization is target-wise and preserves the same DAG sharing. It filters
+leaves by the final active/influential source set and builds each shared
+derivative node once, rather than rebuilding a root-to-leaf path per expanded
+occurrence.
 
 The three restricted strategies implement the fixed-seed identity
 `nu[i+1] = (Df|nu[i])*(F(0))` and therefore require an idempotent domain. They
@@ -128,11 +134,11 @@ directional annihilator law the domain declares with
 zero-map coefficients through `leftMultiplyIsZeroMap` and
 `rightMultiplyIsZeroMap`; returning false only reduces pruning.
 
-`Stat::newton_rounds` records active coordinates, queried and retained
-occurrences, materialized derivative terms, discovery/materialization time,
-and linear-solve time for every round. Aggregate counters and the one-time
-occurrence-index time are stored directly in `Stat`. `Stat::time` covers fixed
-seed construction, indexing, round construction, and inner solves.
+`Stat::newton_rounds` records active coordinates, queried and retained DAG
+leaves, materialized derivative terms, discovery/materialization time, and
+linear-solve time for every round. Aggregate counters and lazy index time are
+stored directly in `Stat`. `Stat::time` covers fixed-seed construction,
+indexing, round construction, and inner solves.
 
 For unbounded ordinary linear backends, idempotent Newton rounds initialize the
 inner solve from the current approximant, which is a pre-fixpoint of both the
@@ -209,9 +215,11 @@ Notable entry points:
 - Inter backward clients use `BackwardInterEngine<Domain, Analysis>`.
 - `TransformerSummary` is the current bounded abstract-summary path used
   by in-tree subdistributive clients such as interprocedural constant
-  propagation and interval analysis. Transformer carriers live directly under
-  `Domains/` because they satisfy the same domain interface as ordinary solver
-  domains.
+  propagation and interval analysis. Its immutable storage is shared between
+  copied values. `GenKillTransformer` and `TaintTransformer` use persistent
+  sparse sets; taint relations represent identity implicitly and store only
+  changed rows. Transformer carriers live directly under `Domains/` because
+  they satisfy the same domain interface as ordinary solver domains.
 
 ## Execution model
 

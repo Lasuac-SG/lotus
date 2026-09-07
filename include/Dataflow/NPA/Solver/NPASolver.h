@@ -680,7 +680,9 @@ private:
         result.stabilized && !stats.hit_limit && !stats.used_approx_equal;
     stats.domain_contract_checks_run = checks_run;
     stats.domain_contract_checks_failed = checks_run && !contract_ok;
-    stats.occurrence_index_time = occurrence_index_time;
+    stats.occurrence_index_time =
+        occurrence_index_time +
+        (sparse_system ? sparse_system->occurrenceIndexTime() : 0.0);
     stats.indexed_derivative_occurrences =
         sparse_system ? static_cast<long>(sparse_system->occurrenceCount()) : 0;
     stats.newton_rounds = std::move(round_stats);

@@ -717,7 +717,7 @@ TEST(NPAInterproceduralClients,
 
 namespace {
 
-using TraceTransferDomain = npa::PathTransferSummary<char>;
+using TraceTransferDomain = npa::TransformerSummary<char>;
 
 struct BackwardTensorLangDomain {
   using value_type = std::set<std::string>;
