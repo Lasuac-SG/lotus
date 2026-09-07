@@ -6,11 +6,18 @@
  * \brief Domain concept detection and solver-independent domain operations.
  */
 
-#include <cassert>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 
 namespace npa {
+
+class UnsupportedDomainProjectError : public std::logic_error {
+public:
+  UnsupportedDomainProjectError()
+      : std::logic_error(
+            "Project expression requires domain project() or projectT()") {}
+};
 
 template <class D> struct DomainHasBase {
   template <class T>
@@ -131,12 +138,39 @@ template <class D> using DomVal = typename D::value_type;
 template <class D> using DomTest = typename D::test_type;
 template <class V> using Optional = std::optional<V>;
 
+enum class ConvergencePolicy {
+  DomainDefault,
+  Exact,
+};
+
+inline ConvergencePolicy &active_convergence_policy_slot() {
+  static thread_local ConvergencePolicy policy =
+      ConvergencePolicy::DomainDefault;
+  return policy;
+}
+
+class ScopedConvergencePolicy {
+public:
+  explicit ScopedConvergencePolicy(ConvergencePolicy policy)
+      : previous_(active_convergence_policy_slot()) {
+    active_convergence_policy_slot() = policy;
+  }
+
+  ScopedConvergencePolicy(const ScopedConvergencePolicy &) = delete;
+  ScopedConvergencePolicy &operator=(const ScopedConvergencePolicy &) = delete;
+
+  ~ScopedConvergencePolicy() { active_convergence_policy_slot() = previous_; }
+
+private:
+  ConvergencePolicy previous_;
+};
+
 #define NPA_REQUIRE_DOMAIN(D)                                                  \
-  static_assert(DomainHasBase<D>::value,                                      \
-                "Invalid DOMAIN: missing required methods");                  \
-  static_assert(                                                              \
-      D::idempotent || DomainHasSubtract<D>::value ||                         \
-          DomainHasChooseDelta<D>::value,                                     \
+  static_assert(DomainHasBase<D>::value,                                       \
+                "Invalid DOMAIN: missing required methods");                   \
+  static_assert(                                                               \
+      D::idempotent || DomainHasSubtract<D>::value ||                          \
+          DomainHasChooseDelta<D>::value,                                      \
       "Non-idempotent DOMAIN must implement subtract() or choose_delta()")
 
 namespace detail {
@@ -155,9 +189,10 @@ inline bool domain_equal_impl(const DomVal<D> &lhs, const DomVal<D> &rhs,
 
 template <class D>
 inline bool domain_equal(const DomVal<D> &lhs, const DomVal<D> &rhs) {
+  if (active_convergence_policy_slot() == ConvergencePolicy::Exact)
+    return D::equal(lhs, rhs);
   return detail::domain_equal_impl<D>(
-      lhs, rhs,
-      std::integral_constant<bool, DomainHasApproxEqual<D>::value>{});
+      lhs, rhs, std::integral_constant<bool, DomainHasApproxEqual<D>::value>{});
 }
 
 template <class D>
@@ -166,8 +201,7 @@ inline bool domain_exact_equal(const DomVal<D> &lhs, const DomVal<D> &rhs) {
 }
 
 template <class D>
-inline bool domain_leq_idempotent(const DomVal<D> &lhs,
-                                  const DomVal<D> &rhs) {
+inline bool domain_leq_idempotent(const DomVal<D> &lhs, const DomVal<D> &rhs) {
   static_assert(D::idempotent,
                 "domain_leq_idempotent requires an idempotent domain");
   return domain_equal<D>(D::combine(lhs, rhs), rhs);
@@ -180,6 +214,13 @@ inline DomVal<D> domain_project_impl(const DomVal<D> &value, std::true_type,
   return D::project(value);
 }
 
+/// Prefer the base-domain spelling when a domain deliberately exposes both.
+template <class D>
+inline DomVal<D> domain_project_impl(const DomVal<D> &value, std::true_type,
+                                     std::true_type) {
+  return D::project(value);
+}
+
 template <class D>
 inline DomVal<D> domain_project_impl(const DomVal<D> &value, std::false_type,
                                      std::true_type) {
@@ -189,9 +230,7 @@ inline DomVal<D> domain_project_impl(const DomVal<D> &value, std::false_type,
 template <class D>
 inline DomVal<D> domain_project_impl(const DomVal<D> &, std::false_type,
                                      std::false_type) {
-  assert(false && "Domain must implement project() or projectT() to evaluate "
-                  "projection expressions");
-  return D::zero();
+  throw UnsupportedDomainProjectError{};
 }
 
 template <class D> inline bool domain_commutative_extend_impl(std::true_type) {

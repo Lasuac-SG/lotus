@@ -36,8 +36,8 @@
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorSemiring.h"
 #include "Utils/Algorithms/PathExpressions/PathExpressions.h"
 
+#include <cstddef>
 #include <mutex>
-#include <sstream>
 
 namespace npa {
 
@@ -132,12 +132,12 @@ private:
     case K::Mu: {
       V fixed = fix<D>(false, D::zero(), [&](const V &cur) {
         auto env2 = env;
-        env2[e->sym] = cur;
+        env2.insert_or_assign(e->sym, cur);
         auto body = eval_with_env(e->t, env2);
         return body.has_value() ? *body : D::zero();
       });
       auto env2 = env;
-      env2[e->sym] = fixed;
+      env2.insert_or_assign(e->sym, fixed);
       auto body = eval_with_env(e->t, env2);
       if (!body.has_value())
         return {};
@@ -411,10 +411,36 @@ template <class TD> struct TensorTarjanPlan {
   std::size_t label_count = 0;
 };
 
+struct TensorTopologyKey {
+  /// For each equation, the dense equation index of each coefficient edge.
+  /// Order and multiplicity are significant because they determine label slots.
+  std::vector<std::vector<unsigned>> dependencies;
+
+  bool operator==(const TensorTopologyKey &other) const {
+    return dependencies == other.dependencies;
+  }
+};
+
+struct TensorTopologyKeyHash {
+  std::size_t operator()(const TensorTopologyKey &key) const {
+    std::size_t hash = key.dependencies.size();
+    auto mix = [&](std::size_t value) {
+      hash ^= value + static_cast<std::size_t>(0x9e3779b9U) + (hash << 6U) +
+              (hash >> 2U);
+    };
+    for (const auto &equation_dependencies : key.dependencies) {
+      mix(equation_dependencies.size());
+      for (unsigned dependency : equation_dependencies)
+        mix(dependency);
+    }
+    return hash;
+  }
+};
+
 template <class TD> struct TensorTarjanPreparedInput {
   using Frag = typename TensorLeftLinearExtractor<TD>::Frag;
   std::vector<Frag> fragments;
-  std::string signature;
+  TensorTopologyKey topology;
 };
 
 template <class TD>
@@ -424,11 +450,11 @@ prepare_tensor_tarjan_input(bool verbose,
                             bool allow_project_pushdown = false) {
   TensorTarjanPreparedInput<TD> prepared;
   prepared.fragments.reserve(rhs.size());
+  prepared.topology.dependencies.resize(rhs.size());
+  const auto validated = validate_linear_equation_system<TD>(rhs);
 
-  std::ostringstream signature;
-  signature << rhs.size() << ';';
-
-  for (const auto &eqn : rhs) {
+  for (std::size_t i = 0; i < rhs.size(); ++i) {
+    const auto &eqn = rhs[i];
     auto extracted = TensorLeftLinearExtractor<TD>::extract(
         eqn.second, allow_project_pushdown);
     if (!extracted.has_value()) {
@@ -439,14 +465,16 @@ prepare_tensor_tarjan_input(bool verbose,
       return {};
     }
     prepared.fragments.push_back(*extracted);
-
-    signature << "C:";
-    for (const auto &term : (*extracted).terms)
-      signature << "T:" << term.first << ';';
-    signature << '|';
+    auto &dependencies = prepared.topology.dependencies[i];
+    dependencies.reserve((*extracted).terms.size());
+    for (const auto &term : (*extracted).terms) {
+      auto found = validated.symbol_to_index.find(term.first);
+      if (found == validated.symbol_to_index.end())
+        throw InvalidEquationSystemError("undefined tensor equation symbol");
+      dependencies.push_back(found->second);
+    }
   }
 
-  prepared.signature = signature.str();
   Optional<TensorTarjanPreparedInput<TD>> out;
   out = prepared;
   return out;
@@ -466,38 +494,27 @@ Optional<TensorTarjanPlan<TD>> get_tensor_tarjan_plan(
   using Frag = typename TensorLeftLinearExtractor<TD>::Frag;
   using Graph = lotus::pathexpressions::GenericLabeledGraph<int, int>;
 
-  std::unordered_map<Symbol, int> sym_to_node;
-  for (int i = 0; i < static_cast<int>(rhs.size()); ++i)
-    sym_to_node[rhs[i].first] = i + 1;
-
   std::vector<Frag> fragments;
-  std::string key;
+  TensorTopologyKey key;
   if (prepared_input) {
     fragments = prepared_input->fragments;
-    key = prepared_input->signature;
+    key = prepared_input->topology;
   } else {
     auto prepared =
         prepare_tensor_tarjan_input<TD>(verbose, rhs, allow_project_pushdown);
     if (!prepared.has_value())
       return {};
     fragments = (*prepared).fragments;
-    key = (*prepared).signature;
+    key = (*prepared).topology;
   }
 
-  for (const auto &frag : fragments) {
-    for (const auto &term : frag.terms) {
-      if (sym_to_node.find(term.first) == sym_to_node.end()) {
-        if (verbose)
-          std::cerr << "[tensor] unknown symbol in left-linear extraction; "
-                       "falling back to tensor worklist\n";
-        return {};
-      }
-    }
-  }
+  if (fragments.size() != rhs.size() || key.dependencies.size() != rhs.size())
+    throw InvalidEquationSystemError("mismatched tensor Tarjan input");
 
   using Plan = TensorTarjanPlan<TD>;
   static std::mutex cache_mu;
-  static std::unordered_map<std::string, Plan> cache;
+  static std::unordered_map<TensorTopologyKey, Plan, TensorTopologyKeyHash>
+      cache;
 
   {
     std::lock_guard<std::mutex> lock(cache_mu);
@@ -520,8 +537,14 @@ Optional<TensorTarjanPlan<TD>> get_tensor_tarjan_plan(
   for (int i = 0; i < static_cast<int>(rhs.size()); ++i) {
     const Frag &frag = fragments[static_cast<std::size_t>(i)];
     graph.addEdge(0, add_label(frag.constant), i + 1);
-    for (const auto &term : frag.terms)
-      graph.addEdge(sym_to_node.at(term.first), add_label(term.second), i + 1);
+    const auto &dependencies = key.dependencies[static_cast<std::size_t>(i)];
+    if (dependencies.size() != frag.terms.size())
+      throw InvalidEquationSystemError("mismatched tensor Tarjan topology");
+    for (std::size_t term_index = 0; term_index < frag.terms.size();
+         ++term_index) {
+      graph.addEdge(static_cast<int>(dependencies[term_index]) + 1,
+                    add_label(frag.terms[term_index].second), i + 1);
+    }
   }
 
   lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
@@ -566,9 +589,9 @@ std::vector<typename TD::value_type> instantiate_tensor_tarjan_labels(
   for (const auto &eqn : rhs) {
     auto extracted = TensorLeftLinearExtractor<TD>::extract(
         eqn.second, allow_project_pushdown);
-    assert(extracted.has_value() &&
-           "instantiate_tensor_tarjan_labels must be called only after a "
-           "successful get_tensor_tarjan_plan()");
+    if (!extracted.has_value())
+      throw InvalidEquationSystemError(
+          "cannot instantiate non-extractable tensor Tarjan input");
     labels.push_back((*extracted).constant);
     for (const auto &term : (*extracted).terms)
       labels.push_back(term.second);
@@ -581,8 +604,9 @@ std::vector<typename TD::value_type> evaluate_tensor_tarjan_plan(
     const TensorTarjanPlan<TD> &plan,
     const std::vector<typename TD::value_type> &labels) {
   using V = typename TD::value_type;
-  assert(labels.size() == plan.label_count &&
-         "Tensor Tarjan labels must match the cached parameterized plan");
+  if (labels.size() != plan.label_count)
+    throw InvalidEquationSystemError(
+        "tensor Tarjan labels do not match the cached plan");
 
   TensorRegexEvaluator<TD> evaluator(labels);
   std::vector<V> out;
@@ -598,6 +622,9 @@ Optional<std::vector<typename TD::value_type>> solve_linear_tensor_tarjan_impl(
     const std::vector<typename TD::value_type> &init,
     bool allow_project_pushdown = DomainHasProjectT<TD>::value) {
   using V = typename TD::value_type;
+  if (init.size() != rhs.size())
+    throw InvalidEquationSystemError(
+        "tensor equation system and initial values differ in size");
   for (const auto &seed : init) {
     if (!domain_equal<TD>(seed, TD::zero())) {
       if (verbose)
@@ -646,6 +673,9 @@ Optional<std::vector<DomVal<D>>> solve_linear_tensor_tarjan_only_impl(
         &rhs_tensor,
     const std::vector<DomVal<D>> &init) {
   validate_tensor_trait_api<D>();
+  if (init.size() != rhs_tensor.size())
+    throw InvalidEquationSystemError(
+        "tensor equation system and initial values differ in size");
   using Traits = TensorSemiringTraits<D>;
   using TD = typename Traits::tensor_domain;
   using VT = typename TD::value_type;
@@ -679,6 +709,9 @@ std::vector<DomVal<D>> solve_linear_tensorized_impl(
         &rhs_tensor,
     std::vector<DomVal<D>> init) {
   validate_tensor_trait_api<D>();
+  if (init.size() != rhs_tensor.size())
+    throw InvalidEquationSystemError(
+        "tensor equation system and initial values differ in size");
   using Traits = TensorSemiringTraits<D>;
   using TD = typename Traits::tensor_domain;
   using VT = typename TD::value_type;
@@ -707,6 +740,9 @@ std::vector<DomVal<D>> solve_linear_tensor_paper_impl(
         &rhs_tensor,
     std::vector<DomVal<D>> init) {
   validate_tensor_trait_api<D>();
+  if (rhs.size() != rhs_tensor.size() || init.size() != rhs.size())
+    throw InvalidEquationSystemError(
+        "base and tensor equation systems differ in size");
   using TD = typename TensorSemiringTraits<D>::tensor_domain;
 
   const bool projection_sensitive =
@@ -743,6 +779,9 @@ solve_linear_tensor_impl(bool verbose,
                          const std::vector<std::pair<Symbol, E1<D>>> &rhs,
                          std::vector<DomVal<D>> init) {
   validate_tensor_trait_api<D>();
+  if (init.size() != rhs.size())
+    throw InvalidEquationSystemError(
+        "linear equation system and initial values differ in size");
   using Traits = TensorSemiringTraits<D>;
   using TD = typename Traits::tensor_domain;
   if (!Traits::available()) {

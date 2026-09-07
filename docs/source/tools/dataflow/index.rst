@@ -107,7 +107,9 @@ both intraprocedural and interprocedural analyses.
 - ``--analysis <name>``: string, default "liveness", one of: liveness, reaching_defs, reachable, inter_liveness, inter_reaching_defs, inter_uninitialized, inter_constant_prop, inter_interval, inter_nullability
 - ``--solver <name>``: string, default "newton", newton or kleene (inter analyses require newton)
 - ``--linear-solver <name>``: string, default "scc", scc, adaptive_scc, or tensor
-- ``-nworkers=<N>``: unsigned, parallel workers for function scheduling
+
+NPA execution is serial. Shared Lotus libraries may still register the global
+``-nworkers`` option in the binary, but it does not control NPA scheduling.
 
 Intraprocedural analyses:
 
@@ -128,7 +130,7 @@ Output format:
 
 .. code-block:: none
 
-   [npa:<analysis>:<scope>:linear=<linear-solver>:workers=<N>:parallel=<on|off>]
+   [npa:<analysis>:<scope>:linear=<linear-solver>]
    FUNC <name>
      bb<N> IN: <comma-separated value ids>
 

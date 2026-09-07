@@ -188,6 +188,8 @@ The core headers implement the algorithms from Esparza et al. (JACM) and Reps et
 
 * **Core/Domain.h**: Domain concept (ω-continuous semiring).
 * **Solver/Options.h**: ``LinearStrategy`` configuration.
+* **Solver/EquationSystem.h**: validates unique LHS symbols, closed free-symbol
+  dependencies, local bindings, and builds dense dependency indices.
 * **Core/Expr/Expressions.h**: ``Exp0`` (polynomial equation AST), ``Exp1`` (linearized AST);
   ``Concat`` encodes the LCFL form :math:`a \cdot X \cdot b`; ``Star`` is the
   Newton/tensor Kleene-star fragment and ``Mu`` is a generic least-fixpoint node.
@@ -221,17 +223,33 @@ Practical notes for numeric domains
 For floating-point / numeric semirings, exact equality often prevents termination
 in iterative solvers. Domains may provide an optional method
 ``approx_equal(a,b)``; when present, NPA uses it for convergence checks instead
-of ``equal(a,b)``.
+of ``equal(a,b)``. Pass ``ConvergencePolicy::Exact`` to a solver invocation to
+use exact equality for that solve.
+
+``DomainContractMode::BasicChecks`` records failures of sampled semiring-law
+checks in solver statistics. ``DomainContractMode::Strict`` throws
+``DomainContractViolationError`` when those checks fail. Domain authors can call
+``run_sampled_domain_contract_checks`` with additional representative values.
 
 Domains may also opt into bounding iteration:
 
-* ``max_fixpoint_iters`` caps generic fixpoint loops (e.g. ``Star`` / ``Mu`` bodies).
+* ``max_fixpoint_iters`` caps generic fixpoint loops (e.g. ``Star`` / ``Mu``
+  bodies); zero means that no update is performed and a negative value is
+  unlimited.
 * ``max_linear_steps`` caps worklist/SCC steps for the linearized system.
 
 If a domain implements ``project()``, Newton/tensor paths require an additional
 opt-in ``project_newton_safe`` contract. That contract is the domain author's
 assertion that projection is monotone and compatible with ``combine`` and the
 linearized summary equations used by the Newton pipeline.
+
+Projection evaluation accepts ``project()``, ``projectT()``, or both. If both
+exist, ``project()`` takes precedence. If neither exists, evaluating a
+``Project`` node throws instead of silently producing zero. Width-dependent
+domains also throw when used without an active ``WidthScope``.
+
+NPA solver execution is serial, including Newton setup, SCC traversal,
+interprocedural artifact construction, and propagation.
 
 The ``lotus-dfa-npa`` command-line tool exposes the in-tree LLVM clients; the
 generic solver APIs can also be used directly by library clients.

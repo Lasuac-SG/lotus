@@ -21,7 +21,7 @@ The binaries are written to `build/bin/`.
 | `lotus-dfa-apa` | APA / elimination driver | Runs elimination-based dataflow analyses and can dump engine results. |
 | `lotus-dfa-mono` | Mono analysis driver | Runs Mono-based analyses on LLVM bitcode. |
 | `lotus-dfa-ifds` | IFDS analysis driver | Runs IFDS-based analyses with alias-analysis support when needed. |
-| `lotus-dfa-npa` | NPA analysis driver | Runs NPA intraprocedural and selected interprocedural analyses on LLVM bitcode, with module-level function scheduling and eligible NPA parallel execution via `-nworkers`. |
+| `lotus-dfa-npa` | NPA analysis driver | Runs serial NPA intraprocedural and selected interprocedural analyses on LLVM bitcode. |
 
 ## Diff testing (`lotus-dfa`)
 
@@ -78,19 +78,11 @@ lotus-dfa-npa --analysis=liveness --solver=newton --stdout /path/to/file.bc
 # NPA interprocedural constant propagation
 lotus-dfa-npa --analysis=constant_prop --stdout /path/to/file.bc
 
-# NPA driver with module-level and NPA-internal parallel execution
-lotus-dfa-npa --analysis=liveness --solver=newton --linear-solver=scc -nworkers=8 --stdout /path/to/file.bc
 ```
 
-`lotus-dfa-npa` inherits the global `ThreadPool` flag `-nworkers=<N>`.
-For intraprocedural analyses, the frontend schedules independent functions
-across the module in parallel and each NPA solve may additionally use the
-engine's internal parallel setup/SCC execution paths when the problem
-structure is eligible.
-
-For module-level interprocedural analyses, scheduling lives inside the
-interprocedural engine rather than in the CLI driver. `-nworkers=0` and
-`-nworkers=1` both stay on the sequential path.
+`lotus-dfa-npa` executes all solver, function, and interprocedural scheduling
+serially. A shared Lotus dependency may still register the process-wide
+`-nworkers` option, but NPA does not consult it.
 
 Currently exposed NPA analyses:
 

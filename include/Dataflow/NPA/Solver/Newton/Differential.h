@@ -175,7 +175,7 @@ private:
       // TOPLAS 2016, Eq. (60): D(g*) = g(ν)* · D(g) · g(ν)*.
       V star_val = context.valueOf(o);
       Env body_env = env;
-      body_env[o->sym] = star_val;
+      body_env.insert_or_assign(o->sym, star_val);
       M1 body_diff = aux(nu, body_env, context, o->t);
       return Exp1<D>::seq(star_val, Exp1<D>::seqR(body_diff, star_val));
     }

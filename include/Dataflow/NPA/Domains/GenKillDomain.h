@@ -28,7 +28,6 @@ public:
   using test_type = bool;
   static constexpr bool idempotent = true;
   using width_context = DomainWidthContext<GenKillTransformer>;
-  using RunState = typename width_context::state_type;
   using WidthScope = typename width_context::scope_type;
 
   // Additive identity (no paths): f(x) = 0  => Kill=all, Gen=0
@@ -98,17 +97,6 @@ private:
   }
 };
 
-} // namespace npa
-
-namespace npa {
-template <> struct DomainExecutionStateTraits<GenKillTransformer> {
-  using state_type = GenKillTransformer::width_context::state_type;
-  using scope_type = GenKillTransformer::width_context::scope_type;
-
-  static state_type capture() {
-    return GenKillTransformer::width_context::capture();
-  }
-};
 } // namespace npa
 
 #endif // NPA_GEN_KILL_TRANSFORMER_H

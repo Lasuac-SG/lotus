@@ -17,6 +17,7 @@ struct Stat {
   int requested_max_iters = -1;
   int effective_max_iters = -1;
   LinearStrategy linear_strategy = LinearStrategy::SCC;
+  ConvergencePolicy convergence_policy = ConvergencePolicy::DomainDefault;
   bool used_approx_equal = false;
   bool used_auto_n_cap = false;
   bool retried_without_auto_n_cap = false;

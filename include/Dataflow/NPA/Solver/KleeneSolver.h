@@ -37,7 +37,7 @@ template <class D> struct KleeneIter {
       const std::vector<std::pair<Symbol, V>> &binds) {
     std::unordered_map<Symbol, V> nu;
     for (auto &b : binds)
-      nu[b.first] = b.second;
+      nu.insert_or_assign(b.first, b.second);
     std::vector<std::pair<Symbol, V>> out;
     for (auto &e : eqns)
       out.emplace_back(e.first, I0<D>::eval(verbose, nu, e.second));
@@ -48,17 +48,24 @@ template <class D> struct KleeneIter {
 template <class D> struct KleeneSolver {
   using V = DomVal<D>;
   using Eqn = std::pair<Symbol, E0<D>>;
-  static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
-  solve(const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
-        DomainContractMode contractMode = DomainContractMode::Off) {
+  static std::pair<std::vector<std::pair<Symbol, V>>, Stat> solve(
+      const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
+      DomainContractMode contractMode = DomainContractMode::Off,
+      ConvergencePolicy convergencePolicy = ConvergencePolicy::DomainDefault) {
     NPA_REQUIRE_DOMAIN(D);
-    SolveContext<D> context;
-    context.options.verbose = verbose;
-    context.options.max_iterations = max;
-    context.options.contract_mode = contractMode;
-    const bool checks_run = contractMode == DomainContractMode::BasicChecks;
+    SolveOptions options;
+    options.verbose = verbose;
+    options.max_iterations = max;
+    options.contract_mode = contractMode;
+    options.convergence_policy = convergencePolicy;
+    SolveContext<D> context(std::move(options));
+    const auto validated = validate_equation_system<D>(eqns);
+    (void)validated;
+    const bool checks_run = contractMode != DomainContractMode::Off;
     const bool contract_ok =
         !checks_run || run_basic_domain_contract_checks<D>(verbose);
+    if (contractMode == DomainContractMode::Strict)
+      require_domain_contract(contract_ok);
     auto result = iterate_until_stable(
         KleeneIter<D>::init(eqns),
         [&](const std::vector<std::pair<Symbol, V>> &current) {
@@ -88,7 +95,10 @@ template <class D> struct KleeneSolver {
     stats.equation_count = static_cast<int>(eqns.size());
     stats.requested_max_iters = max;
     stats.effective_max_iters = max;
-    stats.used_approx_equal = DomainHasApproxEqual<D>::value;
+    stats.convergence_policy = convergencePolicy;
+    stats.used_approx_equal =
+        DomainHasApproxEqual<D>::value &&
+        convergencePolicy == ConvergencePolicy::DomainDefault;
     stats.converged =
         result.stabilized && !stats.hit_limit && !stats.used_approx_equal;
     stats.domain_contract_checks_run = checks_run;

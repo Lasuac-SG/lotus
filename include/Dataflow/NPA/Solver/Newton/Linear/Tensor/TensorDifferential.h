@@ -94,8 +94,8 @@ private:
     return inserted.first->second;
   }
 
-  static E1<TD> aux(const Map &nu, const Env &env,
-                    const EvalContext &context, const E0<D> &expr) {
+  static E1<TD> aux(const Map &nu, const Env &env, const EvalContext &context,
+                    const E0<D> &expr) {
     using K0 = typename Exp0<D>::K;
     switch (expr->k) {
     case K0::Term:
@@ -116,9 +116,9 @@ private:
       auto d_arg = aux(nu, env, context, expr->t);
       auto left =
           Exp1<TD>::seqR(d_arg, Traits::left_constant(nu.at(expr->sym)));
-      auto right = Exp1<TD>::seqR(
-          Exp1<TD>::hole(expr->sym),
-          Traits::right_constant(context.valueOf(expr->t)));
+      auto right =
+          Exp1<TD>::seqR(Exp1<TD>::hole(expr->sym),
+                         Traits::right_constant(context.valueOf(expr->t)));
       return Exp1<TD>::add(left, right);
     }
     case K0::Cond:
@@ -151,7 +151,7 @@ private:
     case K0::Star: {
       V star_value = context.valueOf(expr);
       Env body_env = env;
-      body_env[expr->sym] = star_value;
+      body_env.insert_or_assign(expr->sym, star_value);
       return Exp1<TD>::seqR(aux(nu, body_env, context, expr->t),
                             Traits::couple(star_value, star_value));
     }

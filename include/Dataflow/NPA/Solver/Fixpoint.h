@@ -26,6 +26,12 @@ template <class D, class F> auto fix(bool verbose, DomVal<D> init, F f) {
   int cnt = 0;
   auto last = init;
   const int max_iters = domain_max_fixpoint_iters<D>();
+  if (max_iters == 0) {
+    npa_note_fixpoint_limit_hit();
+    if (verbose)
+      std::cerr << "[fp] hit max_fixpoint_iters=0\n";
+    return last;
+  }
   while (true) {
     auto nxt = f(last);
     if (domain_equal<D>(last, nxt)) {
@@ -49,6 +55,12 @@ template <class D, class Vec, class F>
 Vec fix_vec(bool verbose, Vec init, F f) {
   int cnt = 0;
   const int max_iters = domain_max_fixpoint_iters<D>();
+  if (max_iters == 0) {
+    npa_note_fixpoint_limit_hit();
+    if (verbose)
+      std::cerr << "[fp] hit max_fixpoint_iters=0\n";
+    return init;
+  }
   while (true) {
     Vec nxt = f(init);
     bool stable = true;

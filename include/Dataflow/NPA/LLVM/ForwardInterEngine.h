@@ -5,12 +5,10 @@
 #include "Dataflow/NPA/LLVM/AnalysisSupport.h"
 #include "Dataflow/NPA/NPA.h"
 #include "Utils/Algorithms/PathExpressions/PathExpressions.h"
-#include "Utils/Parallel/ThreadPool.h"
 
 #include <chrono>
 #include <deque>
 #include <map>
-#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -104,28 +102,20 @@ public:
         : analysis_(analysis), module_(module), mode_(mode) {}
 
     std::vector<llvm::Function *> get(const llvm::CallBase &call) {
-      {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto It = cache_.find(&call);
-        if (It != cache_.end())
-          return It->second;
-      }
+      auto It = cache_.find(&call);
+      if (It != cache_.end())
+        return It->second;
 
       std::vector<llvm::Function *> resolved =
           getPossibleCalleesForAnalysis(analysis_, module_, call, mode_, 0);
-
-      {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto Inserted = cache_.emplace(&call, std::move(resolved));
-        return Inserted.first->second;
-      }
+      auto Inserted = cache_.emplace(&call, std::move(resolved));
+      return Inserted.first->second;
     }
 
   private:
     Analysis &analysis_;
     llvm::Module &module_;
     IndirectCallResolutionMode mode_;
-    std::mutex mutex_;
     std::unordered_map<const llvm::CallBase *, std::vector<llvm::Function *>>
         cache_;
   };
@@ -386,13 +376,14 @@ public:
     const Symbol incomingSym = getSyntheticIncomingSymbol(&BB);
     E entryExpr = buildBlockEntryExpr(analysis, BB, Exp::hole(incomingSym), 0);
     std::unordered_map<Symbol, Val> env;
-    env[incomingSym] =
-        Pred && Pred->getTerminator()
-            ? getEdgeTransfer(analysis, *Pred->getTerminator(), BB, 0)
-            : D::one();
+    env.emplace(incomingSym,
+                Pred && Pred->getTerminator()
+                    ? getEdgeTransfer(analysis, *Pred->getTerminator(), BB, 0)
+                    : D::one());
     for (auto *OtherPred : predecessors(&BB)) {
-      env[getBlockSymbol(OtherPred)] =
-          (Pred != nullptr && OtherPred == Pred) ? D::one() : D::zero();
+      env.insert_or_assign(getBlockSymbol(OtherPred),
+                           (Pred != nullptr && OtherPred == Pred) ? D::one()
+                                                                  : D::zero());
     }
     return I0<D>::eval(false, env, entryExpr);
   }
@@ -857,24 +848,10 @@ public:
     const auto ArtifactStart = std::chrono::steady_clock::now();
     while (!frontier.empty()) {
       std::vector<PreparedFunctionArtifacts> prepared(frontier.size());
-      ThreadPool *pool = ThreadPool::get();
-      const bool parallel_frontier =
-          pool->workerCount() > 1 && frontier.size() > 1;
-      if (parallel_frontier) {
-        const std::size_t grain_size = detail::parallel_task_grain_size(
-            frontier.size(), pool->workerCount(), 2);
-        pool->parallelFor<std::size_t>(
-            0, frontier.size(), grain_size, [&](std::size_t index) {
-              prepared[index] = prepareFunctionRegexArtifacts(
-                  M, *frontier[index], analysis, calleeCache,
-                  res.status.call_resolution_mode);
-            });
-      } else {
-        for (std::size_t index = 0; index < frontier.size(); ++index) {
-          prepared[index] = prepareFunctionRegexArtifacts(
-              M, *frontier[index], analysis, calleeCache,
-              res.status.call_resolution_mode);
-        }
+      for (std::size_t index = 0; index < frontier.size(); ++index) {
+        prepared[index] = prepareFunctionRegexArtifacts(
+            M, *frontier[index], analysis, calleeCache,
+            res.status.call_resolution_mode);
       }
 
       std::vector<llvm::Function *> next_frontier;
@@ -912,7 +889,7 @@ public:
     auto rawRes = NPASolver<D>::solve(eqns, verbose, -1, linearStrategy);
     std::unordered_map<Symbol, Val> solvedMap;
     for (auto &p : rawRes.first)
-      solvedMap[p.first] = p.second;
+      solvedMap.insert_or_assign(p.first, p.second);
 
     res.status.summary_solve = rawRes.second;
     res.status.used_bounded_inner_solve =
@@ -927,7 +904,7 @@ public:
       Val summary = I0<D>::eval(false, solvedMap, exprIt->second);
       if (summaryIsApproximate(analysis, summary, 0))
         res.status.approximated = true;
-      res.summaries[entry.second] = summary;
+      res.summaries.insert_or_assign(entry.second, summary);
     }
     res.status.phase_summary_materialization_time =
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
@@ -983,7 +960,8 @@ public:
             auto predIt = blockExitExprs.find(predSym);
             if (predIt == blockExitExprs.end())
               continue;
-            env[predSym] = I0<D>::eval(false, solvedMap, predIt->second);
+            env.insert_or_assign(
+                predSym, I0<D>::eval(false, solvedMap, predIt->second));
           }
           entryToBlockStart = I0<D>::eval(false, env, blockExpr);
         } else {

@@ -42,8 +42,17 @@ NPA intentionally keeps its semiring terminology rather than adopting the
 Mono/APA lattice API. A base NPA domain provides `zero`, `one`, `combine`,
 `extend`, `extend_lin`, `ndetCombine`, `condCombine`, and `equal`.
 `Core/Domain.h` performs compile-time capability detection, while
-`Solver/DomainValidation.h` checks basic identity, annihilation, idempotence,
-and consistency laws when contract checking is enabled.
+`Solver/DomainValidation.h` checks identity, annihilation, associativity,
+distributivity, idempotence, and consistency laws over identity and optional
+representative values. `DomainContractMode::BasicChecks` records failures;
+`DomainContractMode::Strict` rejects the solve.
+
+Both public solvers validate equation systems before evaluation. Every LHS
+must be unique, every free symbol must have an equation, local `Bound` symbols
+must be in scope, and expressions must be non-null. Validation assigns dense
+equation indices reused by SCC planning and tensor topology caching. Domain
+values do not need a default constructor; solver storage is initialized from
+the domain identities.
 
 
 
@@ -65,6 +74,10 @@ generic least fixpoint, but NPA rejects it on Newton/tensor paths.
 
 Domains that expose `project()` must additionally opt into `project_newton_safe`
 before projection is accepted on Newton/tensor paths.
+Domains may expose `project()`, `projectT()`, or both; when both exist,
+`project()` takes precedence. Evaluating `Project` with neither operation throws
+`UnsupportedDomainProjectError`. Width-dependent domains likewise throw if no
+active `WidthScope` exists.
 
 Use `KleeneSolver<D>::solve(eqns, ...)` for plain Kleene solving.
 Use `NPASolver<D>::solve(eqns, verbose, -1, LinearStrategy::SCC)`,
@@ -139,174 +152,19 @@ Notable entry points:
   `Domains/` because they satisfy the same domain interface as ordinary solver
   domains.
 
-## Current parallel algorithm
+## Execution model
 
-The current implementation uses **coarse-grained parallelism inside one
-linearized solve**. The important boundary is:
+NPA solving is serial. Newton initial-value construction, per-round RHS
+construction, SCC traversal, SCC-local worklists, tensor solving, and LLVM
+interprocedural artifact construction and propagation all execute on the
+calling thread. `AdaptiveScc` still chooses `Direct`, `Worklist`, or `Tensor`
+per SCC, but processes those components deterministically in condensation-DAG
+order.
 
-- Newton outer iterations are still sequential
-- the current linearized system for a given Newton round may exploit parallelism
-- inside that linearized system, the main scheduling unit is the **SCC layer**
-
-This section documents exactly what is parallel today.
-
-### 1. Scope of current parallelism
-
-For one call to `NPASolver<D>::solve(...)`, execution looks like this:
-
-1. construct `nu^(0) = f(bot)`
-2. for each Newton round:
-   - build the current linearized system `Df|nu(X) + delta = X`
-   - solve that linearized system
-   - form the next Newton approximant
-
-The current parallel implementation only affects the boxed part below:
-
-`Newton outer loop -> build current linearized system -> solve current linearized system`
-
-It does **not** run multiple Newton rounds concurrently, because round `i+1`
-depends on the result of round `i`.
-
-### 2. Parallel Newton setup
-
-For Newton iteration, the solver may parallelize two setup stages for the
-**current** round:
-
-- initial value construction `nu^(0) = f(bot)`
-- per-round RHS assembly of `(delta + Df|nu)`
-
-This is equation-level parallelism: different equations are prepared on
-different workers and then collected in the original equation order.
-
-The parallel setup path is used only when:
-
-- verbose mode is off
-- the equation count is large enough
-- the thread pool has workers
-
-Expression nodes are immutable. Each evaluation owns an external cache, so
-shared AST nodes do not force a serial fallback and do not create cross-solve
-data races.
-
-### 3. Parallelism when solving the current linearized system
-
-For `LinearStrategy::SCC`, the linearized system is decomposed into SCCs and the
-condensation DAG is solved in topological layers:
-
-- each SCC is solved by a local dependency-driven worklist
-- SCCs in the same ready layer may run in parallel
-- solved values from a layer are committed only after the whole layer finishes
-
-This makes the current parallelism **layer-parallel**, not fully asynchronous.
-Later layers never observe partially committed results from earlier parallel
-tasks.
-
-### 4. Adaptive SCC solving
-
-`LinearStrategy::AdaptiveScc` keeps the same layer-parallel scheduling model,
-but chooses the local solver independently for each SCC:
-
-- `Direct` for singleton acyclic SCCs
-- `Worklist` for ordinary recursive SCCs
-- `Tensor` for tensor-eligible cyclic LCFL SCCs
-
-Parallelism is still only across independent SCCs in the same layer. Each
-individual SCC solve remains serial in v1, including tensor-eligible SCCs.
-
-So `AdaptiveScc` changes **which** solver is used per SCC, but does not yet
-change the granularity of parallel scheduling.
-
-### 5. What is intentionally serial today
-
-The following are not parallelized today:
-
-- outer Newton rounds
-- worklist iteration inside one cyclic SCC
-- tensor-path solving inside one SCC beyond the existing tensor algorithm itself
-- top-level orchestration of multiple independent NPA solves
-- interprocedural graph construction and propagation as a whole-program task
-
-In other words, the current design treats:
-
-- the **equation** as the unit of parallel setup work
-- the **SCC** as the unit of local solver choice
-- the **SCC layer** as the unit of parallel scheduling
-
-### 6. Practical consequence
-
-The current implementation benefits most when the linearized system has:
-
-- enough equations to make Newton setup parallelism worthwhile
-- multiple independent SCCs in the same condensation layer
-- mixed SCC structure, so `AdaptiveScc` can avoid using one global inner solver
-
-If a benchmark is dominated by one large cyclic SCC, the current implementation
-will still solve that SCC serially. In that case, the main benefit of
-`AdaptiveScc` is solver selection, not parallel speedup.
-
-## Discussion and further directions
-
-### 1. More outer-level parallelization
-
-There are two different "outer-level" ideas:
-
-- **parallelizing different Newton rounds of the same solve**
-- **parallelizing multiple independent top-level NPA solves**
-
-The first is difficult and mostly against the structure of Newton iteration:
-
-- round `i+1` needs the concrete result of round `i`
-- the next differential `Df|nu^(i+1)` cannot be built before `nu^(i+1)` exists
-
-So outer Newton rounds form a true dependence chain. Any attempt to parallelize
-them would be speculative and would change the algorithmic design substantially.
-
-The second is much more realistic:
-
-- different analyses on the same module may be run concurrently at the driver level
-- different modules or different client queries may be run concurrently
-- this is conceptually cleaner because the solves are independent
-
-This kind of "more outer-level" parallelization is not currently implemented in
-the NPA core itself, but it is a plausible systems direction.
-
-### 2. Parallelization inside each SCC
-
-Parallelization inside one cyclic SCC is the most natural next fine-grained
-direction, but it is also the hardest to design cleanly.
-
-Why it is hard:
-
-- variables inside one SCC are mutually recursive
-- workers would either share mutable state or work from stale snapshots
-- deterministic accounting for `max_linear_steps` becomes less obvious
-- naive parallel worklists often suffer from synchronization overhead or poor load balance
-
-A likely principled design would be bulk-synchronous:
-
-- take a snapshot of the current SCC environment
-- evaluate a partition of equations in parallel
-- merge updates deterministically
-- repeat until stable
-
-That is much cleaner than fully asynchronous chaotic updates, but it is a new
-algorithmic design, not just an engineering extension of the current code.
-
-### 3. Why SCC granularity remains a good current boundary
-
-Even if parallelism is limited, SCC granularity is still useful because it gives:
-
-- a clean structural decomposition of the current linearized system
-- a natural place to select `Direct`, `Worklist`, or `Tensor`
-- deterministic layer-parallel scheduling where it exists
-- useful diagnostics about where tensorization helps or falls back
-
-So the present implementation should be viewed as:
-
-- a **structure-adaptive SCC-local solver**
-- with **coarse-grained parallelism across SCC layers**
-
-rather than as a fully parallel Newton solver.
+Domains with `approx_equal` use it by default. A solve can instead select
+`ConvergencePolicy::Exact`, which uses `equal` throughout that solve and reports
+exact convergence status. A `max_fixpoint_iters` value of zero permits zero
+updates; negative values remain unlimited.
 
 ## Related Work
 

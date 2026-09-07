@@ -1,8 +1,10 @@
-#include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorProductLift.h"
+#include "Dataflow/NPA/Domains/BitSetDomain.h"
 #include "Dataflow/NPA/Domains/PathTransferSummary.h"
 #include "Dataflow/NPA/Domains/TransformerSummary.h"
 #include "Dataflow/NPA/NPA.h"
+#include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorProductLift.h"
 
+#include <algorithm>
 #include <unordered_map>
 
 #include <gtest/gtest.h>
@@ -31,6 +33,49 @@ struct BoolSemiring {
     return phi ? t : e;
   }
   static value_type subtract(value_type a, value_type b) { return a && !b; }
+};
+
+struct BothProjectBoolSemiring : BoolSemiring {
+  static value_type project(value_type value) { return value; }
+  static value_type projectT(value_type) { return false; }
+};
+
+struct NonDefaultValue {
+  explicit NonDefaultValue(bool initial) : value(initial) {}
+  bool value;
+};
+
+struct NonDefaultSemiring {
+  using value_type = NonDefaultValue;
+  using test_type = bool;
+  static constexpr bool idempotent = true;
+  static constexpr bool commutative_extend = true;
+
+  static value_type zero() { return NonDefaultValue(false); }
+  static value_type one() { return NonDefaultValue(true); }
+  static bool equal(const value_type &lhs, const value_type &rhs) {
+    return lhs.value == rhs.value;
+  }
+  static value_type combine(const value_type &lhs, const value_type &rhs) {
+    return NonDefaultValue(lhs.value || rhs.value);
+  }
+  static value_type extend(const value_type &lhs, const value_type &rhs) {
+    return NonDefaultValue(lhs.value && rhs.value);
+  }
+  static value_type extend_lin(const value_type &lhs, const value_type &rhs) {
+    return extend(lhs, rhs);
+  }
+  static value_type ndetCombine(const value_type &lhs, const value_type &rhs) {
+    return combine(lhs, rhs);
+  }
+  static value_type condCombine(test_type condition,
+                                const value_type &then_value,
+                                const value_type &else_value) {
+    return condition ? then_value : else_value;
+  }
+  static value_type subtract(const value_type &lhs, const value_type &rhs) {
+    return NonDefaultValue(lhs.value && !rhs.value);
+  }
 };
 
 template <class D>
@@ -84,6 +129,92 @@ TEST(NPA, HoleCanReferenceOtherEquationVariable) {
   EXPECT_FALSE(newtonRes.second.hit_outer_limit);
   EXPECT_FALSE(newtonRes.second.hit_linear_limit);
   EXPECT_FALSE(newtonRes.second.hit_fixpoint_limit);
+}
+
+TEST(NPA, SolversRejectDuplicateEquationSymbols) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("x", Exp::term(D::zero()));
+  eqns.emplace_back("x", Exp::term(D::one()));
+
+  EXPECT_THROW((void)npa::KleeneSolver<D>::solve(eqns),
+               npa::InvalidEquationSystemError);
+  EXPECT_THROW((void)npa::NPASolver<D>::solve(eqns),
+               npa::InvalidEquationSystemError);
+
+  std::vector<std::pair<npa::Symbol, npa::E1<D>>> linear_eqns;
+  linear_eqns.emplace_back("x", npa::Exp1<D>::term(D::zero()));
+  linear_eqns.emplace_back("x", npa::Exp1<D>::term(D::one()));
+  EXPECT_THROW((void)npa::solve_linear_scc_impl<D>(false, linear_eqns,
+                                                   {D::zero(), D::zero()}),
+               npa::InvalidEquationSystemError);
+}
+
+TEST(NPA, SolversRejectUndefinedEquationSymbols) {
+  using D = BoolSemiring;
+  using Exp0 = npa::Exp0<D>;
+  using Exp1 = npa::Exp1<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> equations;
+  equations.emplace_back("x", Exp0::hole("missing"));
+  EXPECT_THROW((void)npa::KleeneSolver<D>::solve(equations),
+               npa::InvalidEquationSystemError);
+  EXPECT_THROW((void)npa::NPASolver<D>::solve(equations),
+               npa::InvalidEquationSystemError);
+
+  std::vector<std::pair<npa::Symbol, npa::E1<D>>> linear_equations;
+  linear_equations.emplace_back("x", Exp1::hole("missing"));
+  EXPECT_THROW(
+      (void)npa::solve_linear_scc_impl<D>(false, linear_equations, {D::zero()}),
+      npa::InvalidEquationSystemError);
+}
+
+TEST(NPA, SolverRejectsUnboundLocalSymbols) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> equations;
+  equations.emplace_back("x", Exp::bound("local"));
+  EXPECT_THROW((void)npa::KleeneSolver<D>::solve(equations),
+               npa::InvalidEquationSystemError);
+}
+
+TEST(NPA, ProjectDispatchPrefersProjectWhenBothApisExist) {
+  using D = BothProjectBoolSemiring;
+  EXPECT_TRUE(npa::domain_project<D>(D::one()));
+}
+
+TEST(NPA, UnsupportedProjectThrowsInsteadOfReturningZero) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> equations;
+  equations.emplace_back("x", Exp::project(Exp::term(D::one())));
+  EXPECT_THROW((void)npa::KleeneSolver<D>::solve(equations),
+               npa::UnsupportedDomainProjectError);
+}
+
+TEST(NPA, SolversAcceptNonDefaultConstructibleDomainValues) {
+  using D = NonDefaultSemiring;
+  using Exp = npa::Exp0<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> equations;
+  equations.emplace_back("x", Exp::term(D::one()));
+
+  auto kleene = npa::KleeneSolver<D>::solve(equations);
+  auto newton = npa::NPASolver<D>::solve(equations);
+  ASSERT_EQ(kleene.first.size(), 1u);
+  ASSERT_EQ(newton.first.size(), 1u);
+  EXPECT_TRUE(kleene.first.front().second.value);
+  EXPECT_TRUE(newton.first.front().second.value);
+}
+
+TEST(NPA, WidthDependentDomainsRejectMissingWidthScope) {
+  EXPECT_THROW((void)npa::BitSetDomain::zero(), std::logic_error);
+  EXPECT_THROW((void)npa::BitSetDomain::one(), std::logic_error);
 }
 
 TEST(NPA, SolverReportsWhenOuterIterationCapReturnsApproximation) {
@@ -400,6 +531,41 @@ struct ContractViolationSemiring {
   static value_type subtract(value_type a, value_type b) { return a && !b; }
 };
 
+struct SampledLawViolationSemiring {
+  using value_type = int;
+  using test_type = bool;
+  static constexpr bool idempotent = true;
+
+  static value_type zero() { return 0; }
+  static value_type one() { return 1; }
+  static bool equal(value_type lhs, value_type rhs) { return lhs == rhs; }
+  static value_type combine(value_type lhs, value_type rhs) {
+    return std::max(lhs, rhs);
+  }
+  static value_type extend(value_type lhs, value_type rhs) {
+    if (lhs == 0 || rhs == 0)
+      return 0;
+    if (lhs == 1)
+      return rhs;
+    if (rhs == 1)
+      return lhs;
+    return 0;
+  }
+  static value_type extend_lin(value_type lhs, value_type rhs) {
+    return extend(lhs, rhs);
+  }
+  static value_type ndetCombine(value_type lhs, value_type rhs) {
+    return combine(lhs, rhs);
+  }
+  static value_type condCombine(test_type condition, value_type then_value,
+                                value_type else_value) {
+    return condition ? then_value : else_value;
+  }
+  static value_type subtract(value_type lhs, value_type rhs) {
+    return lhs > rhs ? lhs : 0;
+  }
+};
+
 struct UnsafeProjectedBoolSemiring {
   using value_type = bool;
   using test_type = bool;
@@ -554,6 +720,24 @@ TEST(NPA, AutomaticNIterationBoundFallsBackWhenEqualityIsApproximate) {
             std::string::npos);
 }
 
+TEST(NPA, ExactConvergencePolicyOverridesDomainApproximateEquality) {
+  using D = ApproxEqualityBoolSemiring;
+  using Exp = npa::Exp0<D>;
+
+  D::resetApproxCounter();
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> eqns;
+  eqns.emplace_back("x", Exp::term(D::one()));
+
+  auto result = npa::NPASolver<D>::solve(
+      eqns, false, -1, npa::LinearStrategy::SCC, npa::DomainContractMode::Off,
+      npa::ConvergencePolicy::Exact);
+
+  EXPECT_TRUE(result.second.converged);
+  EXPECT_FALSE(result.second.used_approx_equal);
+  EXPECT_EQ(result.second.convergence_policy, npa::ConvergencePolicy::Exact);
+  EXPECT_EQ(D::getApproxCounter(), 0);
+}
+
 TEST(NPA, SolverCanReportDomainContractCheckFailures) {
   using D = ContractViolationSemiring;
   using Exp = npa::Exp0<D>;
@@ -564,10 +748,32 @@ TEST(NPA, SolverCanReportDomainContractCheckFailures) {
 
   auto result =
       npa::NPASolver<D>::solve(eqns, false, 1, npa::LinearStrategy::SCC,
-                                  npa::DomainContractMode::BasicChecks);
+                               npa::DomainContractMode::BasicChecks);
 
   EXPECT_TRUE(result.second.domain_contract_checks_run);
   EXPECT_TRUE(result.second.domain_contract_checks_failed);
+}
+
+TEST(NPA, StrictDomainContractModeRejectsInvalidDomain) {
+  using D = ContractViolationSemiring;
+  using Exp = npa::Exp0<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> eqns;
+  eqns.emplace_back("x", Exp::term(D::one()));
+
+  EXPECT_THROW((void)npa::NPASolver<D>::solve(eqns, false, 1,
+                                              npa::LinearStrategy::SCC,
+                                              npa::DomainContractMode::Strict),
+               npa::DomainContractViolationError);
+  EXPECT_THROW((void)npa::KleeneSolver<D>::solve(
+                   eqns, false, 1, npa::DomainContractMode::Strict),
+               npa::DomainContractViolationError);
+}
+
+TEST(NPA, SampledDomainChecksExerciseRepresentativeValues) {
+  using D = SampledLawViolationSemiring;
+  EXPECT_TRUE(npa::run_basic_domain_contract_checks<D>());
+  EXPECT_FALSE(npa::run_sampled_domain_contract_checks<D>({2}));
 }
 
 TEST(NPA, LinearStepLimitMarksNewtonResultAsApproximate) {
@@ -579,8 +785,8 @@ TEST(NPA, LinearStepLimitMarksNewtonResultAsApproximate) {
   eqns.emplace_back("x", Exp::hole("y"));
   eqns.emplace_back("y", Exp::term(D::one()));
 
-  auto result = npa::NPASolver<D>::solve(eqns, false, 1,
-                                            npa::LinearStrategy::SCC);
+  auto result =
+      npa::NPASolver<D>::solve(eqns, false, 1, npa::LinearStrategy::SCC);
 
   EXPECT_FALSE(result.second.converged);
   EXPECT_TRUE(result.second.hit_limit);
@@ -625,12 +831,28 @@ TEST(NPA, FixpointIterationLimitMarksMuClosureAsApproximate) {
   auto result = npa::KleeneSolver<D>::solve(eqns, false, 2);
   auto solved = toMap<D>(result.first);
 
-  EXPECT_TRUE(solved.at("x"));
+  EXPECT_FALSE(solved.at("x"));
   EXPECT_FALSE(result.second.converged);
   EXPECT_TRUE(result.second.hit_limit);
   EXPECT_FALSE(result.second.hit_outer_limit);
   EXPECT_FALSE(result.second.hit_linear_limit);
   EXPECT_TRUE(result.second.hit_fixpoint_limit);
+}
+
+TEST(NPA, ZeroFixpointIterationLimitSkipsVectorUpdate) {
+  using D = LimitedFixpointBoolSemiring;
+  bool invoked = false;
+  npa::npa_reset_limit_hit();
+
+  auto result = npa::fix_vec<D>(false, std::vector<bool>{false},
+                                [&](const std::vector<bool> &) {
+                                  invoked = true;
+                                  return std::vector<bool>{true};
+                                });
+
+  EXPECT_FALSE(invoked);
+  EXPECT_FALSE(result.front());
+  EXPECT_TRUE(npa::npa_hit_fixpoint_limit());
 }
 
 TEST(NPA, PathTransferSummaryPreservesMayWriteAcrossCombineAndExtend) {

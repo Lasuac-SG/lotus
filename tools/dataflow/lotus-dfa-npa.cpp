@@ -24,7 +24,6 @@
 #include "Dataflow/NPA/LLVM/AnalysisSupport.h"
 #include "Dataflow/NPA/LLVM/BitVectorSolver.h"
 #include "ToolSupport.h"
-#include "Utils/Parallel/ThreadPool.h"
 
 #include <algorithm>
 #include <memory>
@@ -506,59 +505,23 @@ const AnalysisHandler Handlers[] = {
     {"inter_nullability", true, nullptr, &runInterproceduralNullability},
 };
 
-std::string runAnalysisToString(const AnalysisHandler &Handler, Function &F,
-                                npa::SolverStrategy Strategy,
-                                npa::LinearStrategy LinearStrategy) {
-  std::string Buffer;
-  raw_string_ostream FunctionOS(Buffer);
-  Handler.RunFunction(FunctionOS, F, Strategy, LinearStrategy);
-  return FunctionOS.str();
-}
-
 void runIntraproceduralAnalysesOnModule(raw_ostream &OS, Module &M,
                                         const AnalysisHandler &Handler,
                                         npa::SolverStrategy Strategy,
                                         npa::LinearStrategy LinearStrategy) {
   assert(!Handler.ModuleScoped &&
          "module-scoped interprocedural analyses schedule inside the engine");
-  std::vector<Function *> Functions;
   for (auto &F : M) {
     if (!F.isDeclaration())
-      Functions.push_back(&F);
+      Handler.RunFunction(OS, F, Strategy, LinearStrategy);
   }
-
-  std::vector<std::string> Outputs(Functions.size());
-  ThreadPool *Pool = ThreadPool::get();
-  const bool ParallelFunctions =
-      Pool->workerCount() > 1 && Functions.size() > 1;
-
-  if (ParallelFunctions) {
-    const std::size_t GrainSize = npa::detail::parallel_task_grain_size(
-        Functions.size(), Pool->workerCount(), 2);
-    Pool->parallelFor<std::size_t>(
-        0, Functions.size(), GrainSize, [&](std::size_t Index) {
-          Outputs[Index] = runAnalysisToString(Handler, *Functions[Index],
-                                               Strategy, LinearStrategy);
-        });
-  } else {
-    for (std::size_t Index = 0; Index < Functions.size(); ++Index)
-      Outputs[Index] = runAnalysisToString(Handler, *Functions[Index], Strategy,
-                                           LinearStrategy);
-  }
-
-  for (const auto &Output : Outputs)
-    OS << Output;
 }
 
 } // namespace
 
 int main(int argc, char **argv) {
   InitLLVM X(argc, argv);
-  cl::ParseCommandLineOptions(
-      argc, argv,
-      "NPA engine testing\n"
-      "Use -nworkers=<N> to enable intraprocedural module scheduling and "
-      "eligible NPA/internal interprocedural parallel execution.\n");
+  cl::ParseCommandLineOptions(argc, argv, "NPA engine testing\n");
 
   if (SolverOpt != "newton" && SolverOpt != "kleene") {
     errs() << "error: unknown NPA solver '" << SolverOpt << "'\n";
@@ -606,16 +569,14 @@ int main(int argc, char **argv) {
   }
 
   const npa::SolverStrategy Strategy = parseSolverStrategy(SolverOpt);
-  const npa::LinearStrategy LinearStrategy = parseLinearStrategy(LinearSolverOpt);
-  const unsigned WorkerCount = ThreadPool::get()->workerCount();
-  const bool ParallelEnabled = WorkerCount > 1;
+  const npa::LinearStrategy LinearStrategy =
+      parseLinearStrategy(LinearSolverOpt);
   OS << "[npa:" << AnalysisOpt;
   if (Handler->ModuleScoped)
     OS << ":module";
   else
     OS << ":" << SolverOpt;
-  OS << ":linear=" << LinearSolverOpt << ":workers=" << WorkerCount
-     << ":parallel=" << (ParallelEnabled ? "on" : "off") << "]\n";
+  OS << ":linear=" << LinearSolverOpt << "]\n";
   if (Handler->ModuleScoped)
     Handler->RunModule(OS, *M, LinearStrategy);
   else

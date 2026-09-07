@@ -1,6 +1,6 @@
-#include "Dataflow/NPA/Solver/Newton/Linear/SccSolver.h"
 #include "Dataflow/NPA/Domains/PredicateRelationDomain.h"
 #include "Dataflow/NPA/NPA.h"
+#include "Dataflow/NPA/Solver/Newton/Linear/SccSolver.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorSolver.h"
 
 #include <set>
@@ -395,6 +395,37 @@ TEST(NPA, TensorTarjanExtractsSelfContainedStar) {
   EXPECT_EQ(tp[0], wl[0]);
   EXPECT_EQ(npa::TensorSemiringTraits<D>::readout((*tarjan)[0]), wl[0]);
   EXPECT_EQ(tp[0], (D::value_type{"", "a", "aa", "aaa"}));
+}
+
+TEST(NPA, TensorTarjanCacheKeyIncludesDenseLhsMapping) {
+  using D = BoundedLangSemiring;
+  using E1 = npa::E1<D>;
+  using Exp = npa::Exp1<D>;
+
+  std::vector<std::pair<npa::Symbol, E1>> first;
+  first.emplace_back("X", Exp::term(D::one()));
+  first.emplace_back("Y", Exp::hole("X"));
+
+  std::vector<std::pair<npa::Symbol, E1>> second;
+  second.emplace_back("Y", Exp::term(D::one()));
+  second.emplace_back("X", Exp::hole("X"));
+
+  std::vector<npa::DomVal<D>> init = {D::zero(), D::zero()};
+  auto first_tarjan =
+      npa::solve_linear_tensor_tarjan_impl<D>(false, first, init);
+  auto second_tarjan =
+      npa::solve_linear_tensor_tarjan_impl<D>(false, second, init);
+  auto second_cached =
+      npa::solve_linear_tensor_tarjan_impl<D>(false, second, init);
+  auto second_reference = npa::solve_linear_scc_impl<D>(false, second, init);
+
+  ASSERT_TRUE(first_tarjan.has_value());
+  ASSERT_TRUE(second_tarjan.has_value());
+  ASSERT_TRUE(second_cached.has_value());
+  EXPECT_EQ(*second_tarjan, second_reference);
+  EXPECT_EQ(*second_cached, second_reference);
+  EXPECT_EQ((*second_tarjan)[0], D::one());
+  EXPECT_EQ((*second_tarjan)[1], D::zero());
 }
 
 TEST(NPA, TensorRegularizationRejectsNonConstantStarForTarjanPath) {

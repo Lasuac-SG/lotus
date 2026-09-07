@@ -154,7 +154,7 @@ BitVectorSolver::Result BitVectorSolver::run(llvm::Function &F,
 
   std::unordered_map<std::string, llvm::APInt> rawMap;
   for (auto &p : rawRes.first) {
-    rawMap[p.first] = p.second;
+    rawMap.insert_or_assign(p.first, p.second);
   }
 
   for (auto &BB : F) {
@@ -165,14 +165,14 @@ BitVectorSolver::Result BitVectorSolver::run(llvm::Function &F,
     // solved if equations omitted? Actually we generated equations for all
     // blocks, so they should be there.
     if (rawMap.count(inSym))
-      result.IN[&BB] = rawMap[inSym];
+      result.IN.insert_or_assign(&BB, rawMap.at(inSym));
     else
-      result.IN[&BB] = D::zero();
+      result.IN.insert_or_assign(&BB, D::zero());
 
     if (rawMap.count(outSym))
-      result.OUT[&BB] = rawMap[outSym];
+      result.OUT.insert_or_assign(&BB, rawMap.at(outSym));
     else
-      result.OUT[&BB] = D::zero();
+      result.OUT.insert_or_assign(&BB, D::zero());
   }
 
   return result;

@@ -41,54 +41,16 @@
  *   LCFL inner sub-problems.
  */
 
-#include "Dataflow/NPA/Solver/EquationSystem.h"
 #include "Dataflow/NPA/Solver/DomainValidation.h"
+#include "Dataflow/NPA/Solver/EquationSystem.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/AdaptivePlan.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorSolver.h"
 #include "Dataflow/NPA/Solver/SolveContext.h"
 #include "Dataflow/NPA/Solver/Statistics.h"
-#include "Utils/Parallel/ThreadPool.h"
-
-#include <exception>
 
 namespace npa {
 
 namespace detail {
-enum class NewtonSetupExecutionMode {
-  Auto,
-  ForceSerial,
-  ForceParallel,
-};
-
-inline std::size_t
-newton_parallel_setup_min_equations(std::size_t worker_count) {
-  return std::max<std::size_t>(64, worker_count * 16);
-}
-
-inline std::size_t newton_parallel_setup_min_equations() {
-  return newton_parallel_setup_min_equations(ThreadPool::get()->workerCount());
-}
-
-inline bool should_parallelize_newton_setup(
-    bool verbose, std::size_t equation_count,
-    NewtonSetupExecutionMode mode = NewtonSetupExecutionMode::Auto) {
-  // Phase 2 contract: RHS assembly is parallelized only for non-verbose,
-  // single-run setup work. Auto mode preserves the existing zero/one-worker
-  // fast path; a single worker still counts as sequential execution.
-  if (verbose)
-    return false;
-  if (mode == NewtonSetupExecutionMode::ForceSerial)
-    return false;
-  if (mode == NewtonSetupExecutionMode::ForceParallel)
-    return true;
-  const std::size_t worker_count = ThreadPool::get()->workerCount();
-  if (worker_count <= 1)
-    return false;
-  if (equation_count < newton_parallel_setup_min_equations(worker_count))
-    return false;
-  return true;
-}
-
 /// C++14-friendly dispatch for delta: avoid if constexpr (DomainHasChooseDelta,
 /// idempotent) → choose_delta(v, nu) or v; else subtract(v, nu) or v.
 template <class D>
@@ -137,71 +99,35 @@ template <class D> struct NewtonRoundSetup {
   bool tensor_laws_validated = false;
 };
 
-template <class D> struct NewtonRhsTaskRecord {
-  using tensor_domain = typename TensorSemiringTraits<D>::tensor_domain;
-  E1<D> rhs;
-  E1<tensor_domain> rhs_tensor;
-  bool has_lcfl_structure = false;
-  std::exception_ptr error;
-};
-
 template <class D>
-std::vector<std::pair<Symbol, DomVal<D>>> build_newton_initial_values(
-    const std::vector<std::pair<Symbol, E0<D>>> &eqns,
-    NewtonSetupExecutionMode mode = NewtonSetupExecutionMode::Auto) {
+std::vector<std::pair<Symbol, DomVal<D>>>
+build_newton_initial_values(const std::vector<std::pair<Symbol, E0<D>>> &eqns) {
   using V = DomVal<D>;
   std::unordered_map<Symbol, V> nu0;
   for (auto &e : eqns)
-    nu0[e.first] = D::zero();
+    nu0.insert_or_assign(e.first, D::zero());
 
-  bool parallelize = should_parallelize_newton_setup(false, eqns.size(), mode);
   std::vector<std::pair<Symbol, V>> cur;
   cur.reserve(eqns.size());
-  if (!parallelize) {
-    for (auto &e : eqns) {
-      require_newton_compatible_expr<D>(e.second);
-      cur.emplace_back(e.first, I0<D>::eval(false, nu0, e.second));
-    }
-    return cur;
-  }
-
-  std::vector<Optional<V>> values(eqns.size());
-  std::vector<std::exception_ptr> errors(eqns.size());
-  ThreadPool *pool = ThreadPool::get();
-  const auto execution_context = capture_execution_context<D>();
-  const std::size_t grain_size =
-      detail::parallel_task_grain_size(eqns.size(), pool->workerCount());
-  pool->parallelFor<std::size_t>(
-      0, eqns.size(), grain_size, [&](std::size_t i) {
-        ScopedExecutionContext<D> context_scope(execution_context);
-        try {
-          require_newton_compatible_expr<D>(eqns[i].second);
-          values[i] = I0<D>::eval(false, nu0, eqns[i].second);
-        } catch (...) {
-          errors[i] = std::current_exception();
-        }
-      });
-  for (std::size_t i = 0; i < eqns.size(); ++i) {
-    if (errors[i])
-      std::rethrow_exception(errors[i]);
-    cur.emplace_back(eqns[i].first, *values[i]);
+  for (auto &e : eqns) {
+    require_newton_compatible_expr<D>(e.second);
+    cur.emplace_back(e.first, I0<D>::eval(false, nu0, e.second));
   }
   return cur;
 }
 
 template <class D>
-NewtonRoundSetup<D> build_newton_round_setup(
-    bool verbose, const std::vector<std::pair<Symbol, E0<D>>> &eqns,
-    const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
-    LinearStrategy linStrat = LinearStrategy::SCC,
-    NewtonSetupExecutionMode mode = NewtonSetupExecutionMode::Auto) {
+NewtonRoundSetup<D>
+build_newton_round_setup(const std::vector<std::pair<Symbol, E0<D>>> &eqns,
+                         const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
+                         LinearStrategy linStrat = LinearStrategy::SCC) {
   using V = DomVal<D>;
   using TensorTraits = TensorSemiringTraits<D>;
   using TD = typename TensorTraits::tensor_domain;
 
   std::unordered_map<Symbol, V> nu;
   for (auto &b : binds)
-    nu[b.first] = b.second;
+    nu.insert_or_assign(b.first, b.second);
 
   NewtonRoundSetup<D> setup;
   setup.tensor_requested = linStrat == LinearStrategy::TensorProduct ||
@@ -212,31 +138,26 @@ NewtonRoundSetup<D> build_newton_round_setup(
   setup.tensor_laws_validated =
       setup.tensor_admissible && tensor_paper_laws_validated<D>();
 
-  bool parallelize =
-      should_parallelize_newton_setup(verbose, eqns.size(), mode);
   setup.rhs.reserve(eqns.size());
   if (setup.tensor_laws_validated)
     setup.rhs_tensor.reserve(eqns.size());
 
-  auto build_eqn_rhs = [&](std::size_t index, bool eval_verbose,
-                           NewtonRhsTaskRecord<D> &record) {
-    (void)eval_verbose;
-    const auto &eqn = eqns[index];
+  for (const auto &eqn : eqns) {
     require_newton_compatible_expr<D>(eqn.second);
     typename I0<D>::EvaluationContext evaluation_context;
     V v = I0<D>::evalWithContext(nu, {}, eqn.second, evaluation_context);
     V delta0 = compute_delta<D>(
-        v, nu[eqn.first],
+        v, nu.at(eqn.first),
         std::integral_constant<bool, DomainHasChooseDelta<D>::value>{},
         std::integral_constant<bool, D::idempotent>{});
     if (!D::idempotent)
-      require_valid_newton_delta<D>(v, nu[eqn.first], delta0);
+      require_valid_newton_delta<D>(v, nu.at(eqn.first), delta0);
     auto d = Diff<D>::build(nu, eqn.second, evaluation_context);
-    record.has_lcfl_structure = LCFLDetector<D>::has_lcfl_structure(d);
-    record.rhs = Exp1<D>::add(Exp1<D>::term(delta0), d);
+    setup.has_lcfl_structure =
+        setup.has_lcfl_structure || LCFLDetector<D>::has_lcfl_structure(d);
+    setup.rhs.emplace_back(eqn.first, Exp1<D>::add(Exp1<D>::term(delta0), d));
     if (setup.tensor_laws_validated) {
-      auto tensor_d =
-          TensorDiff<D>::build(nu, eqn.second, evaluation_context);
+      auto tensor_d = TensorDiff<D>::build(nu, eqn.second, evaluation_context);
       E1<TD> tensor_rhs = Exp1<TD>::add(
           Exp1<TD>::term(TensorTraits::right_constant(delta0)), tensor_d);
       if (tensor_supports_projection_equations<D>() && eqn.second &&
@@ -245,46 +166,8 @@ NewtonRoundSetup<D> build_newton_round_setup(
         tensor_rhs = Exp1<TD>::project(Exp1<TD>::add(
             Exp1<TD>::term(TensorTraits::right_constant(delta0)), tensor_d->t));
       }
-      record.rhs_tensor = tensor_rhs;
+      setup.rhs_tensor.emplace_back(eqn.first, std::move(tensor_rhs));
     }
-  };
-
-  if (!parallelize) {
-    for (std::size_t i = 0; i < eqns.size(); ++i) {
-      NewtonRhsTaskRecord<D> record;
-      build_eqn_rhs(i, verbose, record);
-      setup.has_lcfl_structure =
-          setup.has_lcfl_structure || record.has_lcfl_structure;
-      setup.rhs.emplace_back(eqns[i].first, record.rhs);
-      if (setup.tensor_laws_validated)
-        setup.rhs_tensor.emplace_back(eqns[i].first, record.rhs_tensor);
-    }
-    return setup;
-  }
-
-  std::vector<NewtonRhsTaskRecord<D>> records(eqns.size());
-  ThreadPool *pool = ThreadPool::get();
-  const auto execution_context = capture_execution_context<D>();
-  const std::size_t grain_size =
-      detail::parallel_task_grain_size(eqns.size(), pool->workerCount());
-  pool->parallelFor<std::size_t>(
-      0, eqns.size(), grain_size, [&](std::size_t i) {
-        ScopedExecutionContext<D> context_scope(execution_context);
-        try {
-          build_eqn_rhs(i, false, records[i]);
-        } catch (...) {
-          records[i].error = std::current_exception();
-        }
-      });
-
-  for (std::size_t i = 0; i < eqns.size(); ++i) {
-    if (records[i].error)
-      std::rethrow_exception(records[i].error);
-    setup.has_lcfl_structure =
-        setup.has_lcfl_structure || records[i].has_lcfl_structure;
-    setup.rhs.emplace_back(eqns[i].first, records[i].rhs);
-    if (setup.tensor_laws_validated)
-      setup.rhs_tensor.emplace_back(eqns[i].first, records[i].rhs_tensor);
   }
   return setup;
 }
@@ -361,37 +244,32 @@ detail::LinearExecutionPlan choose_adaptive_scc_backends(
 }
 
 template <class D>
-void solve_linear_direct_component(
+bool solve_linear_direct_component(
     const std::vector<std::pair<Symbol, E1<D>>> &rhs, const int idx,
-    const detail::LinearSccPlan<D> &plan,
-    const std::deque<DomVal<D>> &base_values, std::atomic<long> &shared_steps,
-    detail::LinearSccTaskResult<D> &result) {
-  result.values.clear();
-  if (!detail::try_claim_linear_step(shared_steps,
-                                     domain_max_linear_steps<D>())) {
-    result.hit_limit = true;
-    result.values.push_back(base_values[static_cast<std::size_t>(idx)]);
-    return;
-  }
-  ++result.steps;
+    const detail::LinearSccPlan<D> &plan, std::deque<DomVal<D>> &values,
+    std::vector<DomVal<D>> &init, long &steps) {
+  const long max_steps = domain_max_linear_steps<D>();
+  if (max_steps >= 0 && steps >= max_steps)
+    return false;
+  ++steps;
   auto lookup = [&](const Symbol &sym) -> const DomVal<D> & {
-    const auto it = plan.sym_to_idx.find(sym);
-    assert(it != plan.sym_to_idx.end() && "missing dense symbol index");
-    return base_values[static_cast<std::size_t>(it->second)];
+    return values[static_cast<std::size_t>(plan.sym_to_idx.at(sym))];
   };
-  result.values.push_back(I1<D>::evalWithLookup(
-      false, lookup, rhs[static_cast<std::size_t>(idx)].second));
+  auto value = I1<D>::evalWithLookup(false, lookup,
+                                     rhs[static_cast<std::size_t>(idx)].second);
+  values[static_cast<std::size_t>(idx)] = value;
+  init[static_cast<std::size_t>(idx)] = std::move(value);
+  return true;
 }
 
 template <class D>
-void solve_linear_tensor_component(
+std::vector<DomVal<D>> solve_linear_tensor_component(
     bool verbose, const std::vector<std::pair<Symbol, E1<D>>> &rhs,
     const std::vector<
         std::pair<Symbol, E1<typename TensorSemiringTraits<D>::tensor_domain>>>
         &rhs_tensor,
     const detail::LinearSccPlan<D> &plan, const std::vector<int> &scc,
-    const std::deque<DomVal<D>> &base_values,
-    detail::LinearSccTaskResult<D> &result) {
+    const std::deque<DomVal<D>> &base_values) {
   using TD = typename TensorSemiringTraits<D>::tensor_domain;
   std::vector<std::pair<Symbol, E1<D>>> local_rhs;
   std::vector<std::pair<Symbol, E1<TD>>> local_rhs_tensor;
@@ -405,8 +283,8 @@ void solve_linear_tensor_component(
     init.push_back(base_values[static_cast<std::size_t>(idx)]);
   }
   (void)plan;
-  result.values = solve_linear_tensor_paper_impl<D>(
-      verbose, local_rhs, local_rhs_tensor, std::move(init));
+  return solve_linear_tensor_paper_impl<D>(verbose, local_rhs, local_rhs_tensor,
+                                           std::move(init));
 }
 
 template <class D>
@@ -418,117 +296,43 @@ std::vector<DomVal<D>> solve_linear_adaptive_scc_from_plan(
     std::vector<DomVal<D>> init, const detail::LinearSccPlan<D> &plan,
     const detail::LinearExecutionPlan &execution) {
   std::deque<DomVal<D>> values = detail::make_dense_value_buffer<D>(init);
+  long steps = 0;
+  npa_note_adaptive_scc_used();
 
-  std::atomic<long> shared_steps(0);
-  ThreadPool *pool = ThreadPool::get();
-  const bool parallelize = detail::should_parallelize_linear_scc(verbose, plan);
-  const auto execution_context = capture_execution_context<D>();
-
-  auto note_layer_stats = [&](const std::vector<int> &layer) {
-    struct AdaptiveSccStats {
-      int direct_count = 0;
-      int worklist_count = 0;
-      int tensor_count = 0;
-      int tensor_fallback_count = 0;
-    };
-
-    AdaptiveSccStats stats = pool->parallelReduce<std::size_t>(
-        0, layer.size(), 1, AdaptiveSccStats(),
-        [&](std::size_t pos) {
-          AdaptiveSccStats local;
-          const auto &decision =
-              execution.sccs[static_cast<std::size_t>(layer[pos])];
-          switch (decision.backend) {
-          case detail::SccBackend::Direct:
-            ++local.direct_count;
-            break;
-          case detail::SccBackend::Worklist:
-            ++local.worklist_count;
-            break;
-          case detail::SccBackend::Tensor:
-            ++local.tensor_count;
-            break;
-          }
-          if (decision.tensor_fallback)
-            ++local.tensor_fallback_count;
-          return local;
-        },
-        [](AdaptiveSccStats acc, const AdaptiveSccStats &value) {
-          acc.direct_count += value.direct_count;
-          acc.worklist_count += value.worklist_count;
-          acc.tensor_count += value.tensor_count;
-          acc.tensor_fallback_count += value.tensor_fallback_count;
-          return acc;
-        });
-
-    npa_note_adaptive_scc_used();
-    npa_note_adaptive_scc_direct(stats.direct_count);
-    npa_note_adaptive_scc_worklist(stats.worklist_count);
-    npa_note_adaptive_scc_tensor(stats.tensor_count);
-    npa_note_adaptive_scc_tensor_fallback(stats.tensor_fallback_count);
-  };
-
-  auto solve_component = [&](int sid, detail::LinearSccTaskResult<D> &result) {
+  for (int sid : plan.scc_order) {
     const auto &decision = execution.sccs[static_cast<std::size_t>(sid)];
     const auto &scc = plan.sccs[static_cast<std::size_t>(sid)];
+    if (decision.tensor_fallback)
+      npa_note_adaptive_scc_tensor_fallback(1);
+
     switch (decision.backend) {
     case detail::SccBackend::Direct:
-      solve_linear_direct_component<D>(rhs, scc.front(), plan, values,
-                                       shared_steps, result);
-      break;
-    case detail::SccBackend::Tensor:
-      solve_linear_tensor_component<D>(verbose, rhs, rhs_tensor, plan, scc,
-                                       values, result);
+      npa_note_adaptive_scc_direct(1);
+      if (!solve_linear_direct_component<D>(rhs, scc.front(), plan, values,
+                                            init, steps)) {
+        npa_note_linear_limit_hit();
+        return init;
+      }
       break;
     case detail::SccBackend::Worklist:
-      detail::solve_linear_scc_parallel_component<D>(plan, rhs, scc, values,
-                                                     shared_steps, result);
+      npa_note_adaptive_scc_worklist(1);
+      if (!detail::solve_linear_scc_serial_component<D>(plan, rhs, scc, values,
+                                                        init, steps)) {
+        npa_note_linear_limit_hit();
+        return init;
+      }
+      break;
+    case detail::SccBackend::Tensor: {
+      npa_note_adaptive_scc_tensor(1);
+      auto component_values = solve_linear_tensor_component<D>(
+          verbose, rhs, rhs_tensor, plan, scc, values);
+      for (std::size_t pos = 0; pos < scc.size(); ++pos) {
+        const auto idx = static_cast<std::size_t>(scc[pos]);
+        values[idx] = component_values[pos];
+        init[idx] = std::move(component_values[pos]);
+      }
       break;
     }
-  };
-
-  for (const auto &layer : plan.layers) {
-    std::vector<detail::LinearSccTaskResult<D>> results(layer.size());
-    if (parallelize && layer.size() > 1) {
-      const std::size_t grain_size =
-          detail::parallel_task_grain_size(layer.size(), pool->workerCount());
-      pool->parallelFor<std::size_t>(
-          0, layer.size(), grain_size, [&](std::size_t pos) {
-            const int sid = layer[pos];
-            ScopedExecutionContext<D> context_scope(execution_context);
-            try {
-              solve_component(sid, results[pos]);
-            } catch (...) {
-              results[pos].error = std::current_exception();
-            }
-          });
-    } else {
-      for (std::size_t pos = 0; pos < layer.size(); ++pos) {
-        try {
-          solve_component(layer[pos], results[pos]);
-        } catch (...) {
-          results[pos].error = std::current_exception();
-        }
-      }
-    }
-
-    bool hit_limit = false;
-    for (std::size_t pos = 0; pos < layer.size(); ++pos) {
-      if (results[pos].error)
-        std::rethrow_exception(results[pos].error);
-      const int sid = layer[pos];
-      const auto &scc = plan.sccs[static_cast<std::size_t>(sid)];
-      for (std::size_t value_pos = 0; value_pos < scc.size(); ++value_pos) {
-        const int idx = scc[value_pos];
-        values[static_cast<std::size_t>(idx)] = results[pos].values[value_pos];
-        init[static_cast<std::size_t>(idx)] = results[pos].values[value_pos];
-      }
-      hit_limit = hit_limit || results[pos].hit_limit;
-    }
-    note_layer_stats(layer);
-    if (hit_limit) {
-      npa_note_linear_limit_hit();
-      return init;
     }
   }
 
@@ -543,22 +347,19 @@ std::vector<DomVal<D>> solve_linear_adaptive_scc_impl(
         &rhs_tensor,
     std::vector<DomVal<D>> init, const NewtonRoundSetup<D> &setup) {
   auto plan = detail::build_linear_scc_plan<D>(rhs);
-  auto execution =
-      choose_adaptive_scc_backends<D>(plan, rhs_tensor, setup);
-  return solve_linear_adaptive_scc_from_plan<D>(verbose, rhs, rhs_tensor,
-                                                std::move(init), plan,
-                                                execution);
+  auto execution = choose_adaptive_scc_backends<D>(plan, rhs_tensor, setup);
+  return solve_linear_adaptive_scc_from_plan<D>(
+      verbose, rhs, rhs_tensor, std::move(init), plan, execution);
 }
 
 template <class D>
-std::vector<std::pair<Symbol, DomVal<D>>> run_newton_iteration(
-    bool verbose, const std::vector<std::pair<Symbol, E0<D>>> &eqns,
-    const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
-    LinearStrategy linStrat = LinearStrategy::SCC,
-    NewtonSetupExecutionMode mode = NewtonSetupExecutionMode::Auto) {
+std::vector<std::pair<Symbol, DomVal<D>>>
+run_newton_iteration(bool verbose,
+                     const std::vector<std::pair<Symbol, E0<D>>> &eqns,
+                     const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
+                     LinearStrategy linStrat = LinearStrategy::SCC) {
   using V = DomVal<D>;
-  auto setup =
-      build_newton_round_setup<D>(verbose, eqns, binds, linStrat, mode);
+  auto setup = build_newton_round_setup<D>(eqns, binds, linStrat);
   const bool use_tensor =
       setup.tensor_laws_validated && setup.has_lcfl_structure;
   if (linStrat == LinearStrategy::TensorProduct && verbose) {
@@ -584,7 +385,7 @@ std::vector<std::pair<Symbol, DomVal<D>>> run_newton_iteration(
     delta = fix_vec<D>(verbose, init, [&](const std::vector<V> &cur) {
       std::unordered_map<Symbol, V> env;
       for (size_t i = 0; i < cur.size(); ++i)
-        env[setup.rhs[i].first] = cur[i];
+        env.insert_or_assign(setup.rhs[i].first, cur[i]);
       std::vector<V> nxt;
       nxt.reserve(setup.rhs.size());
       for (auto &p : setup.rhs)
@@ -644,17 +445,20 @@ template <class D> struct NPASolver {
 private:
   static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
   solveOnce(const std::vector<Eqn> &eqns, bool verbose, int max,
-            LinearStrategy linear_strategy,
-            DomainContractMode contract_mode) {
-    SolveContext<D> context;
-    context.options.verbose = verbose;
-    context.options.max_iterations = max;
-    context.options.linear_strategy = linear_strategy;
-    context.options.contract_mode = contract_mode;
-    const bool checks_run =
-        contract_mode == DomainContractMode::BasicChecks;
+            LinearStrategy linear_strategy, DomainContractMode contract_mode,
+            ConvergencePolicy convergence_policy) {
+    SolveOptions options;
+    options.verbose = verbose;
+    options.max_iterations = max;
+    options.linear_strategy = linear_strategy;
+    options.contract_mode = contract_mode;
+    options.convergence_policy = convergence_policy;
+    SolveContext<D> context(std::move(options));
+    const bool checks_run = contract_mode != DomainContractMode::Off;
     const bool contract_ok =
         !checks_run || run_basic_domain_contract_checks<D>(verbose);
+    if (contract_mode == DomainContractMode::Strict)
+      require_domain_contract(contract_ok);
     auto result = iterate_until_stable(
         NewtonIter<D>::init(eqns),
         [&](const std::vector<std::pair<Symbol, V>> &current) {
@@ -686,7 +490,10 @@ private:
     stats.requested_max_iters = max;
     stats.effective_max_iters = max;
     stats.linear_strategy = linear_strategy;
-    stats.used_approx_equal = DomainHasApproxEqual<D>::value;
+    stats.convergence_policy = convergence_policy;
+    stats.used_approx_equal =
+        DomainHasApproxEqual<D>::value &&
+        convergence_policy == ConvergencePolicy::DomainDefault;
     const auto adaptive_stats = npa_adaptive_scc_solve_stats();
     stats.adaptive_scc_used = adaptive_stats.used;
     stats.adaptive_scc_direct_count = adaptive_stats.direct_count;
@@ -702,11 +509,14 @@ private:
   }
 
 public:
-  static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
-  solve(const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
-        LinearStrategy linStrat = LinearStrategy::SCC,
-        DomainContractMode contractMode = DomainContractMode::Off) {
+  static std::pair<std::vector<std::pair<Symbol, V>>, Stat> solve(
+      const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
+      LinearStrategy linStrat = LinearStrategy::SCC,
+      DomainContractMode contractMode = DomainContractMode::Off,
+      ConvergencePolicy convergencePolicy = ConvergencePolicy::DomainDefault) {
     NPA_REQUIRE_DOMAIN(D);
+    const auto validated = validate_equation_system<D>(eqns);
+    (void)validated;
     // JACM (Esparza et al.) shows: for idempotent + commutative semirings,
     // Newton terminates after at most n iterations for a system of n equations.
     // We only apply this bound when the domain explicitly declares
@@ -718,15 +528,16 @@ public:
     if (auto_cap) {
       effective_max = static_cast<int>(eqns.size());
     }
-    auto res =
-        solveOnce(eqns, verbose, effective_max, linStrat, contractMode);
+    auto res = solveOnce(eqns, verbose, effective_max, linStrat, contractMode,
+                         convergencePolicy);
     res.second.used_auto_n_cap = auto_cap;
     res.second.effective_max_iters = effective_max;
     if (auto_cap && !res.second.converged) {
       if (verbose)
         std::cerr << "[conv] automatic n-iteration bound was insufficient; "
                      "continuing without the cap\n";
-      res = solveOnce(eqns, verbose, -1, linStrat, contractMode);
+      res = solveOnce(eqns, verbose, -1, linStrat, contractMode,
+                      convergencePolicy);
       res.second.used_auto_n_cap = true;
       res.second.retried_without_auto_n_cap = true;
     }

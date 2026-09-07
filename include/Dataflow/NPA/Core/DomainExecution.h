@@ -1,22 +1,9 @@
 #ifndef NPA_CORE_DOMAIN_EXECUTION_H
 #define NPA_CORE_DOMAIN_EXECUTION_H
 
-#include <cassert>
+#include <stdexcept>
 
 namespace npa {
-
-struct NoopDomainRunState {};
-
-struct NoopDomainRunStateScope {
-  explicit NoopDomainRunStateScope(const NoopDomainRunState &) {}
-};
-
-template <class D> struct DomainExecutionStateTraits {
-  using state_type = NoopDomainRunState;
-  using scope_type = NoopDomainRunStateScope;
-
-  static state_type capture() { return {}; }
-};
 
 /// Domain-owned dynamic state used while constructing width-dependent values.
 template <class Tag> class DomainWidthContext {
@@ -91,7 +78,9 @@ public:
   }
 
   static unsigned require(const char *message) {
-    assert(has_current_bit_width_slot() && message);
+    if (!has_current_bit_width_slot())
+      throw std::logic_error(message ? message
+                                     : "NPA domain bit width is not set");
     return current_bit_width_slot();
   }
 

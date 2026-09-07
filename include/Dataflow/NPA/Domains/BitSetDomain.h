@@ -23,7 +23,6 @@ public:
   static constexpr bool idempotent = true;
   static constexpr bool commutative_extend = true;
   using width_context = DomainWidthContext<BitSetDomain>;
-  using RunState = typename width_context::state_type;
   using WidthScope = typename width_context::scope_type;
 
   static value_type zero() { return zero(requireBitWidth()); }
@@ -61,13 +60,6 @@ private:
     return width_context::require(
         "BitSetDomain width must be installed via WidthScope");
   }
-};
-
-template <> struct DomainExecutionStateTraits<BitSetDomain> {
-  using state_type = BitSetDomain::width_context::state_type;
-  using scope_type = BitSetDomain::width_context::scope_type;
-
-  static state_type capture() { return BitSetDomain::width_context::capture(); }
 };
 
 } // namespace npa

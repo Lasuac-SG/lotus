@@ -23,7 +23,6 @@ public:
   using test_type = bool;
   static constexpr bool idempotent = true;
   using width_context = DomainWidthContext<TaintTransformer>;
-  using RunState = typename width_context::state_type;
   using WidthScope = typename width_context::scope_type;
 
   static value_type zero();
@@ -52,17 +51,6 @@ private:
   static unsigned bitWidthOf(const value_type &value);
 };
 
-} // namespace npa
-
-namespace npa {
-template <> struct DomainExecutionStateTraits<TaintTransformer> {
-  using state_type = TaintTransformer::width_context::state_type;
-  using scope_type = TaintTransformer::width_context::scope_type;
-
-  static state_type capture() {
-    return TaintTransformer::width_context::capture();
-  }
-};
 } // namespace npa
 
 #endif // NPA_TAINT_TRANSFORMER_H

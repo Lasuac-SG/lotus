@@ -68,7 +68,7 @@ private:
     if (cached != context.values.end())
       return cached->second;
 
-    V v{};
+    V v = D::zero();
     switch (e->k) {
     case Exp0<D>::Term:
       v = e->c;
@@ -77,8 +77,7 @@ private:
       v = D::extend(e->c, rec(nu, env, e->t, context));
       break;
     case Exp0<D>::Mul:
-      v = D::extend(rec(nu, env, e->t1, context),
-                    rec(nu, env, e->t2, context));
+      v = D::extend(rec(nu, env, e->t1, context), rec(nu, env, e->t2, context));
       break;
     case Exp0<D>::Call:
       v = D::extend(nu.at(e->sym), rec(nu, env, e->t, context));
@@ -112,13 +111,13 @@ private:
       V init = D::zero();
       v = fix<D>(false, init, [&](V cur) {
         auto env2 = env;
-        env2[e->sym] = cur;
+        env2.insert_or_assign(e->sym, cur);
         context.invalidate(e->t);
         return rec(nu, env2, e->t, context);
       });
     } break;
     }
-    context.values[e.get()] = v;
+    context.values.insert_or_assign(e.get(), v);
     return v;
   }
 };
@@ -147,11 +146,8 @@ template <class D> struct I1 {
   };
 
   static V eval(bool /*verbose*/, const Map &vars, const E1<D> &e) {
-    return evalWithLookup(false,
-                          [&](const Symbol &sym) -> const V & {
-                            return vars.at(sym);
-                          },
-                          e);
+    return evalWithLookup(
+        false, [&](const Symbol &sym) -> const V & { return vars.at(sym); }, e);
   }
 
   template <class Lookup>
@@ -169,7 +165,7 @@ private:
     if (cached != context.values.end())
       return cached->second;
 
-    V v{};
+    V v = D::zero();
     using K = typename Exp1<D>::K;
     switch (e->k) {
     case K::Term:
@@ -216,21 +212,20 @@ private:
       auto it = env.find(e->sym);
       const V &mid = (it != env.end()) ? it->second : lookup(e->sym);
       v = D::extend_lin(rec(lookup, env, e->t1, context),
-                        D::extend_lin(mid,
-                                      rec(lookup, env, e->t2, context)));
+                        D::extend_lin(mid, rec(lookup, env, e->t2, context)));
     } break;
     case K::Star:
     case K::Mu: {
       V init = D::zero();
       v = fix<D>(false, init, [&](V cur) {
         auto env2 = env;
-        env2[e->sym] = cur;
+        env2.insert_or_assign(e->sym, cur);
         context.invalidate(e->t);
         return rec(lookup, env2, e->t, context);
       });
     } break;
     }
-    context.values[e.get()] = v;
+    context.values.insert_or_assign(e.get(), v);
     return v;
   }
 };

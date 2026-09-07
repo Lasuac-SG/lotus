@@ -11,7 +11,7 @@
  *
  * Supported strategies here:
  * - SCC: global Tarjan SCC scheduling, with dependency-driven worklists inside
- *   each SCC (and optional layer-level parallelism across independent SCCs).
+ *   each SCC.
  * - Naive: synchronized fixpoint iteration over the whole linearized system.
  *
  * `AdaptiveScc` also reuses the SCC planning from this file, but it may
@@ -25,14 +25,12 @@
  */
 
 #include "Dataflow/NPA/Core/Expr/Eval.h"
+#include "Dataflow/NPA/Solver/EquationSystem.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/ExpressionAnalysis.h"
 #include "Dataflow/NPA/Solver/SolveContext.h"
-#include "Utils/Parallel/ThreadPool.h"
 
 #include <algorithm>
-#include <atomic>
 #include <deque>
-#include <exception>
 #include <set>
 
 namespace npa {
@@ -57,32 +55,7 @@ template <class D> struct LinearSccPlan {
   std::vector<LinearSccInfo> infos;
   std::vector<std::vector<int>> cond_successors;
   std::vector<std::vector<int>> cond_predecessors;
-  std::vector<std::vector<int>> layers;
-  bool has_nontrivial_parallelism = false;
-  std::size_t max_parallel_layer_width = 0;
-  std::size_t parallel_scc_count = 0;
-  std::size_t parallel_equation_volume = 0;
-};
-
-inline std::size_t parallel_task_grain_size(std::size_t total,
-                                            std::size_t worker_count,
-                                            std::size_t chunks_per_worker = 4) {
-  if (total == 0 || worker_count <= 1)
-    return 1;
-  const std::size_t target_chunks =
-      std::max<std::size_t>(1, worker_count * chunks_per_worker);
-  return std::max<std::size_t>(1, (total + target_chunks - 1) / target_chunks);
-}
-
-inline std::size_t linear_parallel_min_equations(std::size_t worker_count) {
-  return std::max<std::size_t>(64, worker_count * 16);
-}
-
-template <class D> struct LinearSccTaskResult {
-  std::vector<DomVal<D>> values;
-  long steps = 0;
-  bool hit_limit = false;
-  std::exception_ptr error;
+  std::vector<int> scc_order;
 };
 
 template <class D>
@@ -96,18 +69,19 @@ LinearSccPlan<D>
 build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
   LinearSccPlan<D> plan;
   const int n = static_cast<int>(rhs.size());
-  for (int i = 0; i < n; ++i)
-    plan.sym_to_idx[rhs[i].first] = i;
+  const auto validated = validate_linear_equation_system<D>(rhs);
+  plan.sym_to_idx.reserve(validated.symbol_to_index.size());
+  for (const auto &entry : validated.symbol_to_index)
+    plan.sym_to_idx.emplace(entry.first, static_cast<int>(entry.second));
 
   plan.out_edges.resize(static_cast<std::size_t>(n));
   for (int i = 0; i < n; ++i) {
-    std::unordered_set<Symbol> deps;
-    DepFinder<D>::find(rhs[i].second, deps);
-    for (const auto &dep : deps) {
-      auto it = plan.sym_to_idx.find(dep);
-      if (it != plan.sym_to_idx.end())
-        plan.out_edges[static_cast<std::size_t>(i)].push_back(it->second);
-    }
+    const auto &dependencies =
+        validated.dependencies[static_cast<std::size_t>(i)];
+    auto &edges = plan.out_edges[static_cast<std::size_t>(i)];
+    edges.reserve(dependencies.size());
+    for (unsigned dependency : dependencies)
+      edges.push_back(static_cast<int>(dependency));
   }
 
   std::vector<int> index(n, -1), low(n, -1);
@@ -157,10 +131,9 @@ build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
   for (int sid = 0; sid < scc_count; ++sid) {
     auto &info = plan.infos[static_cast<std::size_t>(sid)];
     for (int idx : info.members) {
-      info.has_lcfl_structure =
-          info.has_lcfl_structure || LCFLDetector<D>::has_lcfl_structure(
-                                         rhs[static_cast<std::size_t>(idx)]
-                                             .second);
+      info.has_lcfl_structure = info.has_lcfl_structure ||
+                                LCFLDetector<D>::has_lcfl_structure(
+                                    rhs[static_cast<std::size_t>(idx)].second);
       for (int dep : plan.out_edges[static_cast<std::size_t>(idx)]) {
         if (plan.scc_id[static_cast<std::size_t>(dep)] != sid)
           continue;
@@ -222,18 +195,7 @@ build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
 
   while (!ready.empty()) {
     std::sort(ready.begin(), ready.end());
-    plan.has_nontrivial_parallelism =
-        plan.has_nontrivial_parallelism || ready.size() > 1;
-    if (ready.size() > 1) {
-      plan.max_parallel_layer_width =
-          std::max(plan.max_parallel_layer_width, ready.size());
-      plan.parallel_scc_count += ready.size();
-      for (int sid : ready) {
-        plan.parallel_equation_volume +=
-            plan.sccs[static_cast<std::size_t>(sid)].size();
-      }
-    }
-    plan.layers.push_back(ready);
+    plan.scc_order.insert(plan.scc_order.end(), ready.begin(), ready.end());
 
     std::vector<int> next_ready;
     for (int sid : ready) {
@@ -251,44 +213,6 @@ build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
 }
 
 template <class D>
-bool should_parallelize_linear_scc(bool verbose, const LinearSccPlan<D> &plan) {
-  if (verbose)
-    return false;
-  if (!plan.has_nontrivial_parallelism)
-    return false;
-  const std::size_t worker_count = ThreadPool::get()->workerCount();
-  if (worker_count <= 1)
-    return false;
-  if (plan.sym_to_idx.size() < linear_parallel_min_equations(worker_count))
-    return false;
-  const std::size_t min_layer_width = std::min<std::size_t>(worker_count, 4);
-  if (plan.max_parallel_layer_width < min_layer_width)
-    return false;
-  if (plan.parallel_scc_count < worker_count)
-    return false;
-  if (plan.parallel_equation_volume < worker_count * 4)
-    return false;
-  return true;
-}
-
-inline bool try_claim_linear_step(std::atomic<long> &shared_steps,
-                                  long max_steps) {
-  if (max_steps < 0) {
-    shared_steps.fetch_add(1, std::memory_order_relaxed);
-    return true;
-  }
-  long observed = shared_steps.load(std::memory_order_relaxed);
-  while (observed < max_steps) {
-    if (shared_steps.compare_exchange_weak(observed, observed + 1,
-                                           std::memory_order_relaxed,
-                                           std::memory_order_relaxed)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-template <class D>
 bool solve_linear_scc_serial_component(
     const LinearSccPlan<D> &plan,
     const std::vector<std::pair<Symbol, E1<D>>> &rhs,
@@ -299,9 +223,7 @@ bool solve_linear_scc_serial_component(
   std::deque<int> worklist;
   std::vector<bool> in_queue(rhs.size(), false);
   auto lookup = [&](const Symbol &sym) -> const V & {
-    const auto it = plan.sym_to_idx.find(sym);
-    assert(it != plan.sym_to_idx.end() && "missing dense symbol index");
-    return values[static_cast<std::size_t>(it->second)];
+    return values[static_cast<std::size_t>(plan.sym_to_idx.at(sym))];
   };
   for (int idx : scc) {
     worklist.push_back(idx);
@@ -333,98 +255,6 @@ bool solve_linear_scc_serial_component(
   return true;
 }
 
-template <class D> struct DenseLinearSccOverlay {
-  using V = DomVal<D>;
-
-  const LinearSccPlan<D> &plan;
-  const std::deque<V> &base_values;
-  std::vector<int> local_positions;
-  std::deque<V> local_values;
-
-  DenseLinearSccOverlay(const LinearSccPlan<D> &solver_plan,
-                        const std::deque<V> &base, const std::vector<int> &scc)
-      : plan(solver_plan), base_values(base), local_positions(base.size(), -1),
-        local_values(scc.size()) {
-    for (std::size_t pos = 0; pos < scc.size(); ++pos) {
-      const int idx = scc[pos];
-      local_positions[static_cast<std::size_t>(idx)] = static_cast<int>(pos);
-      local_values[pos] = base_values[static_cast<std::size_t>(idx)];
-    }
-  }
-
-  const V &lookup(const Symbol &sym) const {
-    const auto it = plan.sym_to_idx.find(sym);
-    assert(it != plan.sym_to_idx.end() && "missing dense symbol index");
-    const int idx = it->second;
-    const int local_pos = local_positions[static_cast<std::size_t>(idx)];
-    if (local_pos >= 0)
-      return local_values[static_cast<std::size_t>(local_pos)];
-    return base_values[static_cast<std::size_t>(idx)];
-  }
-
-  void update(int idx, V value) {
-    const int local_pos = local_positions[static_cast<std::size_t>(idx)];
-    assert(local_pos >= 0 && "updated symbol must be local to SCC");
-    local_values[static_cast<std::size_t>(local_pos)] = std::move(value);
-  }
-
-  void appendResultValues(const std::vector<int> &scc,
-                          std::vector<V> &out) const {
-    out.clear();
-    out.reserve(scc.size());
-    for (int idx : scc) {
-      const int local_pos = local_positions[static_cast<std::size_t>(idx)];
-      assert(local_pos >= 0 && "result symbol must be local to SCC");
-      out.push_back(local_values[static_cast<std::size_t>(local_pos)]);
-    }
-  }
-};
-
-template <class D>
-void solve_linear_scc_parallel_component(
-    const LinearSccPlan<D> &plan,
-    const std::vector<std::pair<Symbol, E1<D>>> &rhs,
-    const std::vector<int> &scc, const std::deque<DomVal<D>> &base_values,
-    std::atomic<long> &shared_steps, LinearSccTaskResult<D> &result) {
-  using V = DomVal<D>;
-  const long max_steps = domain_max_linear_steps<D>();
-  DenseLinearSccOverlay<D> env(plan, base_values, scc);
-  std::deque<int> worklist;
-  std::vector<bool> in_queue(rhs.size(), false);
-  for (int idx : scc) {
-    worklist.push_back(idx);
-    in_queue[static_cast<std::size_t>(idx)] = true;
-  }
-
-  while (!worklist.empty()) {
-    const int idx = worklist.front();
-    worklist.pop_front();
-    in_queue[static_cast<std::size_t>(idx)] = false;
-
-    if (!try_claim_linear_step(shared_steps, max_steps)) {
-      result.hit_limit = true;
-      break;
-    }
-    ++result.steps;
-
-    const auto &entry = rhs[static_cast<std::size_t>(idx)];
-    V new_val = I1<D>::evalWithLookup(
-        false, [&](const Symbol &sym) -> const V & { return env.lookup(sym); },
-        entry.second);
-    if (!domain_equal<D>(env.lookup(entry.first), new_val)) {
-      env.update(idx, new_val);
-      for (int user : plan.intra_scc_users[static_cast<std::size_t>(idx)]) {
-        if (!in_queue[static_cast<std::size_t>(user)]) {
-          worklist.push_back(user);
-          in_queue[static_cast<std::size_t>(user)] = true;
-        }
-      }
-    }
-  }
-
-  env.appendResultValues(scc, result.values);
-}
-
 template <class D>
 std::vector<DomVal<D>> solve_linear_scc_serial_from_plan(
     bool verbose, const std::vector<std::pair<Symbol, E1<D>>> &rhs,
@@ -432,92 +262,22 @@ std::vector<DomVal<D>> solve_linear_scc_serial_from_plan(
   std::deque<DomVal<D>> values = make_dense_value_buffer<D>(init);
 
   long steps = 0;
-  for (const auto &layer : plan.layers) {
-    for (int sid : layer) {
-      if (!solve_linear_scc_serial_component<D>(
-              plan, rhs, plan.sccs[static_cast<std::size_t>(sid)], values, init,
-              steps)) {
-        npa_note_linear_limit_hit();
-        if (verbose) {
-          std::cerr << "[linear-scc] hit max_linear_steps="
-                    << domain_max_linear_steps<D>() << "\n";
-        }
-        return init;
+  for (int sid : plan.scc_order) {
+    if (!solve_linear_scc_serial_component<D>(
+            plan, rhs, plan.sccs[static_cast<std::size_t>(sid)], values, init,
+            steps)) {
+      npa_note_linear_limit_hit();
+      if (verbose) {
+        std::cerr << "[linear-scc] hit max_linear_steps="
+                  << domain_max_linear_steps<D>() << "\n";
       }
+      return init;
     }
   }
 
   if (verbose)
     std::cerr << "[linear-scc] steps=" << steps << " sccs=" << plan.sccs.size()
               << "\n";
-  return init;
-}
-
-template <class D>
-std::vector<DomVal<D>> solve_linear_scc_parallel_from_plan(
-    bool verbose, const std::vector<std::pair<Symbol, E1<D>>> &rhs,
-    std::vector<DomVal<D>> init, const LinearSccPlan<D> &plan) {
-  (void)verbose;
-  std::deque<DomVal<D>> values = make_dense_value_buffer<D>(init);
-
-  std::atomic<long> shared_steps(0);
-  ThreadPool *pool = ThreadPool::get();
-  const auto execution_context = capture_execution_context<D>();
-  for (const auto &layer : plan.layers) {
-    if (layer.size() == 1) {
-      const int sid = layer.front();
-      LinearSccTaskResult<D> result;
-      solve_linear_scc_parallel_component<D>(
-          plan, rhs, plan.sccs[static_cast<std::size_t>(sid)], values,
-          shared_steps, result);
-      const auto &scc = plan.sccs[static_cast<std::size_t>(sid)];
-      for (std::size_t pos = 0; pos < scc.size(); ++pos) {
-        const int idx = scc[pos];
-        values[static_cast<std::size_t>(idx)] = result.values[pos];
-        init[static_cast<std::size_t>(idx)] = result.values[pos];
-      }
-      if (result.hit_limit) {
-        npa_note_linear_limit_hit();
-        return init;
-      }
-      continue;
-    }
-
-    std::vector<LinearSccTaskResult<D>> results(layer.size());
-    const std::size_t grain_size =
-        parallel_task_grain_size(layer.size(), pool->workerCount());
-    pool->parallelFor<std::size_t>(
-        0, layer.size(), grain_size, [&](std::size_t pos) {
-          const int sid = layer[pos];
-          ScopedExecutionContext<D> context_scope(execution_context);
-          try {
-            solve_linear_scc_parallel_component<D>(
-                plan, rhs, plan.sccs[static_cast<std::size_t>(sid)], values,
-                shared_steps, results[pos]);
-          } catch (...) {
-            results[pos].error = std::current_exception();
-          }
-        });
-
-    bool hit_limit = false;
-    for (std::size_t pos = 0; pos < layer.size(); ++pos) {
-      if (results[pos].error)
-        std::rethrow_exception(results[pos].error);
-      const int sid = layer[pos];
-      const auto &scc = plan.sccs[static_cast<std::size_t>(sid)];
-      for (std::size_t value_pos = 0; value_pos < scc.size(); ++value_pos) {
-        const int idx = scc[value_pos];
-        values[static_cast<std::size_t>(idx)] = results[pos].values[value_pos];
-        init[static_cast<std::size_t>(idx)] = results[pos].values[value_pos];
-      }
-      hit_limit = hit_limit || results[pos].hit_limit;
-    }
-    if (hit_limit) {
-      npa_note_linear_limit_hit();
-      return init;
-    }
-  }
-
   return init;
 }
 
@@ -530,12 +290,12 @@ std::vector<DomVal<D>>
 solve_linear_scc_impl(bool verbose,
                       const std::vector<std::pair<Symbol, E1<D>>> &rhs,
                       std::vector<DomVal<D>> init) {
+  if (init.size() != rhs.size())
+    throw InvalidEquationSystemError(
+        "linear equation system and initial values differ in size");
   auto plan = detail::build_linear_scc_plan<D>(rhs);
-  if (!detail::should_parallelize_linear_scc(verbose, plan))
-    return detail::solve_linear_scc_serial_from_plan<D>(verbose, rhs,
-                                                        std::move(init), plan);
-  return detail::solve_linear_scc_parallel_from_plan<D>(verbose, rhs,
-                                                        std::move(init), plan);
+  return detail::solve_linear_scc_serial_from_plan<D>(verbose, rhs,
+                                                      std::move(init), plan);
 }
 
 /// Solve linear system via tensor product (Reps et al. Alg. 3.4): convert

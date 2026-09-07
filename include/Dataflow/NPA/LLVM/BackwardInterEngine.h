@@ -4,7 +4,6 @@
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
 #include "Dataflow/NPA/NPA.h"
 #include "Utils/Algorithms/PathExpressions/PathExpressions.h"
-#include "Utils/Parallel/ThreadPool.h"
 
 #include <chrono>
 #include <deque>
@@ -678,24 +677,10 @@ public:
     const auto ArtifactStart = std::chrono::steady_clock::now();
     while (!frontier.empty()) {
       std::vector<PreparedFunctionArtifacts> prepared(frontier.size());
-      ThreadPool *pool = ThreadPool::get();
-      const bool parallel_frontier =
-          pool->workerCount() > 1 && frontier.size() > 1;
-      if (parallel_frontier) {
-        const std::size_t grain_size = detail::parallel_task_grain_size(
-            frontier.size(), pool->workerCount(), 2);
-        pool->parallelFor<std::size_t>(
-            0, frontier.size(), grain_size, [&](std::size_t index) {
-              prepared[index] = prepareFunctionRegexArtifacts(
-                  M, *frontier[index], analysis, calleeCache,
-                  res.status.call_resolution_mode);
-            });
-      } else {
-        for (std::size_t index = 0; index < frontier.size(); ++index) {
-          prepared[index] = prepareFunctionRegexArtifacts(
-              M, *frontier[index], analysis, calleeCache,
-              res.status.call_resolution_mode);
-        }
+      for (std::size_t index = 0; index < frontier.size(); ++index) {
+        prepared[index] = prepareFunctionRegexArtifacts(
+            M, *frontier[index], analysis, calleeCache,
+            res.status.call_resolution_mode);
       }
 
       std::vector<llvm::Function *> next_frontier;
@@ -732,7 +717,7 @@ public:
     auto rawRes = NPASolver<D>::solve(eqns, verbose, -1, linearStrategy);
     std::unordered_map<Symbol, Val> solvedMap;
     for (auto &p : rawRes.first)
-      solvedMap[p.first] = p.second;
+      solvedMap.insert_or_assign(p.first, p.second);
 
     res.status.summary_solve = rawRes.second;
     res.status.used_bounded_inner_solve =
@@ -747,7 +732,7 @@ public:
       Val summary = I0<D>::eval(false, solvedMap, exprIt->second);
       if (summaryIsApproximate(analysis, summary, 0))
         res.status.approximated = true;
-      res.summaries[entry.second] = summary;
+      res.summaries.insert_or_assign(entry.second, summary);
     }
     res.status.phase_summary_materialization_time =
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
@@ -794,24 +779,10 @@ public:
         blocks.push_back(&BB);
 
       std::vector<PreparedBlockPropagation> prepared(blocks.size());
-      ThreadPool *pool = ThreadPool::get();
-      const bool parallel_blocks =
-          pool->workerCount() > 1 && blocks.size() >= 4;
-      if (parallel_blocks) {
-        const std::size_t grain_size = detail::parallel_task_grain_size(
-            blocks.size(), pool->workerCount(), 2);
-        pool->parallelFor<std::size_t>(
-            0, blocks.size(), grain_size, [&](std::size_t index) {
-              prepared[index] = prepareBlockPropagation(
-                  M, analysis, *blocks[index], calleeCache, exitFact, solvedMap,
-                  res.status.call_resolution_mode);
-            });
-      } else {
-        for (std::size_t index = 0; index < blocks.size(); ++index) {
-          prepared[index] = prepareBlockPropagation(
-              M, analysis, *blocks[index], calleeCache, exitFact, solvedMap,
-              res.status.call_resolution_mode);
-        }
+      for (std::size_t index = 0; index < blocks.size(); ++index) {
+        prepared[index] = prepareBlockPropagation(
+            M, analysis, *blocks[index], calleeCache, exitFact, solvedMap,
+            res.status.call_resolution_mode);
       }
 
       for (const auto &block : prepared) {

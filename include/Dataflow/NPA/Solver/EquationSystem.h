@@ -6,11 +6,179 @@
  * \brief Solver-independent iteration helper for equation-system façades.
  */
 
+#include "Dataflow/NPA/Core/Expr/Expressions.h"
+
+#include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace npa {
+
+class InvalidEquationSystemError : public std::logic_error {
+public:
+  explicit InvalidEquationSystemError(const std::string &message)
+      : std::logic_error(message) {}
+};
+
+/// A checked symbol table and canonical dense dependency topology.
+struct ValidatedEquationSystem {
+  std::unordered_map<Symbol, unsigned> symbol_to_index;
+  std::vector<std::vector<unsigned>> dependencies;
+};
+
+namespace detail {
+
+inline void require_bound_symbol(const Symbol &symbol,
+                                 const std::unordered_set<Symbol> &bound) {
+  if (bound.find(symbol) == bound.end())
+    throw InvalidEquationSystemError("unbound local equation symbol");
+}
+
+template <class D>
+void collect_free_symbols(const E0<D> &expr,
+                          const std::unordered_set<Symbol> &bound,
+                          std::unordered_set<Symbol> &free) {
+  if (!expr)
+    throw InvalidEquationSystemError("null polynomial equation expression");
+
+  using K = typename Exp0<D>::K;
+  switch (expr->k) {
+  case K::Term:
+    return;
+  case K::Seq:
+  case K::Project:
+    collect_free_symbols(expr->t, bound, free);
+    return;
+  case K::Mul:
+  case K::Cond:
+  case K::Ndet:
+    collect_free_symbols(expr->t1, bound, free);
+    collect_free_symbols(expr->t2, bound, free);
+    return;
+  case K::Call:
+    free.insert(expr->sym);
+    collect_free_symbols(expr->t, bound, free);
+    return;
+  case K::Hole:
+    free.insert(expr->sym);
+    return;
+  case K::Bound:
+    require_bound_symbol(expr->sym, bound);
+    return;
+  case K::Concat:
+    if (bound.find(expr->sym) == bound.end())
+      free.insert(expr->sym);
+    collect_free_symbols(expr->t1, bound, free);
+    collect_free_symbols(expr->t2, bound, free);
+    return;
+  case K::Star:
+  case K::Mu: {
+    auto body_bound = bound;
+    body_bound.insert(expr->sym);
+    collect_free_symbols(expr->t, body_bound, free);
+    return;
+  }
+  }
+}
+
+template <class D>
+void collect_free_symbols(const E1<D> &expr,
+                          const std::unordered_set<Symbol> &bound,
+                          std::unordered_set<Symbol> &free) {
+  if (!expr)
+    throw InvalidEquationSystemError("null linear equation expression");
+
+  using K = typename Exp1<D>::K;
+  switch (expr->k) {
+  case K::Term:
+    return;
+  case K::Seq:
+  case K::SeqR:
+  case K::Project:
+    collect_free_symbols(expr->t, bound, free);
+    return;
+  case K::Cond:
+  case K::Ndet:
+  case K::Add:
+  case K::Sub:
+    collect_free_symbols(expr->t1, bound, free);
+    collect_free_symbols(expr->t2, bound, free);
+    return;
+  case K::Call:
+    if (bound.find(expr->sym) == bound.end())
+      free.insert(expr->sym);
+    return;
+  case K::Hole:
+    free.insert(expr->sym);
+    return;
+  case K::Bound:
+    require_bound_symbol(expr->sym, bound);
+    return;
+  case K::Concat:
+    if (bound.find(expr->sym) == bound.end())
+      free.insert(expr->sym);
+    collect_free_symbols(expr->t1, bound, free);
+    collect_free_symbols(expr->t2, bound, free);
+    return;
+  case K::Star:
+  case K::Mu: {
+    auto body_bound = bound;
+    body_bound.insert(expr->sym);
+    collect_free_symbols(expr->t, body_bound, free);
+    return;
+  }
+  }
+}
+
+template <class D, class E>
+ValidatedEquationSystem
+validate_equations(const std::vector<std::pair<Symbol, E>> &equations) {
+  ValidatedEquationSystem validated;
+  validated.symbol_to_index.reserve(equations.size());
+  validated.dependencies.resize(equations.size());
+
+  for (std::size_t i = 0; i < equations.size(); ++i) {
+    auto inserted = validated.symbol_to_index.emplace(equations[i].first,
+                                                      static_cast<unsigned>(i));
+    if (!inserted.second)
+      throw InvalidEquationSystemError("duplicate equation LHS symbol");
+  }
+
+  for (std::size_t i = 0; i < equations.size(); ++i) {
+    std::unordered_set<Symbol> free;
+    collect_free_symbols(equations[i].second, {}, free);
+    auto &dense_dependencies = validated.dependencies[i];
+    dense_dependencies.reserve(free.size());
+    for (const auto &symbol : free) {
+      auto found = validated.symbol_to_index.find(symbol);
+      if (found == validated.symbol_to_index.end())
+        throw InvalidEquationSystemError("undefined equation symbol");
+      dense_dependencies.push_back(found->second);
+    }
+    std::sort(dense_dependencies.begin(), dense_dependencies.end());
+  }
+  return validated;
+}
+
+} // namespace detail
+
+template <class D>
+ValidatedEquationSystem validate_equation_system(
+    const std::vector<std::pair<Symbol, E0<D>>> &equations) {
+  return detail::validate_equations<D>(equations);
+}
+
+template <class D>
+ValidatedEquationSystem validate_linear_equation_system(
+    const std::vector<std::pair<Symbol, E1<D>>> &equations) {
+  return detail::validate_equations<D>(equations);
+}
 
 template <class State> struct IterationResult {
   State value;

@@ -3,14 +3,12 @@
 
 /**
  * \file
- * \brief Per-solve bookkeeping and worker execution-context propagation.
+ * \brief Per-solve bookkeeping for convergence and adaptive SCC statistics.
  */
 
-#include "Dataflow/NPA/Core/DomainExecution.h"
 #include "Dataflow/NPA/Solver/Options.h"
 #include "Dataflow/NPA/Solver/Statistics.h"
 
-#include <atomic>
 #include <utility>
 
 namespace npa {
@@ -32,87 +30,70 @@ struct AdaptiveSccSolveStats {
 class ApproximationSourceCollector {
 public:
   void reset() {
-    hit_outer_limit_.store(false, std::memory_order_relaxed);
-    hit_linear_limit_.store(false, std::memory_order_relaxed);
-    hit_fixpoint_limit_.store(false, std::memory_order_relaxed);
+    hit_outer_limit_ = false;
+    hit_linear_limit_ = false;
+    hit_fixpoint_limit_ = false;
   }
 
-  void note_outer_limit_hit() {
-    hit_outer_limit_.store(true, std::memory_order_relaxed);
-  }
+  void note_outer_limit_hit() { hit_outer_limit_ = true; }
 
-  void note_linear_limit_hit() {
-    hit_linear_limit_.store(true, std::memory_order_relaxed);
-  }
+  void note_linear_limit_hit() { hit_linear_limit_ = true; }
 
-  void note_fixpoint_limit_hit() {
-    hit_fixpoint_limit_.store(true, std::memory_order_relaxed);
-  }
+  void note_fixpoint_limit_hit() { hit_fixpoint_limit_ = true; }
 
   ApproximationSourceFlags snapshot() const {
-    ApproximationSourceFlags flags;
-    flags.hit_outer_limit = hit_outer_limit_.load(std::memory_order_relaxed);
-    flags.hit_linear_limit = hit_linear_limit_.load(std::memory_order_relaxed);
-    flags.hit_fixpoint_limit =
-        hit_fixpoint_limit_.load(std::memory_order_relaxed);
-    return flags;
+    return {hit_outer_limit_, hit_linear_limit_, hit_fixpoint_limit_};
   }
 
 private:
-  std::atomic<bool> hit_outer_limit_{false};
-  std::atomic<bool> hit_linear_limit_{false};
-  std::atomic<bool> hit_fixpoint_limit_{false};
+  bool hit_outer_limit_ = false;
+  bool hit_linear_limit_ = false;
+  bool hit_fixpoint_limit_ = false;
 };
 
 class AdaptiveSccSolveCollector {
 public:
   void reset() {
-    used_.store(false, std::memory_order_relaxed);
-    direct_count_.store(0, std::memory_order_relaxed);
-    worklist_count_.store(0, std::memory_order_relaxed);
-    tensor_count_.store(0, std::memory_order_relaxed);
-    tensor_fallback_count_.store(0, std::memory_order_relaxed);
+    used_ = false;
+    direct_count_ = 0;
+    worklist_count_ = 0;
+    tensor_count_ = 0;
+    tensor_fallback_count_ = 0;
   }
 
-  void note_used() { used_.store(true, std::memory_order_relaxed); }
+  void note_used() { used_ = true; }
 
   void note_direct(int count = 1) {
     if (count > 0)
-      direct_count_.fetch_add(count, std::memory_order_relaxed);
+      direct_count_ += count;
   }
 
   void note_worklist(int count = 1) {
     if (count > 0)
-      worklist_count_.fetch_add(count, std::memory_order_relaxed);
+      worklist_count_ += count;
   }
 
   void note_tensor(int count = 1) {
     if (count > 0)
-      tensor_count_.fetch_add(count, std::memory_order_relaxed);
+      tensor_count_ += count;
   }
 
   void note_tensor_fallback(int count = 1) {
     if (count > 0)
-      tensor_fallback_count_.fetch_add(count, std::memory_order_relaxed);
+      tensor_fallback_count_ += count;
   }
 
   AdaptiveSccSolveStats snapshot() const {
-    AdaptiveSccSolveStats stats;
-    stats.used = used_.load(std::memory_order_relaxed);
-    stats.direct_count = direct_count_.load(std::memory_order_relaxed);
-    stats.worklist_count = worklist_count_.load(std::memory_order_relaxed);
-    stats.tensor_count = tensor_count_.load(std::memory_order_relaxed);
-    stats.tensor_fallback_count =
-        tensor_fallback_count_.load(std::memory_order_relaxed);
-    return stats;
+    return {used_, direct_count_, worklist_count_, tensor_count_,
+            tensor_fallback_count_};
   }
 
 private:
-  std::atomic<bool> used_{false};
-  std::atomic<int> direct_count_{0};
-  std::atomic<int> worklist_count_{0};
-  std::atomic<int> tensor_count_{0};
-  std::atomic<int> tensor_fallback_count_{0};
+  bool used_ = false;
+  int direct_count_ = 0;
+  int worklist_count_ = 0;
+  int tensor_count_ = 0;
+  int tensor_fallback_count_ = 0;
 };
 
 inline ApproximationSourceCollector &npa_default_approximation_collector() {
@@ -125,7 +106,8 @@ inline AdaptiveSccSolveCollector &npa_default_adaptive_scc_collector() {
   return collector;
 }
 
-inline ApproximationSourceCollector *&npa_active_approximation_collector_slot() {
+inline ApproximationSourceCollector *&
+npa_active_approximation_collector_slot() {
   static thread_local ApproximationSourceCollector *collector = nullptr;
   return collector;
 }
@@ -178,55 +160,27 @@ private:
   AdaptiveSccSolveCollector *previous_;
 };
 
-/// Owns options, results, domain state, and mutable bookkeeping for one solve.
+/// Owns options, results, and mutable bookkeeping for one solve.
 template <class D> class SolveContext {
 public:
-  using domain_state_type = typename DomainExecutionStateTraits<D>::state_type;
-
   explicit SolveContext(SolveOptions solve_options = {})
       : options(std::move(solve_options)),
-        domain_state(DomainExecutionStateTraits<D>::capture()),
         approximation_scope_(approximation_collector_),
-        adaptive_scope_(adaptive_collector_) {
+        adaptive_scope_(adaptive_collector_),
+        convergence_scope_(options.convergence_policy) {
     approximation_collector_.reset();
     adaptive_collector_.reset();
   }
 
   SolveOptions options;
   Stat stats;
-  domain_state_type domain_state;
 
 private:
   ApproximationSourceCollector approximation_collector_;
   AdaptiveSccSolveCollector adaptive_collector_;
   ScopedApproximationSourceCollector approximation_scope_;
   ScopedAdaptiveSccSolveCollector adaptive_scope_;
-};
-
-template <class D> struct ExecutionContext {
-  using domain_state_type = typename DomainExecutionStateTraits<D>::state_type;
-
-  ApproximationSourceCollector *approximation_collector = nullptr;
-  domain_state_type domain_state{};
-};
-
-template <class D> inline ExecutionContext<D> capture_execution_context() {
-  ExecutionContext<D> ctx;
-  ctx.approximation_collector = &npa_active_approximation_collector();
-  ctx.domain_state = DomainExecutionStateTraits<D>::capture();
-  return ctx;
-}
-
-template <class D> class ScopedExecutionContext {
-public:
-  using traits_type = DomainExecutionStateTraits<D>;
-
-  explicit ScopedExecutionContext(const ExecutionContext<D> &ctx)
-      : approx_scope_(*ctx.approximation_collector), domain_scope_(ctx.domain_state) {}
-
-private:
-  ScopedApproximationSourceCollector approx_scope_;
-  typename traits_type::scope_type domain_scope_;
+  ScopedConvergencePolicy convergence_scope_;
 };
 
 inline ApproximationSourceFlags npa_approximation_source_flags() {

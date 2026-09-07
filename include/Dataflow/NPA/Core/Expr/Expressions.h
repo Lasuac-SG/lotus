@@ -27,7 +27,6 @@
 #include "Dataflow/NPA/Core/Symbol.h"
 
 #include <memory>
-#include <unordered_set>
 
 namespace npa {
 
@@ -61,6 +60,8 @@ template <class D> struct Exp0 : std::enable_shared_from_this<Exp0<D>> {
   Symbol sym;
   T phi;
   E0<D> t1, t2;
+  Exp0() : k(Term), c(D::zero()), phi{} {}
+
   static E0<D> term(V v) {
     auto e = std::make_shared<Exp0>();
     e->k = Term;
@@ -178,6 +179,8 @@ template <class D> struct Exp1 {
   Symbol sym;
   T phi;
   E1<D> t, t1, t2;
+  Exp1() : k(Term), c(D::zero()), phi{} {}
+
   static E1<D> term(V v) {
     auto e = std::make_shared<Exp1>();
     e->k = Term;
@@ -275,49 +278,6 @@ template <class D> struct Exp1 {
     e->t = body;
     e->sym = x;
     return e;
-  }
-};
-
-/// Collects variable symbols on which a linearized expression depends
-/// (Hole, Call, Concat, Star, Mu). Used for worklist and dependency graph.
-template <class D> struct DepFinder {
-  using Set = std::unordered_set<Symbol>;
-  static void find(const E1<D> &e, Set &deps) {
-    if (!e)
-      return;
-    using K = typename Exp1<D>::K;
-    switch (e->k) {
-    case K::Hole:
-      deps.insert(e->sym);
-      break;
-    case K::Bound:
-      break;
-    case K::Call:
-      deps.insert(e->sym);
-      break;
-    case K::Concat:
-      deps.insert(e->sym);
-      find(e->t1, deps);
-      find(e->t2, deps);
-      break;
-    case K::Star:
-    case K::Mu:
-      deps.insert(e->sym);
-      find(e->t, deps);
-      break;
-    case K::Project:
-    case K::SeqR:
-      find(e->t, deps);
-      break;
-    default:
-      if (e->t)
-        find(e->t, deps);
-      if (e->t1)
-        find(e->t1, deps);
-      if (e->t2)
-        find(e->t2, deps);
-      break;
-    }
   }
 };
 
