@@ -207,6 +207,38 @@ TEST(NPAAdaptiveScc, MatchesTensorOnEligibleSystemAndReportsCounts) {
   EXPECT_EQ(adaptive.second.adaptive_scc_tensor_fallback_count, 0);
 }
 
+TEST(NPAAdaptiveScc, SparseRoundsComposeWithTensorAndAdaptiveBackends) {
+  using D = npa::PredicateRelationDomain;
+  using E0 = npa::E0<D>;
+  using Exp0 = npa::Exp0<D>;
+
+  D::configure(2, 1);
+  E0 set_global_true = Exp0::term(D::assignConst(0, true));
+  E0 set_local_true = Exp0::term(D::assignConst(1, true));
+  E0 id = Exp0::term(D::one());
+  E0 rhs = Exp0::project(
+      Exp0::ndet(id, Exp0::concat(set_global_true, "X", set_local_true)));
+  std::vector<std::pair<npa::Symbol, E0>> eqns;
+  eqns.emplace_back("X", rhs);
+
+  npa::SolveOptions baseline_options;
+  baseline_options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto baseline = npa::NPASolver<D>::solve(eqns, baseline_options);
+
+  for (npa::LinearStrategy backend :
+       {npa::LinearStrategy::SCC, npa::LinearStrategy::AdaptiveScc,
+        npa::LinearStrategy::TensorProduct}) {
+    npa::SolveOptions options = baseline_options;
+    options.linear_strategy = backend;
+    options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+    auto sparse = npa::NPASolver<D>::solve(eqns, options);
+
+    ASSERT_EQ(baseline.first.size(), sparse.first.size());
+    EXPECT_TRUE(D::equal(baseline.first[0].second, sparse.first[0].second));
+    EXPECT_EQ(baseline.second.iters, sparse.second.iters);
+  }
+}
+
 TEST(NPAAdaptiveScc, MatchesSccOnMixedTensorAndDirectSystem) {
   using D = npa::PredicateRelationDomain;
   using E0 = npa::E0<D>;

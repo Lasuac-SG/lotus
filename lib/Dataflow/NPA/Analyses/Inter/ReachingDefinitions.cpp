@@ -13,7 +13,7 @@ namespace npa {
 // Analysis Policy for Reaching Definitions (Gen/Kill)
 class RDAnalysis {
 public:
-  using FactType = llvm::APInt; // Fact type for Phase 2
+  using FactType = GenKillTransformer::fact_type;
 
 private:
   using D = GenKillTransformer;
@@ -21,8 +21,6 @@ private:
   using E = E0<D>;
 
   std::unordered_map<const llvm::Value *, unsigned> valToBit;
-  unsigned bitWidth;
-  D::WidthScope widthScope;
 
 public:
   RDAnalysis(llvm::Module &M) {
@@ -37,56 +35,44 @@ public:
         }
       }
     }
-    bitWidth = (bit == 0) ? 1 : bit;
-    widthScope.reset(bitWidth);
   }
 
-  FactType getEntryValue() const {
-    return llvm::APInt(bitWidth, 0); // Empty set of definitions
-  }
+  FactType getEntryValue() const { return {}; }
 
   E getTransfer(llvm::Instruction &I, E currentPath) {
     if (valToBit.count(&I)) {
-      unsigned b = valToBit[&I];
-      llvm::APInt gen(bitWidth, 0);
-      gen.setBit(b);
-      llvm::APInt kill(bitWidth, 0); // SSA: No kill of other defs
-      return Exp::seq({kill, gen}, currentPath);
+      return Exp::seq(D::generate(valToBit[&I]), currentPath);
     }
     return currentPath;
   }
 
-  // Phase 2: Application of Summary (Function) to Fact (APInt)
-  // Summary is (Kill, Gen)
-  // Fact is APInt
-  // Result = (Fact \ Kill) U Gen
-  llvm::APInt applySummary(const D::value_type &summary,
-                           const llvm::APInt &fact) {
-    return (fact & ~summary.first) | summary.second;
+  FactType applySummary(const D::value_type &summary, const FactType &fact) {
+    return D::apply(summary, fact);
   }
 
-  llvm::APInt joinFacts(const llvm::APInt &a, const llvm::APInt &b) {
-    return a | b;
+  FactType joinFacts(const FactType &a, const FactType &b) {
+    FactType result = a;
+    result |= b;
+    return result;
   }
 
-  bool factsEqual(const llvm::APInt &a, const llvm::APInt &b) { return a == b; }
+  bool factsEqual(const FactType &a, const FactType &b) { return a == b; }
 };
 
 InterReachingDefinitions::Result
 InterReachingDefinitions::run(llvm::Module &M, bool verbose,
                               LinearStrategy linearStrategy,
-                              IndirectCallResolutionMode callResolutionMode) {
+                              IndirectCallResolutionMode callResolutionMode,
+                              NewtonRoundStrategy roundStrategy) {
   RDAnalysis analysis(M);
   auto engineResult = InterEngine<GenKillTransformer, RDAnalysis>::run(
-      M, analysis, verbose, linearStrategy, callResolutionMode);
+      M, analysis, verbose, linearStrategy, callResolutionMode, roundStrategy);
 
   InterReachingDefinitions::Result res;
   res.status = engineResult.status;
   res.summaries.insert(engineResult.summaries.begin(),
                        engineResult.summaries.end());
-  for (auto &kv : engineResult.blockEntryFacts) {
-    res.blockFacts[kv.first] = kv.second;
-  }
+  res.blockFacts = std::move(engineResult.blockEntryFacts);
   return res;
 }
 

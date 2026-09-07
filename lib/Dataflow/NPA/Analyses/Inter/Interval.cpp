@@ -898,10 +898,11 @@ private:
 InterIntervalAnalysis::Result
 InterIntervalAnalysis::run(llvm::Module &M, bool verbose,
                            LinearStrategy linearStrategy,
-                           IndirectCallResolutionMode callResolutionMode) {
+                           IndirectCallResolutionMode callResolutionMode,
+                           NewtonRoundStrategy roundStrategy) {
   IntervalAnalysis analysis;
   auto engineResult = InterEngine<IntervalSummary, IntervalAnalysis>::run(
-      M, analysis, verbose, linearStrategy, callResolutionMode);
+      M, analysis, verbose, linearStrategy, callResolutionMode, roundStrategy);
 
   Result result;
   result.status = engineResult.status;

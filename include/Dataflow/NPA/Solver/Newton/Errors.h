@@ -30,6 +30,13 @@ public:
             "project_newton_safe for Project on Newton/tensor paths") {}
 };
 
+class SparseNewtonRequiresIdempotentError : public std::logic_error {
+public:
+  SparseNewtonRequiresIdempotentError()
+      : std::logic_error(
+            "sparse Newton round construction requires an idempotent domain") {}
+};
+
 template <class D>
 inline bool valid_newton_delta(const DomVal<D> &f_nu, const DomVal<D> &nu,
                                const DomVal<D> &delta) {

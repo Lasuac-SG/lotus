@@ -11,7 +11,8 @@
 namespace npa {
 
 template <class Op, class OpLess = std::less<Op>> struct TransformerLess {
-  bool operator()(const std::vector<Op> &lhs, const std::vector<Op> &rhs) const {
+  bool operator()(const std::vector<Op> &lhs,
+                  const std::vector<Op> &rhs) const {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(),
                                         rhs.end(), OpLess{});
   }
@@ -35,12 +36,13 @@ struct TransformerSummaryValue {
 /// The current implementation keeps a finite set of summary transformers and an
 /// overflow bit, which preserves the existing CP/IA behavior while decoupling
 /// them from the older PathTransferSummary-specific API.
-template <class Op, class OpLess = std::less<Op>>
-class TransformerSummary {
+template <class Op, class OpLess = std::less<Op>> class TransformerSummary {
 public:
   using value_type = TransformerSummaryValue<Op, OpLess>;
   using test_type = bool;
   static constexpr bool idempotent = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
   static constexpr std::size_t max_transformers = 4096;
   static constexpr std::size_t max_transformer_length = 320;
 
@@ -109,12 +111,13 @@ public:
 private:
   template <typename... Ts> using void_t = void;
 
-  template <typename T, typename = void> struct HasPointerDest : std::false_type {};
+  template <typename T, typename = void>
+  struct HasPointerDest : std::false_type {};
 
   template <typename T>
   struct HasPointerDest<T, void_t<decltype(std::declval<T>().dest)>>
-      : std::integral_constant<bool,
-                               std::is_pointer<decltype(std::declval<T>().dest)>::value> {};
+      : std::integral_constant<
+            bool, std::is_pointer<decltype(std::declval<T>().dest)>::value> {};
 
   template <typename T = Op>
   static typename std::enable_if<HasPointerDest<T>::value, void>::type
@@ -140,7 +143,8 @@ private:
 
   template <typename T>
   struct HasSummaryCanOverwritePrevious<
-      T, void_t<decltype(std::declval<const T &>().summaryCanOverwritePrevious())>>
+      T,
+      void_t<decltype(std::declval<const T &>().summaryCanOverwritePrevious())>>
       : std::true_type {};
 
   static typename value_type::transformer_type
@@ -173,31 +177,36 @@ private:
   }
 
   template <typename T = Op>
-  static typename std::enable_if<HasSummaryCanBeOverwritten<T>::value, bool>::type
-  summaryCanBeOverwritten(const T &op) {
+  static
+      typename std::enable_if<HasSummaryCanBeOverwritten<T>::value, bool>::type
+      summaryCanBeOverwritten(const T &op) {
     return op.summaryCanBeOverwritten();
   }
 
   template <typename T = Op>
-  static typename std::enable_if<!HasSummaryCanBeOverwritten<T>::value, bool>::type
-  summaryCanBeOverwritten(const T &) {
+  static
+      typename std::enable_if<!HasSummaryCanBeOverwritten<T>::value, bool>::type
+      summaryCanBeOverwritten(const T &) {
     return false;
   }
 
   template <typename T = Op>
-  static typename std::enable_if<HasSummaryCanOverwritePrevious<T>::value, bool>::type
+  static typename std::enable_if<HasSummaryCanOverwritePrevious<T>::value,
+                                 bool>::type
   summaryCanOverwritePrevious(const T &op) {
     return op.summaryCanOverwritePrevious();
   }
 
   template <typename T = Op>
-  static typename std::enable_if<!HasSummaryCanOverwritePrevious<T>::value, bool>::type
+  static typename std::enable_if<!HasSummaryCanOverwritePrevious<T>::value,
+                                 bool>::type
   summaryCanOverwritePrevious(const T &) {
     return false;
   }
 
-  static void insertTransformer(value_type &out,
-                                typename value_type::transformer_type transformer) {
+  static void
+  insertTransformer(value_type &out,
+                    typename value_type::transformer_type transformer) {
     transformer = canonicalizeTransformer(std::move(transformer));
     for (const auto &op : transformer)
       noteWrite(out, op);

@@ -27,6 +27,7 @@
 #include "Dataflow/NPA/Core/Symbol.h"
 
 #include <memory>
+#include <unordered_set>
 
 namespace npa {
 
@@ -152,6 +153,63 @@ template <class D> struct Exp0 : std::enable_shared_from_this<Exp0<D>> {
 
 template <class D> struct Exp1;
 template <class D> using E1 = std::shared_ptr<Exp1<D>>;
+
+template <class D>
+bool referencesLocalSymbol(const E0<D> &expression, const Symbol &symbol,
+                           std::unordered_set<const Exp0<D> *> &visited) {
+  if (!expression || !visited.insert(expression.get()).second)
+    return false;
+  if (expression->k == Exp0<D>::Bound && expression->sym == symbol)
+    return true;
+  if (expression->k == Exp0<D>::Concat && expression->sym == symbol)
+    return true;
+  return referencesLocalSymbol(expression->t, symbol, visited) ||
+         referencesLocalSymbol(expression->t1, symbol, visited) ||
+         referencesLocalSymbol(expression->t2, symbol, visited);
+}
+
+template <class D>
+bool referencesLocalSymbol(const E0<D> &expression, const Symbol &symbol) {
+  std::unordered_set<const Exp0<D> *> visited;
+  return referencesLocalSymbol(expression, symbol, visited);
+}
+
+/// Recognize the canonical equation Z = 1 + Z*a (or 1 + a*Z) used to encode
+/// a semiring Kleene star. Domains with a closed-form star can evaluate this
+/// shape without generic local fixpoint iteration.
+template <class D> E0<D> matchSemiringStarOperand(const E0<D> &expression) {
+  if (!expression || expression->k != Exp0<D>::Star || !expression->t ||
+      expression->t->k != Exp0<D>::Ndet) {
+    return nullptr;
+  }
+
+  auto isOne = [](const E0<D> &candidate) {
+    return candidate && candidate->k == Exp0<D>::Term &&
+           D::equal(candidate->c, D::one());
+  };
+  auto matchProduct = [&](const E0<D> &candidate) -> E0<D> {
+    if (!candidate || candidate->k != Exp0<D>::Mul)
+      return nullptr;
+    if (candidate->t1 && candidate->t1->k == Exp0<D>::Bound &&
+        candidate->t1->sym == expression->sym) {
+      return candidate->t2;
+    }
+    if (candidate->t2 && candidate->t2->k == Exp0<D>::Bound &&
+        candidate->t2->sym == expression->sym) {
+      return candidate->t1;
+    }
+    return nullptr;
+  };
+
+  E0<D> operand;
+  if (isOne(expression->t->t1))
+    operand = matchProduct(expression->t->t2);
+  else if (isOne(expression->t->t2))
+    operand = matchProduct(expression->t->t1);
+  if (referencesLocalSymbol(operand, expression->sym))
+    return nullptr;
+  return operand;
+}
 
 /// Linearized expression (right-hand side of Df|ν(X) + δ = X). Adds Add/Sub
 /// for combine and differential; Concat/Star/Mu preserved from Exp0.
@@ -283,137 +341,64 @@ template <class D> struct Exp1 {
 
 template <class D> struct ExprFeatureDetector {
   static bool has_star(const E0<D> &e) {
-    if (!e)
-      return false;
-    switch (e->k) {
-    case Exp0<D>::Star:
-      return true;
-    case Exp0<D>::Seq:
-    case Exp0<D>::Call:
-    case Exp0<D>::Project:
-    case Exp0<D>::Mu:
-      return has_star(e->t);
-    case Exp0<D>::Mul:
-    case Exp0<D>::Cond:
-    case Exp0<D>::Ndet:
-    case Exp0<D>::Concat:
-      return has_star(e->t1) || has_star(e->t2);
-    default:
-      return false;
-    }
+    return contains(e, Exp0<D>::Star);
   }
 
   static bool has_star(const E1<D> &e) {
-    if (!e)
-      return false;
-    using K = typename Exp1<D>::K;
-    switch (e->k) {
-    case K::Star:
-      return true;
-    case K::Seq:
-    case K::SeqR:
-    case K::Project:
-      return has_star(e->t);
-    case K::Cond:
-    case K::Add:
-    case K::Sub:
-    case K::Ndet:
-    case K::Concat:
-    case K::Mu:
-      return has_star(e->t1) || has_star(e->t2) || has_star(e->t);
-    default:
-      return false;
-    }
+    return contains(e, Exp1<D>::Star);
   }
 
   static bool has_mu(const E0<D> &e) {
-    if (!e)
-      return false;
-    switch (e->k) {
-    case Exp0<D>::Mu:
-      return true;
-    case Exp0<D>::Seq:
-    case Exp0<D>::Call:
-    case Exp0<D>::Project:
-    case Exp0<D>::Star:
-      return has_mu(e->t);
-    case Exp0<D>::Mul:
-    case Exp0<D>::Cond:
-    case Exp0<D>::Ndet:
-    case Exp0<D>::Concat:
-      return has_mu(e->t1) || has_mu(e->t2);
-    default:
-      return false;
-    }
+    return contains(e, Exp0<D>::Mu);
   }
 
   static bool has_mu(const E1<D> &e) {
-    if (!e)
-      return false;
-    using K = typename Exp1<D>::K;
-    switch (e->k) {
-    case K::Mu:
-      return true;
-    case K::Seq:
-    case K::SeqR:
-    case K::Project:
-      return has_mu(e->t);
-    case K::Cond:
-    case K::Add:
-    case K::Sub:
-    case K::Ndet:
-    case K::Concat:
-      return has_mu(e->t1) || has_mu(e->t2);
-    case K::Star:
-      return has_mu(e->t);
-    default:
-      return false;
-    }
+    return contains(e, Exp1<D>::Mu);
   }
 
   static bool has_project(const E0<D> &e) {
-    if (!e)
-      return false;
-    switch (e->k) {
-    case Exp0<D>::Project:
-      return true;
-    case Exp0<D>::Seq:
-    case Exp0<D>::Call:
-      return has_project(e->t);
-    case Exp0<D>::Mul:
-    case Exp0<D>::Cond:
-    case Exp0<D>::Ndet:
-    case Exp0<D>::Concat:
-      return has_project(e->t1) || has_project(e->t2);
-    case Exp0<D>::Star:
-    case Exp0<D>::Mu:
-      return has_project(e->t);
-    default:
-      return false;
-    }
+    return contains(e, Exp0<D>::Project);
   }
 
   static bool has_project(const E1<D> &e) {
+    return contains(e, Exp1<D>::Project);
+  }
+
+private:
+  static bool contains(const E0<D> &e, typename Exp0<D>::K kind) {
+    std::unordered_set<const Exp0<D> *> visited;
+    return contains(e, kind, visited);
+  }
+
+  static bool contains(const E0<D> &e, typename Exp0<D>::K kind,
+                       std::unordered_set<const Exp0<D> *> &visited) {
     if (!e)
       return false;
-    using K = typename Exp1<D>::K;
-    switch (e->k) {
-    case K::Project:
-      return true;
-    case K::Seq:
-    case K::SeqR:
-    case K::Star:
-    case K::Mu:
-      return has_project(e->t);
-    case K::Cond:
-    case K::Add:
-    case K::Sub:
-    case K::Ndet:
-    case K::Concat:
-      return has_project(e->t1) || has_project(e->t2);
-    default:
+    if (!visited.insert(e.get()).second)
       return false;
-    }
+    if (e->k == kind)
+      return true;
+    return contains(e->t, kind, visited) ||
+           contains(e->t1, kind, visited) ||
+           contains(e->t2, kind, visited);
+  }
+
+  static bool contains(const E1<D> &e, typename Exp1<D>::K kind) {
+    std::unordered_set<const Exp1<D> *> visited;
+    return contains(e, kind, visited);
+  }
+
+  static bool contains(const E1<D> &e, typename Exp1<D>::K kind,
+                       std::unordered_set<const Exp1<D> *> &visited) {
+    if (!e)
+      return false;
+    if (!visited.insert(e.get()).second)
+      return false;
+    if (e->k == kind)
+      return true;
+    return contains(e->t, kind, visited) ||
+           contains(e->t1, kind, visited) ||
+           contains(e->t2, kind, visited);
   }
 };
 

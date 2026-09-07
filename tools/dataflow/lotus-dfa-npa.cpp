@@ -57,6 +57,11 @@ static cl::opt<std::string> LinearSolverOpt(
     "linear-solver",
     cl::desc("Newton linear solver: scc (default), adaptive_scc, tensor"),
     cl::init("scc"));
+static cl::opt<std::string> NewtonRoundOpt(
+    "newton-round",
+    cl::desc("Newton round construction: dense (default), static, "
+             "always_maybe, sparse"),
+    cl::init("dense"));
 
 namespace {
 
@@ -276,6 +281,43 @@ npa::LinearStrategy parseLinearStrategy(StringRef Name) {
   return npa::LinearStrategy::SCC;
 }
 
+npa::NewtonRoundStrategy parseNewtonRoundStrategy(StringRef Name) {
+  if (Name == "static")
+    return npa::NewtonRoundStrategy::Static;
+  if (Name == "always_maybe")
+    return npa::NewtonRoundStrategy::AlwaysMaybe;
+  if (Name == "sparse")
+    return npa::NewtonRoundStrategy::Sparse;
+  return npa::NewtonRoundStrategy::Dense;
+}
+
+void printNewtonProfile(raw_ostream &OS, const npa::Stat &Stats) {
+  if (NewtonRoundOpt.getNumOccurrences() == 0 || Stats.newton_rounds.empty())
+    return;
+  OS << "  [profile] sparse_index_seconds=" << Stats.occurrence_index_time
+     << " indexed_occurrences=" << Stats.indexed_derivative_occurrences
+     << " queried_occurrences=" << Stats.queried_derivative_occurrences
+     << " retained_occurrences=" << Stats.retained_derivative_occurrences
+     << " materialized_terms=" << Stats.materialized_derivative_terms << "\n";
+  OS << "  [profile] round_discovery_seconds=" << Stats.round_discovery_time
+     << " round_materialization_seconds=" << Stats.round_materialization_time
+     << " round_setup_seconds="
+     << Stats.round_discovery_time + Stats.round_materialization_time
+     << " linear_solve_seconds=" << Stats.linear_solve_time << "\n";
+  for (size_t I = 0; I < Stats.newton_rounds.size(); ++I) {
+    const auto &Round = Stats.newton_rounds[I];
+    OS << "  [profile] newton_round=" << I
+       << " active_coordinates=" << Round.active_coordinates
+       << " queried_occurrences=" << Round.queried_occurrences
+       << " retained_occurrences=" << Round.retained_occurrences
+       << " materialized_terms=" << Round.materialized_derivative_terms
+       << " discovery_seconds=" << Round.discovery_time
+       << " materialization_seconds=" << Round.materialization_time
+       << " setup_seconds=" << Round.discovery_time + Round.materialization_time
+       << " linear_seconds=" << Round.linear_solve_time << "\n";
+  }
+}
+
 void formatBitSet(raw_ostream &OS, const APInt &Bits,
                   const std::vector<std::string> &BitLabels) {
   bool First = true;
@@ -283,6 +325,20 @@ void formatBitSet(raw_ostream &OS, const APInt &Bits,
       std::min<unsigned>(Bits.getBitWidth(), BitLabels.size());
   for (unsigned Bit = 0; Bit < Width; ++Bit) {
     if (!Bits[Bit])
+      continue;
+    if (!First)
+      OS << ",";
+    OS << BitLabels[Bit];
+    First = false;
+  }
+}
+
+void formatBitSet(raw_ostream &OS,
+                  const npa::GenKillTransformer::fact_type &Bits,
+                  const std::vector<std::string> &BitLabels) {
+  bool First = true;
+  for (unsigned Bit : Bits) {
+    if (Bit >= BitLabels.size())
       continue;
     if (!First)
       OS << ",";
@@ -302,10 +358,13 @@ void printBlockStates(raw_ostream &OS, const BlockView &View,
 }
 
 void runLiveness(raw_ostream &OS, Function &F, npa::SolverStrategy Strategy,
-                 npa::LinearStrategy LinearStrategy) {
+                 npa::LinearStrategy LinearStrategy,
+                 npa::NewtonRoundStrategy RoundStrategy) {
   BlockView View = buildBlockView(F);
-  auto Result = npa::LiveVariables::run(F, Strategy, LinearStrategy);
+  auto Result =
+      npa::LiveVariables::run(F, Strategy, LinearStrategy, RoundStrategy);
   lotus::dataflow_tool::emitFunctionHeader(OS, F);
+  printNewtonProfile(OS, Result.stats);
   printBlockStates(OS, View, [&](const BasicBlock *BB) {
     auto It = Result.IN.find(BB);
     if (It != Result.IN.end())
@@ -315,10 +374,13 @@ void runLiveness(raw_ostream &OS, Function &F, npa::SolverStrategy Strategy,
 
 void runReachingDefinitions(raw_ostream &OS, Function &F,
                             npa::SolverStrategy Strategy,
-                            npa::LinearStrategy LinearStrategy) {
+                            npa::LinearStrategy LinearStrategy,
+                            npa::NewtonRoundStrategy RoundStrategy) {
   BlockView View = buildBlockView(F);
-  auto Result = npa::ReachingDefinitions::run(F, Strategy, LinearStrategy);
+  auto Result =
+      npa::ReachingDefinitions::run(F, Strategy, LinearStrategy, RoundStrategy);
   lotus::dataflow_tool::emitFunctionHeader(OS, F);
+  printNewtonProfile(OS, Result.stats);
   printBlockStates(OS, View, [&](const BasicBlock *BB) {
     auto It = Result.IN.find(BB);
     if (It != Result.IN.end())
@@ -327,9 +389,11 @@ void runReachingDefinitions(raw_ostream &OS, Function &F,
 }
 
 void runReachable(raw_ostream &OS, Function &F, npa::SolverStrategy Strategy,
-                  npa::LinearStrategy LinearStrategy) {
+                  npa::LinearStrategy LinearStrategy,
+                  npa::NewtonRoundStrategy RoundStrategy) {
   BlockView View = buildBlockView(F);
-  auto Reachable = npa::ReachableBlocks::run(F, Strategy, LinearStrategy);
+  auto Reachable =
+      npa::ReachableBlocks::run(F, Strategy, LinearStrategy, RoundStrategy);
   lotus::dataflow_tool::emitFunctionHeader(OS, F);
   printBlockStates(OS, View, [&](const BasicBlock *BB) {
     OS << (Reachable.count(BB) ? "reachable" : "unreachable");
@@ -352,13 +416,18 @@ void printModuleBlockStates(raw_ostream &OS, Module &M, Printer &&PrintState) {
 }
 
 void runInterproceduralLiveness(raw_ostream &OS, Module &M,
-                                npa::LinearStrategy LinearStrategy) {
+                                npa::LinearStrategy LinearStrategy,
+                                npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
-  auto Result = npa::InterLiveVariables::run(M, false, LinearStrategy);
+  auto Result = npa::InterLiveVariables::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -370,14 +439,19 @@ void runInterproceduralLiveness(raw_ostream &OS, Module &M,
   });
 }
 
-void runInterproceduralReachingDefinitions(raw_ostream &OS, Module &M,
-                                           npa::LinearStrategy LinearStrategy) {
+void runInterproceduralReachingDefinitions(
+    raw_ostream &OS, Module &M, npa::LinearStrategy LinearStrategy,
+    npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
-  auto Result = npa::InterReachingDefinitions::run(M, false, LinearStrategy);
+  auto Result = npa::InterReachingDefinitions::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -389,15 +463,20 @@ void runInterproceduralReachingDefinitions(raw_ostream &OS, Module &M,
   });
 }
 
-void runInterproceduralMaybeUninitialized(raw_ostream &OS, Module &M,
-                                          npa::LinearStrategy LinearStrategy) {
+void runInterproceduralMaybeUninitialized(
+    raw_ostream &OS, Module &M, npa::LinearStrategy LinearStrategy,
+    npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
   const auto Labels = buildMaybeUninitializedLabels(M, View.ValueToId);
-  auto Result = npa::InterMaybeUninitialized::run(M, false, LinearStrategy);
+  auto Result = npa::InterMaybeUninitialized::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -409,14 +488,19 @@ void runInterproceduralMaybeUninitialized(raw_ostream &OS, Module &M,
   });
 }
 
-void runInterproceduralConstantPropagation(raw_ostream &OS, Module &M,
-                                           npa::LinearStrategy LinearStrategy) {
+void runInterproceduralConstantPropagation(
+    raw_ostream &OS, Module &M, npa::LinearStrategy LinearStrategy,
+    npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
-  auto Result = npa::InterConstantPropagation::run(M, false, LinearStrategy);
+  auto Result = npa::InterConstantPropagation::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -435,13 +519,18 @@ void runInterproceduralConstantPropagation(raw_ostream &OS, Module &M,
 }
 
 void runInterproceduralInterval(raw_ostream &OS, Module &M,
-                                npa::LinearStrategy LinearStrategy) {
+                                npa::LinearStrategy LinearStrategy,
+                                npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
-  auto Result = npa::InterIntervalAnalysis::run(M, false, LinearStrategy);
+  auto Result = npa::InterIntervalAnalysis::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -458,13 +547,18 @@ void runInterproceduralInterval(raw_ostream &OS, Module &M,
 }
 
 void runInterproceduralNullability(raw_ostream &OS, Module &M,
-                                   npa::LinearStrategy LinearStrategy) {
+                                   npa::LinearStrategy LinearStrategy,
+                                   npa::NewtonRoundStrategy RoundStrategy) {
   const ModuleView View = buildModuleView(M);
-  auto Result = npa::InterNullability::run(M, false, LinearStrategy);
+  auto Result = npa::InterNullability::run(
+      M, false, LinearStrategy,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      RoundStrategy);
   OS << "  [profile] phase=artifact_construction seconds="
      << Result.status.phase_artifact_construction_time << "\n";
   OS << "  [profile] phase=summary_solve seconds="
      << Result.status.summary_solve.time << "\n";
+  printNewtonProfile(OS, Result.status.summary_solve);
   OS << "  [profile] phase=summary_materialization seconds="
      << Result.status.phase_summary_materialization_time << "\n";
   OS << "  [profile] phase=propagation seconds="
@@ -486,8 +580,9 @@ struct AnalysisHandler final {
   StringRef Name;
   bool ModuleScoped = false;
   void (*RunFunction)(raw_ostream &, Function &, npa::SolverStrategy,
-                      npa::LinearStrategy) = nullptr;
-  void (*RunModule)(raw_ostream &, Module &, npa::LinearStrategy) = nullptr;
+                      npa::LinearStrategy, npa::NewtonRoundStrategy) = nullptr;
+  void (*RunModule)(raw_ostream &, Module &, npa::LinearStrategy,
+                    npa::NewtonRoundStrategy) = nullptr;
 };
 
 const AnalysisHandler Handlers[] = {
@@ -505,15 +600,15 @@ const AnalysisHandler Handlers[] = {
     {"inter_nullability", true, nullptr, &runInterproceduralNullability},
 };
 
-void runIntraproceduralAnalysesOnModule(raw_ostream &OS, Module &M,
-                                        const AnalysisHandler &Handler,
-                                        npa::SolverStrategy Strategy,
-                                        npa::LinearStrategy LinearStrategy) {
+void runIntraproceduralAnalysesOnModule(
+    raw_ostream &OS, Module &M, const AnalysisHandler &Handler,
+    npa::SolverStrategy Strategy, npa::LinearStrategy LinearStrategy,
+    npa::NewtonRoundStrategy RoundStrategy) {
   assert(!Handler.ModuleScoped &&
          "module-scoped interprocedural analyses schedule inside the engine");
   for (auto &F : M) {
     if (!F.isDeclaration())
-      Handler.RunFunction(OS, F, Strategy, LinearStrategy);
+      Handler.RunFunction(OS, F, Strategy, LinearStrategy, RoundStrategy);
   }
 }
 
@@ -530,6 +625,16 @@ int main(int argc, char **argv) {
   if (LinearSolverOpt != "scc" && LinearSolverOpt != "adaptive_scc" &&
       LinearSolverOpt != "tensor") {
     errs() << "error: unknown NPA linear solver '" << LinearSolverOpt << "'\n";
+    return 1;
+  }
+  if (NewtonRoundOpt != "dense" && NewtonRoundOpt != "static" &&
+      NewtonRoundOpt != "always_maybe" && NewtonRoundOpt != "sparse") {
+    errs() << "error: unknown Newton round strategy '" << NewtonRoundOpt
+           << "'\n";
+    return 1;
+  }
+  if (SolverOpt == "kleene" && NewtonRoundOpt != "dense") {
+    errs() << "error: --newton-round applies only to --solver=newton\n";
     return 1;
   }
 
@@ -571,17 +676,22 @@ int main(int argc, char **argv) {
   const npa::SolverStrategy Strategy = parseSolverStrategy(SolverOpt);
   const npa::LinearStrategy LinearStrategy =
       parseLinearStrategy(LinearSolverOpt);
+  const npa::NewtonRoundStrategy RoundStrategy =
+      parseNewtonRoundStrategy(NewtonRoundOpt);
   OS << "[npa:" << AnalysisOpt;
   if (Handler->ModuleScoped)
     OS << ":module";
   else
     OS << ":" << SolverOpt;
-  OS << ":linear=" << LinearSolverOpt << "]\n";
+  OS << ":linear=" << LinearSolverOpt;
+  if (NewtonRoundOpt.getNumOccurrences() != 0)
+    OS << ":round=" << NewtonRoundOpt;
+  OS << "]\n";
   if (Handler->ModuleScoped)
-    Handler->RunModule(OS, *M, LinearStrategy);
+    Handler->RunModule(OS, *M, LinearStrategy, RoundStrategy);
   else
     runIntraproceduralAnalysesOnModule(OS, *M, *Handler, Strategy,
-                                       LinearStrategy);
+                                       LinearStrategy, RoundStrategy);
 
   return 0;
 }

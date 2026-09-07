@@ -19,10 +19,12 @@ public:
     std::map<BlockKey, IntervalState> blockFacts;
   };
 
-  static Result run(llvm::Module &M, bool verbose = false,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    IndirectCallResolutionMode callResolutionMode =
-                        IndirectCallResolutionMode::ClosedWorldTypeCompatible);
+  static Result
+  run(llvm::Module &M, bool verbose = false,
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      IndirectCallResolutionMode callResolutionMode =
+          IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense);
 };
 
 } // namespace npa

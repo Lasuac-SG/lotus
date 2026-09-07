@@ -73,17 +73,13 @@ TEST(NPAThreadSafetyHardening, BitVectorWidthScopesRemainIsolatedAcrossThreads) 
       [&] { return run_case(7, 7); }, [&] { return run_case(13, 13); }));
 }
 
-TEST(NPAThreadSafetyHardening, GenKillWidthScopesRemainIsolatedAcrossThreads) {
-  auto run_case = [](unsigned width) {
-    npa::GenKillTransformer::WidthScope scope(width);
+TEST(NPAThreadSafetyHardening, GenKillSparseValuesNeedNoSharedWidthContext) {
+  auto run_case = [](unsigned bit) {
     for (unsigned iteration = 0; iteration < 256; ++iteration) {
       auto zero = npa::GenKillTransformer::zero();
       auto one = npa::GenKillTransformer::one();
-      if (zero.first.getBitWidth() != width || zero.second.getBitWidth() != width)
-        return false;
-      if (one.first.getBitWidth() != width || one.second.getBitWidth() != width)
-        return false;
-      if (zero.first.countPopulation() != width || zero.second.countPopulation() != 0)
+      auto generating = npa::GenKillTransformer::generate(bit);
+      if (!zero.kill_all || one.kill_all || !generating.gen.test(bit))
         return false;
       if (!npa::GenKillTransformer::equal(
               npa::GenKillTransformer::combine(one, zero), one)) {
@@ -97,22 +93,19 @@ TEST(NPAThreadSafetyHardening, GenKillWidthScopesRemainIsolatedAcrossThreads) {
       runConcurrentPair([&] { return run_case(11); }, [&] { return run_case(17); }));
 }
 
-TEST(NPAThreadSafetyHardening, TaintWidthScopesRemainIsolatedAcrossThreads) {
-  auto run_case = [](unsigned width) {
-    npa::TaintTransformer::WidthScope scope(width);
+TEST(NPAThreadSafetyHardening, TaintSparseValuesNeedNoSharedWidthContext) {
+  auto run_case = [](unsigned bit) {
     for (unsigned iteration = 0; iteration < 256; ++iteration) {
       auto zero = npa::TaintTransformer::zero();
       auto one = npa::TaintTransformer::one();
-      if (zero.gen.getBitWidth() != width || one.gen.getBitWidth() != width)
+      if (zero.identity || one.gen.count() != 0 || !one.identity)
         return false;
-      if (one.rel.size() != width || one.rel.front().getBitWidth() != width)
-        return false;
-      npa::TaintTransformer::addEdge(one, 0, width - 1);
-      npa::TaintTransformer::addGen(one, width - 1);
-      llvm::APInt input(width, 0);
-      input.setBit(0);
-      llvm::APInt output = npa::TaintTransformer::apply(one, input);
-      if (!output[width - 1])
+      npa::TaintTransformer::addEdge(one, 0, bit);
+      npa::TaintTransformer::addGen(one, bit);
+      npa::TaintTransformer::fact_type input;
+      input.set(0);
+      auto output = npa::TaintTransformer::apply(one, input);
+      if (!output.test(bit))
         return false;
     }
     return true;
@@ -123,19 +116,16 @@ TEST(NPAThreadSafetyHardening, TaintWidthScopesRemainIsolatedAcrossThreads) {
 }
 
 TEST(NPAThreadSafetyHardening, SafeCoreDomainsSupportConcurrentReadOnlyOps) {
-  npa::TaintTransformer::WidthScope taint_scope(4);
   npa::BitSetDomain::WidthScope bit_scope(4);
-  npa::GenKillTransformer::WidthScope gen_kill_scope(4);
 
   auto transfer = npa::TaintTransformer::one();
   npa::TaintTransformer::addEdge(transfer, 0, 1);
   npa::TaintTransformer::addEdge(transfer, 1, 2);
   npa::TaintTransformer::addGen(transfer, 3);
   const auto composed = npa::TaintTransformer::extend(transfer, transfer);
-  llvm::APInt input(4, 0);
-  input.setBit(0);
-  const llvm::APInt expectedTaint =
-      npa::TaintTransformer::apply(composed, input);
+  npa::TaintTransformer::fact_type input;
+  input.set(0);
+  const auto expectedTaint = npa::TaintTransformer::apply(composed, input);
 
   llvm::APInt bitsA(4, 0);
   bitsA.setBit(0);
@@ -146,10 +136,13 @@ TEST(NPAThreadSafetyHardening, SafeCoreDomainsSupportConcurrentReadOnlyOps) {
   const llvm::APInt expectedBitVector =
       npa::BitSetDomain::combine(bitsA, bitsB);
 
-  npa::GenKillTransformer::value_type genKillA{
-      llvm::APInt(4, 0b0011), llvm::APInt(4, 0b0100)};
-  npa::GenKillTransformer::value_type genKillB{
-      llvm::APInt(4, 0b1000), llvm::APInt(4, 0b0001)};
+  npa::GenKillTransformer::value_type genKillA;
+  genKillA.kill.set(0);
+  genKillA.kill.set(1);
+  genKillA.gen.set(2);
+  npa::GenKillTransformer::value_type genKillB;
+  genKillB.kill.set(3);
+  genKillB.gen.set(0);
   const auto expectedGenKill =
       npa::GenKillTransformer::extend(genKillA, genKillB);
 

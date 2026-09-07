@@ -248,21 +248,28 @@ private:
     RegexToExpr(const std::vector<E> &labels, unsigned &star_counter)
         : labels_(labels), starCounter_(star_counter) {}
 
+    E translate(const lotus::pathexpressions::RegexRef<int> &regex) {
+      auto cached = cache_.find(regex.get());
+      if (cached != cache_.end())
+        return cached->second;
+      E result = regex->accept(*this, nullptr);
+      cache_.emplace(regex.get(), result);
+      return result;
+    }
+
     E visit(const lotus::pathexpressions::Union<int> &re,
             std::nullptr_t) override {
-      return combineExpr(re.getFirst()->accept(*this),
-                         re.getSecond()->accept(*this));
+      return combineExpr(translate(re.getFirst()), translate(re.getSecond()));
     }
 
     E visit(const lotus::pathexpressions::Concatenation<int> &re,
             std::nullptr_t) override {
-      return multiplyExpr(re.getSecond()->accept(*this),
-                          re.getFirst()->accept(*this));
+      return multiplyExpr(translate(re.getSecond()), translate(re.getFirst()));
     }
 
     E visit(const lotus::pathexpressions::Star<int> &re,
             std::nullptr_t) override {
-      return starExpr(re.getInner()->accept(*this), starCounter_);
+      return starExpr(translate(re.getInner()), starCounter_);
     }
 
     E visit(const lotus::pathexpressions::Literal<int> &re,
@@ -283,14 +290,8 @@ private:
   private:
     const std::vector<E> &labels_;
     unsigned &starCounter_;
+    std::unordered_map<const lotus::pathexpressions::IRegex<int> *, E> cache_;
   };
-
-  static E translateRegex(const lotus::pathexpressions::RegexRef<int> &regex,
-                          const std::vector<E> &labels,
-                          unsigned &star_counter) {
-    RegexToExpr translator(labels, star_counter);
-    return regex->accept(translator, nullptr);
-  }
 
   template <class T = D>
   static typename std::enable_if<DomainHasProject<T>::value, E>::type
@@ -315,7 +316,7 @@ private:
     if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
       if (CI->getCalledFunction() == nullptr)
         ++status.indirect_calls_seen;
-      std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
+      const auto &Callees = calleeCache.get(*CI);
       if (!Callees.empty()) {
         E callBranches = nullptr;
         for (llvm::Function *Callee : Callees) {
@@ -355,7 +356,7 @@ private:
     if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
       if (CI->getCalledFunction() == nullptr)
         ++status.indirect_calls_seen;
-      std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
+      const auto &Callees = calleeCache.get(*CI);
       if (!Callees.empty()) {
         E callBranches = nullptr;
         for (llvm::Function *Callee : Callees) {
@@ -440,19 +441,20 @@ private:
 
     lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
     unsigned starCounter = 0;
+    RegexToExpr translator(labels, starCounter);
 
     FunctionRegexArtifacts out;
     llvm::BasicBlock *Entry = F.empty() ? nullptr : &F.getEntryBlock();
     out.fullSummaryExpr =
-        Entry ? translateRegex(computer.exprBetween(blockIds.at(Entry), exitId),
-                               labels, starCounter)
+        Entry ? translator.translate(
+                    computer.exprBetween(blockIds.at(Entry), exitId))
               : Exp::term(D::one());
     out.summaryExpr = makeSummaryEquationExpr(out.fullSummaryExpr);
     for (auto &BB : F) {
       const std::string bSym = InterEngine<D, Analysis>::getBlockSymbol(&BB);
       out.blockSummaryExprs.emplace(
-          bSym, translateRegex(computer.exprBetween(blockIds.at(&BB), exitId),
-                               labels, starCounter));
+          bSym,
+          translator.translate(computer.exprBetween(blockIds.at(&BB), exitId)));
     }
     return out;
   }
@@ -511,18 +513,19 @@ private:
 
     lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
     unsigned starCounter = 0;
+    RegexToExpr translator(labels, starCounter);
     llvm::BasicBlock *Entry = F.empty() ? nullptr : &F.getEntryBlock();
     prepared.artifacts.fullSummaryExpr =
-        Entry ? translateRegex(computer.exprBetween(blockIds.at(Entry), exitId),
-                               labels, starCounter)
+        Entry ? translator.translate(
+                    computer.exprBetween(blockIds.at(Entry), exitId))
               : Exp::term(D::one());
     prepared.artifacts.summaryExpr =
         makeSummaryEquationExpr(prepared.artifacts.fullSummaryExpr);
     for (auto &BB : F) {
       const std::string bSym = InterEngine<D, Analysis>::getBlockSymbol(&BB);
       prepared.artifacts.blockSummaryExprs.emplace(
-          bSym, translateRegex(computer.exprBetween(blockIds.at(&BB), exitId),
-                               labels, starCounter));
+          bSym,
+          translator.translate(computer.exprBetween(blockIds.at(&BB), exitId)));
     }
     return prepared;
   }
@@ -593,7 +596,7 @@ private:
       if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
         if (CI->getCalledFunction() == nullptr)
           ++prepared.indirect_calls_seen;
-        std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
+        const auto &Callees = calleeCache.get(*CI);
         if (!Callees.empty()) {
           Val currentPathVal = I0<D>::eval(false, solvedMap, currentPath);
           E callBranches = nullptr;
@@ -651,10 +654,12 @@ public:
     return InterEngine<D, Analysis>::getPossibleCallees(M, Call, mode);
   }
 
-  static Result run(llvm::Module &M, Analysis &analysis, bool verbose = false,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    IndirectCallResolutionMode callResolutionMode =
-                        IndirectCallResolutionMode::ClosedWorldTypeCompatible) {
+  static Result
+  run(llvm::Module &M, Analysis &analysis, bool verbose = false,
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      IndirectCallResolutionMode callResolutionMode =
+          IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense) {
     std::vector<std::pair<Symbol, E>> eqns;
     std::set<llvm::Function *> visited;
     std::unordered_map<std::string, FunctionKey> functionSymbols;
@@ -714,7 +719,9 @@ public:
                                       ArtifactStart)
             .count();
 
-    auto rawRes = NPASolver<D>::solve(eqns, verbose, -1, linearStrategy);
+    auto rawRes = NPASolver<D>::solve(
+        eqns, verbose, -1, linearStrategy, DomainContractMode::Off,
+        ConvergencePolicy::DomainDefault, roundStrategy);
     std::unordered_map<Symbol, Val> solvedMap;
     for (auto &p : rawRes.first)
       solvedMap.insert_or_assign(p.first, p.second);
@@ -725,11 +732,13 @@ public:
     res.status.approximated =
         !rawRes.second.converged || res.status.used_bounded_inner_solve;
     const auto SummaryMaterializationStart = std::chrono::steady_clock::now();
+    typename I0<D>::EvaluationContext summaryEvaluationContext;
     for (const auto &entry : functionSymbols) {
       auto exprIt = fullSummaryExprs.find(entry.first);
       if (exprIt == fullSummaryExprs.end())
         continue;
-      Val summary = I0<D>::eval(false, solvedMap, exprIt->second);
+      Val summary = I0<D>::evalCachedWithContext(solvedMap, {}, exprIt->second,
+                                                 summaryEvaluationContext);
       if (summaryIsApproximate(analysis, summary, 0))
         res.status.approximated = true;
       res.summaries.insert_or_assign(entry.second, summary);
@@ -738,6 +747,8 @@ public:
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
                                       SummaryMaterializationStart)
             .count();
+    summaryEvaluationContext.values.clear();
+    summaryEvaluationContext.values.rehash(0);
 
     std::deque<llvm::Function *> worklist2;
     std::set<llvm::Function *> inWorklist2;

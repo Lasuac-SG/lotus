@@ -564,11 +564,13 @@ private:
 InterConstantPropagation::Result
 InterConstantPropagation::run(llvm::Module &M, bool verbose,
                               LinearStrategy linearStrategy,
-                              IndirectCallResolutionMode callResolutionMode) {
+                              IndirectCallResolutionMode callResolutionMode,
+                              NewtonRoundStrategy roundStrategy) {
   ConstantPropagationAnalysis analysis;
   auto engineResult =
       InterEngine<ConstantPropagationSummary, ConstantPropagationAnalysis>::run(
-          M, analysis, verbose, linearStrategy, callResolutionMode);
+          M, analysis, verbose, linearStrategy, callResolutionMode,
+          roundStrategy);
 
   Result result;
   result.status = engineResult.status;

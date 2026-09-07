@@ -68,6 +68,17 @@ public:
       std::is_same<decltype(test<D>(0)), std::true_type>::value;
 };
 
+template <class D> struct DomainHasStar {
+  template <class T>
+  static auto test(int)
+      -> decltype(T::star(T::zero()), std::true_type{});
+  template <class> static std::false_type test(...);
+
+public:
+  static constexpr bool value =
+      std::is_same<decltype(test<D>(0)), std::true_type>::value;
+};
+
 template <class D> struct DomainHasCommutativeExtend {
   template <class T>
   static auto test(int) -> decltype(T::commutative_extend, std::true_type{});

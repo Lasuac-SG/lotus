@@ -22,11 +22,15 @@ public:
   using test_type = bool; // no symbolic guards for now
   static constexpr bool idempotent = true;
   static constexpr bool commutative_extend = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
   using width_context = DomainWidthContext<BitSetDomain>;
   using WidthScope = typename width_context::scope_type;
 
   static value_type zero() { return zero(requireBitWidth()); }
-  static value_type zero(unsigned bit_width) { return llvm::APInt(bit_width, 0); }
+  static value_type zero(unsigned bit_width) {
+    return llvm::APInt(bit_width, 0);
+  }
   static value_type one() { return one(requireBitWidth()); }
   static value_type one(unsigned bit_width) {
     return llvm::APInt::getAllOnes(bit_width);

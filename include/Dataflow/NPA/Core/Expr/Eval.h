@@ -18,6 +18,8 @@
 #include "Dataflow/NPA/Core/Expr/Expressions.h"
 #include "Dataflow/NPA/Solver/Fixpoint.h"
 
+#include <unordered_set>
+
 namespace npa {
 
 /// Evaluator for polynomial expressions (Exp0).
@@ -30,16 +32,27 @@ template <class D> struct I0 {
     std::unordered_map<const Exp0<D> *, V> values;
 
     void invalidate(const E0<D> &expr) {
+      std::unordered_set<const Exp0<D> *> visited;
+      invalidate(expr, visited);
+    }
+
+  private:
+    void invalidate(const E0<D> &expr,
+                    std::unordered_set<const Exp0<D> *> &visited) {
       if (!expr)
+        return;
+      if (!visited.insert(expr.get()).second)
         return;
       values.erase(expr.get());
       if (expr->t)
-        invalidate(expr->t);
+        invalidate(expr->t, visited);
       if (expr->t1)
-        invalidate(expr->t1);
+        invalidate(expr->t1, visited);
       if (expr->t2)
-        invalidate(expr->t2);
+        invalidate(expr->t2, visited);
     }
+
+  public:
 
     const V &valueOf(const E0<D> &expr) const { return values.at(expr.get()); }
   };
@@ -58,6 +71,14 @@ template <class D> struct I0 {
   static V evalWithContext(const Map &nu, const Environment &env,
                            const E0<D> &e, EvaluationContext &context) {
     context.invalidate(e);
+    return rec(nu, env, e, context);
+  }
+
+  /// Evaluate another root with an existing cache under the same valuation
+  /// and environment. This is useful for families of immutable expressions
+  /// that share subtrees, such as block and call-prefix summaries.
+  static V evalCachedWithContext(const Map &nu, const Environment &env,
+                                 const E0<D> &e, EvaluationContext &context) {
     return rec(nu, env, e, context);
   }
 
@@ -106,7 +127,21 @@ private:
       v = D::extend(rec(nu, env, e->t1, context),
                     D::extend(mid, rec(nu, env, e->t2, context)));
     } break;
-    case Exp0<D>::Star:
+    case Exp0<D>::Star: {
+      if constexpr (DomainHasStar<D>::value) {
+        if (E0<D> operand = matchSemiringStarOperand<D>(e)) {
+          v = D::star(rec(nu, env, operand, context));
+          break;
+        }
+      }
+      V init = D::zero();
+      v = fix<D>(false, init, [&](V cur) {
+        auto env2 = env;
+        env2.insert_or_assign(e->sym, cur);
+        context.invalidate(e->t);
+        return rec(nu, env2, e->t, context);
+      });
+    } break;
     case Exp0<D>::Mu: {
       V init = D::zero();
       v = fix<D>(false, init, [&](V cur) {
@@ -133,16 +168,27 @@ template <class D> struct I1 {
     std::unordered_map<const Exp1<D> *, V> values;
 
     void invalidate(const E1<D> &expr) {
+      std::unordered_set<const Exp1<D> *> visited;
+      invalidate(expr, visited);
+    }
+
+  private:
+    void invalidate(const E1<D> &expr,
+                    std::unordered_set<const Exp1<D> *> &visited) {
       if (!expr)
+        return;
+      if (!visited.insert(expr.get()).second)
         return;
       values.erase(expr.get());
       if (expr->t)
-        invalidate(expr->t);
+        invalidate(expr->t, visited);
       if (expr->t1)
-        invalidate(expr->t1);
+        invalidate(expr->t1, visited);
       if (expr->t2)
-        invalidate(expr->t2);
+        invalidate(expr->t2, visited);
     }
+
+  public:
   };
 
   static V eval(bool /*verbose*/, const Map &vars, const E1<D> &e) {

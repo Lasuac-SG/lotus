@@ -3,25 +3,19 @@
 
 /**
  * \file
- * \brief Differential construction: builds linearized expression Df|ν from f.
+ * \brief Differential construction: builds linearized expression Df|nu.
  *
- * Given the current approximation ν and a polynomial expression e (one
- * equation of f), build the \e differential expression that corresponds to
- * Df|ν. The result is an Exp1 (linear in the variables) such that the
- * Newton round solves Df|ν(Δ) + δ = Δ, i.e. Δ^(i) is the least solution of
- * the linearized system (Esparza et al. JACM, Defn. 3.1, 3.5).
- *
- * Rules: Term -> 0; Seq -> c·d(t); Call -> ν(f)·d(arg) + f(ν(arg)); Cond -> by
- * branch; Ndet -> D(t1) ⊕ D(t2) (Defn 3.1 sum); Hole -> X; Bound -> 0;
- * Concat -> D(t1)·ν_X·t2 + t1·X·t2 + t1·ν_X·D(t2); Star -> g(ν)*·D(g)·g(ν)*
- * (TOPLAS 2016, Eq. (60)).
+ * Given the current approximation nu and a polynomial expression e, build the
+ * Exp1 differential used by a Newton round. Input expressions may be DAGs;
+ * both validation and differentiation preserve shared subexpressions.
  */
 
 #include "Dataflow/NPA/Core/Expr/Eval.h"
 #include "Dataflow/NPA/Solver/Newton/Errors.h"
 
-#include <mutex>
-#include <sstream>
+#include <cstddef>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace npa {
 
@@ -32,154 +26,203 @@ template <class D> struct Diff {
   using Map = std::unordered_map<Symbol, V>;
   using Env = typename I0<D>::Environment;
   using EvalContext = typename I0<D>::EvaluationContext;
+
   struct Plan {
-    std::vector<typename Exp0<D>::K> preorder;
     bool has_mu = false;
     bool has_project = false;
   };
 
-  /// Build the differential of e at ν without mutating the expression tree.
+  /// Build the differential of e at nu without mutating the expression DAG.
   static M1 build(const Map &nu, const M0 &e) {
-    auto plan = get_plan(e);
-    if ((*plan).has_mu)
-      throw UnsupportedNewtonMuError{};
-    if ((*plan).has_project && !domain_project_newton_safe<D>())
-      throw UnsafeNewtonProjectError{};
-    EvalContext context;
-    (void)I0<D>::evalWithContext(nu, {}, e, context);
-    return aux(nu, {}, context, e);
+    requireSupported(e);
+    EvalContext evaluationContext;
+    (void)I0<D>::evalWithContext(nu, {}, e, evaluationContext);
+    BuildContext buildContext;
+    return aux(nu, {}, evaluationContext, e, buildContext, 0);
   }
 
-  static M1 build(const Map &nu, const M0 &e, const EvalContext &context) {
-    auto plan = get_plan(e);
-    if ((*plan).has_mu)
-      throw UnsupportedNewtonMuError{};
-    if ((*plan).has_project && !domain_project_newton_safe<D>())
-      throw UnsafeNewtonProjectError{};
-    return aux(nu, {}, context, e);
+  static M1 build(const Map &nu, const M0 &e,
+                  const EvalContext &evaluationContext) {
+    requireSupported(e);
+    BuildContext buildContext;
+    return aux(nu, {}, evaluationContext, e, buildContext, 0);
   }
 
 private:
-  static void describe(const M0 &e, Plan &plan, std::ostringstream &signature) {
-    if (!e) {
-      signature << "N;";
+  struct MemoKey {
+    const Exp0<D> *expression = nullptr;
+    std::size_t scope = 0;
+
+    bool operator==(const MemoKey &other) const {
+      return expression == other.expression && scope == other.scope;
+    }
+  };
+
+  struct MemoKeyHash {
+    std::size_t operator()(const MemoKey &key) const {
+      const auto pointerHash = std::hash<const Exp0<D> *>{}(key.expression);
+      return pointerHash ^ (key.scope + static_cast<std::size_t>(0x9e3779b9) +
+                            (pointerHash << 6) + (pointerHash >> 2));
+    }
+  };
+
+  struct BuildContext {
+    std::unordered_map<MemoKey, M1, MemoKeyHash> memo;
+    std::size_t next_scope = 1;
+  };
+
+  static void inspect(const M0 &expression, Plan &plan,
+                      std::unordered_set<const Exp0<D> *> &visited) {
+    if (!expression || !visited.insert(expression.get()).second)
+      return;
+
+    using K = typename Exp0<D>::K;
+    switch (expression->k) {
+    case K::Project:
+      plan.has_project = true;
+      inspect(expression->t, plan, visited);
+      return;
+    case K::Mu:
+      plan.has_mu = true;
+      inspect(expression->t, plan, visited);
+      return;
+    case K::Seq:
+    case K::Call:
+    case K::Star:
+      inspect(expression->t, plan, visited);
+      return;
+    case K::Mul:
+    case K::Cond:
+    case K::Ndet:
+    case K::Concat:
+      inspect(expression->t1, plan, visited);
+      inspect(expression->t2, plan, visited);
+      return;
+    case K::Term:
+    case K::Hole:
+    case K::Bound:
       return;
     }
-    plan.preorder.push_back(e->k);
-    signature << static_cast<int>(e->k) << ';';
-    using K0 = typename Exp0<D>::K;
-    switch (e->k) {
-    case K0::Project:
-      plan.has_project = true;
-      describe(e->t, plan, signature);
-      break;
-    case K0::Mu:
-      plan.has_mu = true;
-      describe(e->t, plan, signature);
-      break;
-    case K0::Seq:
-    case K0::Call:
-    case K0::Star:
-      describe(e->t, plan, signature);
-      break;
-    case K0::Mul:
-    case K0::Cond:
-    case K0::Ndet:
-    case K0::Concat:
-      describe(e->t1, plan, signature);
-      describe(e->t2, plan, signature);
-      break;
-    default:
-      break;
-    }
   }
 
-  static Optional<Plan> get_plan(const M0 &e) {
-    static std::mutex cache_mu;
-    static std::unordered_map<std::string, Plan> cache;
-
+  static Plan makePlan(const M0 &expression) {
     Plan plan;
-    std::ostringstream signature;
-    describe(e, plan, signature);
-    const std::string key = signature.str();
-    {
-      std::lock_guard<std::mutex> lock(cache_mu);
-      auto it = cache.find(key);
-      if (it != cache.end()) {
-        Optional<Plan> out;
-        out = it->second;
-        return out;
-      }
-    }
-    {
-      std::lock_guard<std::mutex> lock(cache_mu);
-      auto inserted = cache.emplace(key, plan);
-      Optional<Plan> out;
-      out = inserted.first->second;
-      return out;
-    }
+    std::unordered_set<const Exp0<D> *> visited;
+    inspect(expression, plan, visited);
+    return plan;
   }
 
-  static M1 aux(const Map &nu, const Env &env, const EvalContext &context,
-                const M0 &o) {
-    using K0 = typename Exp0<D>::K;
-    switch (o->k) {
-    case K0::Term:
+  static void requireSupported(const M0 &expression) {
+    const Plan plan = makePlan(expression);
+    if (plan.has_mu)
+      throw UnsupportedNewtonMuError{};
+    if (plan.has_project && !domain_project_newton_safe<D>())
+      throw UnsafeNewtonProjectError{};
+  }
+
+  static M1 aux(const Map &nu, const Env &env,
+                const EvalContext &evaluationContext, const M0 &expression,
+                BuildContext &buildContext, std::size_t scope) {
+    const MemoKey key{expression.get(), scope};
+    auto cached = buildContext.memo.find(key);
+    if (cached != buildContext.memo.end())
+      return cached->second;
+
+    M1 result = auxUncached(nu, env, evaluationContext, expression,
+                            buildContext, scope);
+    buildContext.memo.emplace(key, result);
+    return result;
+  }
+
+  static M1 auxUncached(const Map &nu, const Env &env,
+                        const EvalContext &evaluationContext,
+                        const M0 &expression, BuildContext &buildContext,
+                        std::size_t scope) {
+    using K = typename Exp0<D>::K;
+    switch (expression->k) {
+    case K::Term:
       return Exp1<D>::term(D::zero());
-    case K0::Seq:
-      return Exp1<D>::seq(o->c, aux(nu, env, context, o->t));
-    case K0::Mul: {
-      M1 lhs = aux(nu, env, context, o->t1);
-      M1 rhs = aux(nu, env, context, o->t2);
-      return Exp1<D>::add(Exp1<D>::seqR(lhs, context.valueOf(o->t2)),
-                          Exp1<D>::seq(context.valueOf(o->t1), rhs));
+    case K::Seq:
+      return Exp1<D>::seq(
+          expression->c,
+          aux(nu, env, evaluationContext, expression->t, buildContext, scope));
+    case K::Mul: {
+      M1 lhs = aux(nu, env, evaluationContext, expression->t1, buildContext,
+                   scope);
+      M1 rhs = aux(nu, env, evaluationContext, expression->t2, buildContext,
+                   scope);
+      return Exp1<D>::add(
+          Exp1<D>::seqR(lhs, evaluationContext.valueOf(expression->t2)),
+          Exp1<D>::seq(evaluationContext.valueOf(expression->t1), rhs));
     }
-    case K0::Call: {
-      auto dArg = aux(nu, env, context, o->t);
-      auto left = Exp1<D>::seq(nu.at(o->sym), dArg);
-      auto right = Exp1<D>::call(o->sym, context.valueOf(o->t));
-      return Exp1<D>::add(left, right);
+    case K::Call: {
+      M1 argument = aux(nu, env, evaluationContext, expression->t,
+                        buildContext, scope);
+      M1 argumentTerm = Exp1<D>::seq(nu.at(expression->sym), argument);
+      M1 calleeTerm = Exp1<D>::call(
+          expression->sym, evaluationContext.valueOf(expression->t));
+      return Exp1<D>::add(argumentTerm, calleeTerm);
     }
-    case K0::Cond:
-      return Exp1<D>::cond(o->phi, aux(nu, env, context, o->t1),
-                           aux(nu, env, context, o->t2));
-    case K0::Ndet:
-      // Paper Defn 3.1: D(∑ f_i)|ν(b) = ∑ Df_i|ν(b). So D(ndet(t1,t2)) = D(t1)
-      // ⊕ D(t2).
-      return Exp1<D>::add(aux(nu, env, context, o->t1),
-                          aux(nu, env, context, o->t2));
-    case K0::Project:
-      return Exp1<D>::project(aux(nu, env, context, o->t));
-    case K0::Hole:
-      return Exp1<D>::hole(o->sym);
-    case K0::Bound:
-      // Bound variables are local to Concat/Star/Mu; treat them as constants
-      // w.r.t. the system variables.
+    case K::Cond:
+      return Exp1<D>::cond(
+          expression->phi,
+          aux(nu, env, evaluationContext, expression->t1, buildContext, scope),
+          aux(nu, env, evaluationContext, expression->t2, buildContext,
+              scope));
+    case K::Ndet:
+      return Exp1<D>::add(
+          aux(nu, env, evaluationContext, expression->t1, buildContext, scope),
+          aux(nu, env, evaluationContext, expression->t2, buildContext,
+              scope));
+    case K::Project:
+      return Exp1<D>::project(aux(nu, env, evaluationContext, expression->t,
+                                  buildContext, scope));
+    case K::Hole:
+      return Exp1<D>::hole(expression->sym);
+    case K::Bound:
+      // Bound variables are constants with respect to system variables.
       return Exp1<D>::term(D::zero());
-    case K0::Concat: {
-      // Product rule: D(t1·X·t2)|ν(b) = D(t1)·ν_X·t2 + t1·b·t2 + t1·ν_X·D(t2)
-      // (Esparza et al. Defn. 3.1: D(g·h) = D(g)·h(v) + g(v)·D(h)).
-      V t1_val = context.valueOf(o->t1);
-      V t2_val = context.valueOf(o->t2);
-      auto bound = env.find(o->sym);
-      V nu_x = bound != env.end() ? bound->second : nu.at(o->sym);
-      M1 d1 = aux(nu, env, context, o->t1);
-      M1 d2 = aux(nu, env, context, o->t2);
-      M1 term1 = Exp1<D>::seqR(d1, D::extend(nu_x, t2_val));
-      M1 term2 =
-          Exp1<D>::concat(Exp1<D>::term(t1_val), o->sym, Exp1<D>::term(t2_val));
-      M1 term3 = Exp1<D>::seq(t1_val, Exp1<D>::seq(nu_x, d2));
-      return Exp1<D>::add(Exp1<D>::add(term1, term2), term3);
+    case K::Concat: {
+      const V &leftValue = evaluationContext.valueOf(expression->t1);
+      const V &rightValue = evaluationContext.valueOf(expression->t2);
+      auto bound = env.find(expression->sym);
+      const V &middleValue =
+          bound != env.end() ? bound->second : nu.at(expression->sym);
+      M1 leftDerivative = aux(nu, env, evaluationContext, expression->t1,
+                              buildContext, scope);
+      M1 rightDerivative = aux(nu, env, evaluationContext, expression->t2,
+                               buildContext, scope);
+      M1 leftTerm = Exp1<D>::seqR(
+          leftDerivative, D::extend(middleValue, rightValue));
+      M1 middleTerm = Exp1<D>::concat(Exp1<D>::term(leftValue),
+                                      expression->sym,
+                                      Exp1<D>::term(rightValue));
+      M1 rightTerm = Exp1<D>::seq(
+          leftValue, Exp1<D>::seq(middleValue, rightDerivative));
+      return Exp1<D>::add(Exp1<D>::add(leftTerm, middleTerm), rightTerm);
     }
-    case K0::Star: {
-      // TOPLAS 2016, Eq. (60): D(g*) = g(ν)* · D(g) · g(ν)*.
-      V star_val = context.valueOf(o);
-      Env body_env = env;
-      body_env.insert_or_assign(o->sym, star_val);
-      M1 body_diff = aux(nu, body_env, context, o->t);
-      return Exp1<D>::seq(star_val, Exp1<D>::seqR(body_diff, star_val));
+    case K::Star: {
+      // TOPLAS 2016, Eq. (60): D(g*) = g(nu)* D(g) g(nu)*.
+      const V &starValue = evaluationContext.valueOf(expression);
+      if constexpr (DomainHasStar<D>::value) {
+        if (M0 operand = matchSemiringStarOperand<D>(expression)) {
+          M1 operandDerivative = aux(nu, env, evaluationContext, operand,
+                                     buildContext, scope);
+          return Exp1<D>::seq(
+              starValue,
+              Exp1<D>::seqR(std::move(operandDerivative), starValue));
+        }
+      }
+      Env bodyEnvironment = env;
+      bodyEnvironment.insert_or_assign(expression->sym, starValue);
+      const std::size_t bodyScope = buildContext.next_scope++;
+      M1 bodyDerivative =
+          aux(nu, bodyEnvironment, evaluationContext, expression->t,
+              buildContext, bodyScope);
+      return Exp1<D>::seq(
+          starValue, Exp1<D>::seqR(std::move(bodyDerivative), starValue));
     }
-    case K0::Mu:
+    case K::Mu:
       throw UnsupportedNewtonMuError{};
     }
     return nullptr;

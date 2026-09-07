@@ -1,10 +1,12 @@
 #include "Dataflow/NPA/Domains/BitSetDomain.h"
+#include "Dataflow/NPA/Domains/GenKillDomain.h"
 #include "Dataflow/NPA/Domains/PathTransferSummary.h"
 #include "Dataflow/NPA/Domains/TransformerSummary.h"
 #include "Dataflow/NPA/NPA.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorProductLift.h"
 
 #include <algorithm>
+#include <set>
 #include <unordered_map>
 
 #include <gtest/gtest.h>
@@ -16,6 +18,8 @@ struct BoolSemiring {
   using test_type = bool;
   static constexpr bool idempotent = true;
   static constexpr bool commutative_extend = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
 
   static value_type zero() { return false; }
   static value_type one() { return true; }
@@ -38,6 +42,11 @@ struct BoolSemiring {
 struct BothProjectBoolSemiring : BoolSemiring {
   static value_type project(value_type value) { return value; }
   static value_type projectT(value_type) { return false; }
+};
+
+struct SparseProjectedBoolSemiring : BoolSemiring {
+  static constexpr bool project_newton_safe = true;
+  static value_type project(value_type value) { return value; }
 };
 
 struct NonDefaultValue {
@@ -347,6 +356,309 @@ TEST(NPA, NewtonIdempotentUpdateMatchesSolvedLinearizedSystem) {
 
   for (size_t i = 0; i < nu1.size(); ++i)
     EXPECT_EQ(nu1[i].second, delta[i]);
+}
+
+TEST(NPA, SparseNewtonMatchesDenseAndDiscoversRoundSpecificSupport) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  // Paper example:
+  //   x1 = 1, x2 = x1, x4 = x1, x3 = x2 * x4.
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("x1", Exp::term(D::one()));
+  eqns.emplace_back("x2", Exp::hole("x1"));
+  eqns.emplace_back("x3", Exp::mul(Exp::hole("x2"), Exp::hole("x4")));
+  eqns.emplace_back("x4", Exp::hole("x1"));
+
+  auto solveWith = [&](npa::NewtonRoundStrategy strategy) {
+    npa::SolveOptions options;
+    options.newton_round_strategy = strategy;
+    options.convergence_policy = npa::ConvergencePolicy::Exact;
+    return npa::NPASolver<D>::solve(eqns, options);
+  };
+
+  auto dense = solveWith(npa::NewtonRoundStrategy::Dense);
+  auto static_slice = solveWith(npa::NewtonRoundStrategy::Static);
+  auto always_maybe = solveWith(npa::NewtonRoundStrategy::AlwaysMaybe);
+  auto sparse = solveWith(npa::NewtonRoundStrategy::Sparse);
+
+  EXPECT_EQ(toMap<D>(dense.first), toMap<D>(static_slice.first));
+  EXPECT_EQ(toMap<D>(dense.first), toMap<D>(always_maybe.first));
+  EXPECT_EQ(toMap<D>(dense.first), toMap<D>(sparse.first));
+  EXPECT_TRUE(toMap<D>(sparse.first).at("x3"));
+
+  EXPECT_EQ(sparse.second.newton_round_strategy,
+            npa::NewtonRoundStrategy::Sparse);
+  EXPECT_EQ(sparse.second.indexed_derivative_occurrences, 4);
+  ASSERT_GE(sparse.second.newton_rounds.size(), 2u);
+  EXPECT_EQ(sparse.second.newton_rounds[0].active_coordinates, 3);
+  EXPECT_EQ(sparse.second.newton_rounds[0].queried_occurrences, 4);
+  EXPECT_EQ(sparse.second.newton_rounds[0].retained_occurrences, 2);
+  EXPECT_EQ(sparse.second.newton_rounds[0].materialized_derivative_terms, 2);
+  EXPECT_EQ(sparse.second.newton_rounds[1].active_coordinates, 4);
+  EXPECT_EQ(sparse.second.newton_rounds[1].retained_occurrences, 4);
+
+  ASSERT_FALSE(static_slice.second.newton_rounds.empty());
+  EXPECT_EQ(static_slice.second.newton_rounds[0].active_coordinates, 4);
+  EXPECT_EQ(static_slice.second.newton_rounds[0].queried_occurrences, 0);
+  ASSERT_FALSE(always_maybe.second.newton_rounds.empty());
+  EXPECT_EQ(always_maybe.second.newton_rounds[0].active_coordinates, 4);
+  EXPECT_EQ(always_maybe.second.newton_rounds[0].queried_occurrences, 4);
+
+  auto dense_round = npa::NewtonIter<D>::init(eqns);
+  auto sparse_round = dense_round;
+  for (int round = 0; round < 3; ++round) {
+    dense_round = npa::NewtonIter<D>::run(false, eqns, dense_round);
+    sparse_round = npa::NewtonIter<D>::run(false, eqns, sparse_round,
+                                           npa::LinearStrategy::SCC,
+                                           npa::NewtonRoundStrategy::Sparse);
+    EXPECT_EQ(toMap<D>(dense_round), toMap<D>(sparse_round));
+  }
+}
+
+TEST(NPA, SparseNewtonOneRoundZeroExtendsInactiveCoordinates) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("x1", Exp::term(D::one()));
+  eqns.emplace_back("x2", Exp::hole("x1"));
+  eqns.emplace_back("x3", Exp::mul(Exp::hole("x2"), Exp::hole("x4")));
+  eqns.emplace_back("x4", Exp::hole("x1"));
+
+  auto nu0 = npa::NewtonIter<D>::init(eqns);
+  auto nu1 = npa::NewtonIter<D>::run(false, eqns, nu0, npa::LinearStrategy::SCC,
+                                     npa::NewtonRoundStrategy::Sparse);
+  auto values = toMap<D>(nu1);
+
+  EXPECT_TRUE(values.at("x1"));
+  EXPECT_TRUE(values.at("x2"));
+  EXPECT_FALSE(values.at("x3"));
+  EXPECT_TRUE(values.at("x4"));
+}
+
+TEST(NPA, SparseFilteredDifferentiationCoversAllNewtonExpressionContexts) {
+  using D = SparseProjectedBoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  E star = Exp::star(Exp::ndet(Exp::term(D::one()),
+                               Exp::mul(Exp::bound("local"), Exp::hole("f"))),
+                     "local");
+  E call = Exp::call("f", Exp::hole("seed"));
+  E concat = Exp::concat(Exp::hole("seed"), "f", Exp::hole("seed"));
+  E branches = Exp::cond(true, call, Exp::hole("star"));
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(D::one()));
+  eqns.emplace_back("f", Exp::seq(D::one(), Exp::hole("seed")));
+  eqns.emplace_back("star", std::move(star));
+  eqns.emplace_back("result", Exp::project(Exp::ndet(std::move(branches),
+                                                     std::move(concat))));
+
+  npa::SolveOptions dense_options;
+  dense_options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto dense = npa::NPASolver<D>::solve(eqns, dense_options);
+
+  for (npa::NewtonRoundStrategy strategy :
+       {npa::NewtonRoundStrategy::Static, npa::NewtonRoundStrategy::AlwaysMaybe,
+        npa::NewtonRoundStrategy::Sparse}) {
+    npa::SolveOptions options = dense_options;
+    options.newton_round_strategy = strategy;
+    auto result = npa::NPASolver<D>::solve(eqns, options);
+    EXPECT_EQ(toMap<D>(dense.first), toMap<D>(result.first));
+    EXPECT_EQ(dense.second.iters, result.second.iters);
+  }
+}
+
+TEST(NPA, SparseFilteredDifferentiationPreservesNoncommutativeContextOrder) {
+  using D = npa::PathTransferSummary<char>;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(D::singleton('s')));
+  eqns.emplace_back("a", Exp::seq(D::singleton('a'), Exp::hole("seed")));
+  eqns.emplace_back("b",
+                    Exp::mul(Exp::hole("a"), Exp::term(D::singleton('b'))));
+  eqns.emplace_back("c", Exp::call("b", Exp::term(D::singleton('c'))));
+  eqns.emplace_back("result", Exp::concat(Exp::term(D::singleton('l')), "c",
+                                          Exp::term(D::singleton('r'))));
+
+  npa::SolveOptions dense_options;
+  dense_options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto dense = npa::NPASolver<D>::solve(eqns, dense_options);
+
+  for (npa::LinearStrategy backend :
+       {npa::LinearStrategy::Naive, npa::LinearStrategy::SCC}) {
+    npa::SolveOptions sparse_options = dense_options;
+    sparse_options.linear_strategy = backend;
+    sparse_options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+    auto sparse = npa::NPASolver<D>::solve(eqns, sparse_options);
+
+    EXPECT_EQ(toMap<D>(dense.first), toMap<D>(sparse.first));
+    EXPECT_EQ(dense.second.iters, sparse.second.iters);
+  }
+}
+
+TEST(NPA, SparseDiscoveryRetainsEveryOccurrenceOfTheSameGraphEdge) {
+  using D = BoolSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(D::one()));
+  eqns.emplace_back("x", Exp::hole("seed"));
+  eqns.emplace_back("y", Exp::mul(Exp::hole("x"), Exp::hole("x")));
+
+  npa::SolveOptions options;
+  options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+  options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto result = npa::NPASolver<D>::solve(eqns, options);
+
+  EXPECT_EQ(result.second.indexed_derivative_occurrences, 3);
+  ASSERT_GE(result.second.newton_rounds.size(), 2u);
+  EXPECT_EQ(result.second.newton_rounds[0].retained_occurrences, 1);
+  EXPECT_EQ(result.second.newton_rounds[1].retained_occurrences, 3);
+  EXPECT_TRUE(toMap<D>(result.first).at("y"));
+}
+
+TEST(NPA, SparseGenKillRepresentationComposesAndAppliesExactly) {
+  using D = npa::GenKillTransformer;
+
+  D::value_type inner;
+  inner.kill.set(1);
+  inner.gen.set(2);
+  D::value_type outer;
+  outer.kill.set(2);
+  outer.gen.set(4097);
+
+  D::fact_type input;
+  input.set(0);
+  input.set(1);
+  D::fact_type sequential = D::apply(outer, D::apply(inner, input));
+  D::fact_type composed = D::apply(D::extend(outer, inner), input);
+  EXPECT_EQ(composed, sequential);
+  EXPECT_TRUE(composed.test(0));
+  EXPECT_TRUE(composed.test(4097));
+  EXPECT_EQ(composed.count(), 2u);
+
+  const auto constant = D::extend(D::generate(7), D::zero());
+  EXPECT_TRUE(constant.kill_all);
+  D::fact_type constantResult = D::apply(constant, input);
+  EXPECT_TRUE(constantResult.test(7));
+  EXPECT_EQ(constantResult.count(), 1u);
+  EXPECT_TRUE(D::equal(D::extend(D::zero(), D::generate(7)), D::zero()));
+  EXPECT_TRUE(D::equal(D::combine(D::zero(), outer), outer));
+}
+
+TEST(NPA, PersistentSparseFactSetMatchesFiniteSetOperations) {
+  npa::SparseFactSet lhs;
+  npa::SparseFactSet rhs;
+  std::set<unsigned> lhsReference;
+  std::set<unsigned> rhsReference;
+  for (unsigned bit = 0; bit < 4096; ++bit) {
+    if ((bit * 17 + 3) % 11 < 4) {
+      lhs.set(bit);
+      lhsReference.insert(bit);
+    }
+    if ((bit * 29 + 5) % 13 < 5) {
+      rhs.set(bit);
+      rhsReference.insert(bit);
+    }
+  }
+
+  auto materialize = [](const npa::SparseFactSet &facts) {
+    return std::set<unsigned>(facts.begin(), facts.end());
+  };
+  EXPECT_EQ(materialize(lhs), lhsReference);
+  EXPECT_EQ(materialize(rhs), rhsReference);
+
+  npa::SparseFactSet joined = lhs;
+  joined |= rhs;
+  std::set<unsigned> joinedReference = lhsReference;
+  joinedReference.insert(rhsReference.begin(), rhsReference.end());
+  EXPECT_EQ(materialize(joined), joinedReference);
+
+  npa::SparseFactSet common = lhs;
+  common &= rhs;
+  std::set<unsigned> commonReference;
+  std::set_intersection(lhsReference.begin(), lhsReference.end(),
+                        rhsReference.begin(), rhsReference.end(),
+                        std::inserter(commonReference, commonReference.end()));
+  EXPECT_EQ(materialize(common), commonReference);
+
+  npa::SparseFactSet difference = lhs;
+  difference.intersectWithComplement(rhs);
+  std::set<unsigned> differenceReference;
+  std::set_difference(lhsReference.begin(), lhsReference.end(),
+                      rhsReference.begin(), rhsReference.end(),
+                      std::inserter(differenceReference,
+                                    differenceReference.end()));
+  EXPECT_EQ(materialize(difference), differenceReference);
+
+  npa::SparseFactSet unchanged = lhs;
+  const unsigned existing = *lhsReference.begin();
+  EXPECT_FALSE(unchanged.set(existing));
+  EXPECT_FALSE(unchanged.reset(4097));
+  EXPECT_EQ(unchanged, lhs);
+}
+
+TEST(NPA, SparseOracleHonorsDirectionalZeroMapContracts) {
+  using D = npa::GenKillTransformer;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  D::value_type generating = D::generate(0);
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(generating));
+  // For this transformer carrier, a ⊗ zero may still generate facts, while
+  // zero ⊗ a is always zero.
+  eqns.emplace_back("right_zero",
+                    Exp::mul(Exp::hole("seed"), Exp::term(D::zero())));
+  eqns.emplace_back("left_zero",
+                    Exp::mul(Exp::term(D::zero()), Exp::hole("seed")));
+
+  npa::SolveOptions dense_options;
+  dense_options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto dense = npa::NPASolver<D>::solve(eqns, dense_options);
+
+  npa::SolveOptions sparse_options = dense_options;
+  sparse_options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+  auto sparse = npa::NPASolver<D>::solve(eqns, sparse_options);
+
+  EXPECT_EQ(toMap<D>(dense.first), toMap<D>(sparse.first));
+  EXPECT_FALSE(D::equal(toMap<D>(sparse.first).at("right_zero"), D::zero()));
+  EXPECT_TRUE(D::equal(toMap<D>(sparse.first).at("left_zero"), D::zero()));
+  ASSERT_FALSE(sparse.second.newton_rounds.empty());
+  EXPECT_EQ(sparse.second.newton_rounds[0].active_coordinates, 2);
+  EXPECT_EQ(sparse.second.newton_rounds[0].queried_occurrences, 2);
+  EXPECT_EQ(sparse.second.newton_rounds[0].retained_occurrences, 1);
+}
+
+TEST(NPA, SparseOracleWithoutDomainLawsConservativelyReturnsMaybe) {
+  using D = NonDefaultSemiring;
+  using Exp = npa::Exp0<D>;
+  using E = npa::E0<D>;
+
+  std::vector<std::pair<npa::Symbol, E>> eqns;
+  eqns.emplace_back("seed", Exp::term(D::one()));
+  eqns.emplace_back("left", Exp::hole("seed"));
+  eqns.emplace_back("right", Exp::hole("seed"));
+  eqns.emplace_back("product", Exp::mul(Exp::hole("left"), Exp::hole("right")));
+
+  npa::SolveOptions options;
+  options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+  options.convergence_policy = npa::ConvergencePolicy::Exact;
+  auto result = npa::NPASolver<D>::solve(eqns, options);
+
+  ASSERT_FALSE(result.second.newton_rounds.empty());
+  EXPECT_EQ(result.second.newton_rounds[0].active_coordinates, 4);
+  EXPECT_EQ(result.second.newton_rounds[0].retained_occurrences, 4);
+  EXPECT_TRUE(toMap<D>(result.first).at("product").value);
 }
 
 namespace {
@@ -689,6 +1001,24 @@ TEST(NPA, ValidNonIdempotentResidualReconstructsFunctionValue) {
   EXPECT_EQ(fNu, 5);
   EXPECT_EQ(delta, 3);
   EXPECT_NO_THROW(npa::require_valid_newton_delta<D>(fNu, nu.at("x"), delta));
+}
+
+TEST(NPA, SparseRoundStrategiesRejectNonIdempotentDomains) {
+  using D = BadDeltaSemiring;
+  using Exp = npa::Exp0<D>;
+
+  std::vector<std::pair<npa::Symbol, npa::E0<D>>> eqns;
+  eqns.emplace_back("x", Exp::term(D::one()));
+
+  for (npa::NewtonRoundStrategy strategy :
+       {npa::NewtonRoundStrategy::Static, npa::NewtonRoundStrategy::AlwaysMaybe,
+        npa::NewtonRoundStrategy::Sparse}) {
+    npa::SolveOptions options;
+    options.max_iterations = 1;
+    options.newton_round_strategy = strategy;
+    EXPECT_THROW((void)npa::NPASolver<D>::solve(eqns, options),
+                 npa::SparseNewtonRequiresIdempotentError);
+  }
 }
 
 TEST(NPA, AutomaticNIterationBoundFallsBackWhenEqualityIsApproximate) {

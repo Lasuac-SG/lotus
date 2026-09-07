@@ -7,7 +7,6 @@
 #include <map>
 #include <unordered_map>
 
-#include <llvm/ADT/APInt.h>
 #include <llvm/IR/Module.h>
 
 namespace npa {
@@ -17,15 +16,17 @@ public:
   struct Result {
     AnalysisStatus status;
     std::map<FunctionKey, TaintTransformer::value_type> summaries;
-    std::map<BlockKey, llvm::APInt> blockFacts;
+    std::map<BlockKey, TaintTransformer::fact_type> blockFacts;
     std::unordered_map<const llvm::Value *, unsigned> valueBits;
     unsigned bitWidth = 1;
   };
 
-  static Result run(llvm::Module &M, bool verbose = false,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    IndirectCallResolutionMode callResolutionMode =
-                        IndirectCallResolutionMode::ClosedWorldTypeCompatible);
+  static Result
+  run(llvm::Module &M, bool verbose = false,
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      IndirectCallResolutionMode callResolutionMode =
+          IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense);
 };
 
 } // namespace npa

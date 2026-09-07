@@ -86,9 +86,11 @@ private:
 
 BitVectorSolver::Result LiveVariables::run(llvm::Function &F,
                                            SolverStrategy strategy,
-                                           LinearStrategy linearStrategy) {
+                                           LinearStrategy linearStrategy,
+                                           NewtonRoundStrategy roundStrategy) {
   LiveVariablesInfo info(F);
-  return BitVectorSolver::run(F, info, strategy, linearStrategy);
+  return BitVectorSolver::run(F, info, strategy, linearStrategy, false,
+                              roundStrategy);
 }
 
 } // namespace npa

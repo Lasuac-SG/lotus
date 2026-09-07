@@ -33,6 +33,7 @@
  *   - Solver/KleeneSolver.h        : public Kleene solver
  *   - Solver/NPASolver.h           : public Newton/NPA façade
  *   - Solver/Newton/               : differentiation and Newton machinery
+ *   - Solver/Newton/Sparse/        : derivative-support sparse round builder
  *   - Solver/Newton/Linear/        : SCC structure and ordinary backends
  *   - Solver/Newton/Linear/Tensor/ : optional tensor backend
  *   - LLVM/                        : LLVM-specific analysis infrastructure

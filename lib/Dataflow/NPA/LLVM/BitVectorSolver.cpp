@@ -24,11 +24,10 @@ static std::string getBlockSymbol(const llvm::BasicBlock *BB,
   return s;
 }
 
-BitVectorSolver::Result BitVectorSolver::run(llvm::Function &F,
-                                             const BitVectorProblem &info,
-                                             SolverStrategy strategy,
-                                             LinearStrategy linearStrategy,
-                                             bool verbose) {
+BitVectorSolver::Result
+BitVectorSolver::run(llvm::Function &F, const BitVectorProblem &info,
+                     SolverStrategy strategy, LinearStrategy linearStrategy,
+                     bool verbose, NewtonRoundStrategy roundStrategy) {
   // 1. Setup Domain
   BitSetDomain::WidthScope width_scope(info.getBitWidth());
 
@@ -143,7 +142,9 @@ BitVectorSolver::Result BitVectorSolver::run(llvm::Function &F,
   // 3. Solve
   std::pair<std::vector<std::pair<Symbol, D::value_type>>, Stat> rawRes;
   if (strategy == SolverStrategy::Newton) {
-    rawRes = NPASolver<D>::solve(eqns, verbose, -1, linearStrategy);
+    rawRes = NPASolver<D>::solve(
+        eqns, verbose, -1, linearStrategy, DomainContractMode::Off,
+        ConvergencePolicy::DomainDefault, roundStrategy);
   } else {
     rawRes = KleeneSolver<D>::solve(eqns, verbose);
   }

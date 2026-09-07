@@ -92,15 +92,14 @@ private:
 
 class MaybeUninitializedAnalysis {
 public:
-  using FactType = llvm::APInt;
   using D = TaintTransformer;
+  using FactType = D::fact_type;
   using Exp = Exp0<D>;
   using E = E0<D>;
 
-  explicit MaybeUninitializedAnalysis(llvm::Module &M)
-      : info(M), bitWidth(info.getBitWidth()), widthScope(bitWidth) {}
+  explicit MaybeUninitializedAnalysis(llvm::Module &M) : info(M) {}
 
-  FactType getEntryValue() const { return llvm::APInt(bitWidth, 0); }
+  FactType getEntryValue() const { return {}; }
 
   E getTransfer(llvm::Instruction &I, E currentPath) {
     if (llvm::isa<llvm::CallBase>(&I))
@@ -223,7 +222,9 @@ public:
   }
 
   FactType joinFacts(const FactType &lhs, const FactType &rhs) {
-    return lhs | rhs;
+    FactType result = lhs;
+    result |= rhs;
+    return result;
   }
 
   bool factsEqual(const FactType &lhs, const FactType &rhs) {
@@ -232,15 +233,11 @@ public:
 
 private:
   UninitializedInfo info;
-  unsigned bitWidth = 1;
-  D::WidthScope widthScope;
 
   void clearDestination(D::value_type &transfer, unsigned destBit) const {
     if (destBit == UninitializedInfo::invalidBit())
       return;
-    for (auto &row : transfer.rel)
-      row.clearBit(destBit);
-    transfer.gen.clearBit(destBit);
+    D::clearOutput(transfer, destBit);
   }
 
   void assignZero(D::value_type &transfer, unsigned destBit) const {
@@ -325,11 +322,13 @@ private:
 InterMaybeUninitialized::Result
 InterMaybeUninitialized::run(llvm::Module &M, bool verbose,
                              LinearStrategy linearStrategy,
-                             IndirectCallResolutionMode callResolutionMode) {
+                             IndirectCallResolutionMode callResolutionMode,
+                             NewtonRoundStrategy roundStrategy) {
   MaybeUninitializedAnalysis analysis(M);
   auto engineResult =
       InterEngine<TaintTransformer, MaybeUninitializedAnalysis>::run(
-          M, analysis, verbose, linearStrategy, callResolutionMode);
+          M, analysis, verbose, linearStrategy, callResolutionMode,
+          roundStrategy);
 
   InterMaybeUninitialized::Result result;
   result.status = engineResult.status;

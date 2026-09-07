@@ -62,17 +62,14 @@ private:
 
 class InterproceduralLiveAnalysis {
 public:
-  using FactType = llvm::APInt;
   using D = TaintTransformer;
+  using FactType = D::fact_type;
   using Exp = Exp0<D>;
   using E = E0<D>;
 
-  explicit InterproceduralLiveAnalysis(llvm::Module &M)
-      : info(M), bitWidth(info.getBitWidth()), widthScope(bitWidth) {}
+  explicit InterproceduralLiveAnalysis(llvm::Module &M) : info(M) {}
 
-  FactType getExitValue(const llvm::Function &) const {
-    return llvm::APInt(bitWidth, 0);
-  }
+  FactType getExitValue(const llvm::Function &) const { return {}; }
 
   E getTransfer(llvm::Instruction &I, E currentPath) {
     D::value_type transfer = D::one();
@@ -164,7 +161,9 @@ public:
   }
 
   FactType joinFacts(const FactType &lhs, const FactType &rhs) const {
-    return lhs | rhs;
+    FactType result = lhs;
+    result |= rhs;
+    return result;
   }
 
   bool factsEqual(const FactType &lhs, const FactType &rhs) const {
@@ -175,14 +174,11 @@ public:
 
 private:
   LiveVariablesInfo info;
-  unsigned bitWidth = 1;
-  D::WidthScope widthScope;
 
   void clearInput(D::value_type &transfer, unsigned inputBit) const {
-    if (inputBit == LiveVariablesInfo::invalidBit() ||
-        inputBit >= transfer.rel.size())
+    if (inputBit == LiveVariablesInfo::invalidBit())
       return;
-    transfer.rel[inputBit] = llvm::APInt(bitWidth, 0);
+    D::clearInput(transfer, inputBit);
   }
 };
 
@@ -191,14 +187,13 @@ private:
 InterLiveVariables::Result
 InterLiveVariables::run(llvm::Module &M, bool verbose,
                         LinearStrategy linearStrategy,
-                        IndirectCallResolutionMode callResolutionMode) {
+                        IndirectCallResolutionMode callResolutionMode,
+                        NewtonRoundStrategy roundStrategy) {
   InterproceduralLiveAnalysis analysis(M);
   auto engineResult =
-      BackwardInterEngine<TaintTransformer,
-                          InterproceduralLiveAnalysis>::run(M, analysis,
-                                                            verbose,
-                                                            linearStrategy,
-                                                            callResolutionMode);
+      BackwardInterEngine<TaintTransformer, InterproceduralLiveAnalysis>::run(
+          M, analysis, verbose, linearStrategy, callResolutionMode,
+          roundStrategy);
 
   Result result;
   result.status = engineResult.status;

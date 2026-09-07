@@ -38,6 +38,29 @@ That means `LinearStrategy` is only relevant to the **Newton** path. It does
 not choose between Kleene and Newton; it only chooses the inner backend used by
 Newton for its current linearized system.
 
+Newton also exposes an orthogonal `NewtonRoundStrategy`:
+
+- **Dense**: construct every coordinate of the traditional residual-based
+  linearization. This remains the default.
+- **Static**: for an idempotent domain, compute syntactic reachability from
+  `supp(F(0))` once and solve that fixed slice with the fixed seed.
+- **AlwaysMaybe**: repeat the source-indexed demand traversal each round while
+  forcing every zero-oracle query to retain its occurrence. This is the
+  conservative sparse-framework ablation.
+- **Sparse**: re-evaluate reachable occurrence contexts at the current Newton
+  valuation and materialize only occurrences whose zero map cannot be proved.
+
+Sparse discovery remains source-indexed, but materialization is target-wise:
+one fused traversal of each active `Exp0` computes node values and the filtered
+derivative together, using the retained-occurrence mask. Shared occurrence-path
+prefixes and target evaluation contexts are cached within a round, so common
+`Mul`, `Call`, `Concat`, and `Star` structure is not rebuilt per occurrence.
+
+The three restricted strategies implement the fixed-seed identity
+`nu[i+1] = (Df|nu[i])*(F(0))` and therefore require an idempotent domain. They
+throw `SparseNewtonRequiresIdempotentError` otherwise. They are independent of
+the inner `LinearStrategy` and work with SCC, adaptive-SCC, and tensor solving.
+
 NPA intentionally keeps its semiring terminology rather than adopting the
 Mono/APA lattice API. A base NPA domain provides `zero`, `one`, `combine`,
 `extend`, `extend_lin`, `ndetCombine`, `condCombine`, and `equal`.
@@ -77,13 +100,50 @@ before projection is accepted on Newton/tensor paths.
 Domains may expose `project()`, `projectT()`, or both; when both exist,
 `project()` takes precedence. Evaluating `Project` with neither operation throws
 `UnsupportedDomainProjectError`. Width-dependent domains likewise throw if no
-active `WidthScope` exists.
+active `WidthScope` exists. `GenKillTransformer` is width-independent: finite
+kill/gen sets use an immutable persistent sparse set, and its universal kill is
+represented by a `kill_all` flag.
 
 Use `KleeneSolver<D>::solve(eqns, ...)` for plain Kleene solving.
 Use `NPASolver<D>::solve(eqns, verbose, -1, LinearStrategy::SCC)`,
 `LinearStrategy::AdaptiveScc`, or `LinearStrategy::TensorProduct` for the JACM
 Newton/NPA outer solver with different inner linear backends; or pass
-`LinearStrategy` into `BitVectorSolver::run` (optional 5th parameter).
+`LinearStrategy` into `BitVectorSolver::run`.
+
+For named configuration, prefer `SolveOptions`:
+
+```cpp
+npa::SolveOptions options;
+options.linear_strategy = npa::LinearStrategy::AdaptiveScc;
+options.newton_round_strategy = npa::NewtonRoundStrategy::Sparse;
+auto result = npa::NPASolver<MyDomain>::solve(equations, options);
+```
+
+`SparseNewtonZeroOracle<D>` is the domain customization point. Its default
+uses exact `D::equal` zero tests and only prunes multiplication contexts whose
+directional annihilator law the domain declares with
+`sparse_npa_zero_left_annihilator` and/or
+`sparse_npa_zero_right_annihilator`. Missing declarations conservatively mean
+“Maybe.” A specialization may additionally recognize domain-specific
+zero-map coefficients through `leftMultiplyIsZeroMap` and
+`rightMultiplyIsZeroMap`; returning false only reduces pruning.
+
+`Stat::newton_rounds` records active coordinates, queried and retained
+occurrences, materialized derivative terms, discovery/materialization time,
+and linear-solve time for every round. Aggregate counters and the one-time
+occurrence-index time are stored directly in `Stat`. `Stat::time` covers fixed
+seed construction, indexing, round construction, and inner solves.
+
+For unbounded ordinary linear backends, idempotent Newton rounds initialize the
+inner solve from the current approximant, which is a pre-fixpoint of both the
+dense residual and fixed-seed operators. Tensor regularization retains its zero
+start so that its Tarjan path remains available; bounded solvers also keep the
+old zero-start behavior for explicit approximation reporting.
+
+The forward interprocedural engine caches solved block-entry, block-exit, and
+call-prefix summaries before fact propagation. Worklist iterations apply those
+prepared summaries to changing function-input facts instead of rebuilding
+instruction transfer ASTs and re-evaluating shared path prefixes.
 
 When using `AdaptiveScc`, the solver reports aggregate counts for SCC-local direct/worklist/tensor choices and tensor fallbacks in `Stat`.
 
@@ -108,6 +168,7 @@ include/Dataflow/NPA/
 │   ├── NPASolver.h
 │   └── Newton/
 │       ├── Differential.h
+│       ├── Sparse/             # occurrence index and sparse construction
 │       └── Linear/
 │           ├── SccSolver.h
 │           ├── AdaptivePlan.h

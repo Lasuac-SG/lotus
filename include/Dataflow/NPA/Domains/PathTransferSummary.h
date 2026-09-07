@@ -11,7 +11,8 @@
 namespace npa {
 
 template <class Op, class OpLess = std::less<Op>> struct PathLess {
-  bool operator()(const std::vector<Op> &lhs, const std::vector<Op> &rhs) const {
+  bool operator()(const std::vector<Op> &lhs,
+                  const std::vector<Op> &rhs) const {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(),
                                         rhs.end(), OpLess{});
   }
@@ -35,6 +36,8 @@ public:
   using value_type = PathTransferSummaryValue<Op, OpLess>;
   using test_type = bool;
   static constexpr bool idempotent = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
   static constexpr std::size_t max_paths = 4096;
   static constexpr std::size_t max_path_length = 320;
 
@@ -102,12 +105,13 @@ public:
 private:
   template <typename... Ts> using void_t = void;
 
-  template <typename T, typename = void> struct HasPointerDest : std::false_type {};
+  template <typename T, typename = void>
+  struct HasPointerDest : std::false_type {};
 
   template <typename T>
   struct HasPointerDest<T, void_t<decltype(std::declval<T>().dest)>>
-      : std::integral_constant<bool,
-                               std::is_pointer<decltype(std::declval<T>().dest)>::value> {};
+      : std::integral_constant<
+            bool, std::is_pointer<decltype(std::declval<T>().dest)>::value> {};
 
   template <typename T = Op>
   static typename std::enable_if<HasPointerDest<T>::value, void>::type

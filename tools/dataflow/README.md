@@ -75,6 +75,10 @@ lotus-dfa-ifds --analysis=taint --stdout /path/to/file.bc
 # NPA driver
 lotus-dfa-npa --analysis=liveness --solver=newton --stdout /path/to/file.bc
 
+# Sparse fixed-seed Newton rounds (also: static, always_maybe, dense)
+lotus-dfa-npa --analysis=liveness --solver=newton \
+  --newton-round=sparse --stdout /path/to/file.bc
+
 # NPA interprocedural constant propagation
 lotus-dfa-npa --analysis=constant_prop --stdout /path/to/file.bc
 
@@ -96,6 +100,10 @@ module-level interprocedural clients use Newton and currently reject
 `--solver=kleene`. `--linear-solver={scc,adaptive_scc,tensor}` selects the
 Newton linearized-system solver for both intraprocedural Newton runs and
 module-level interprocedural runs.
+`--newton-round={dense,static,always_maybe,sparse}` independently selects how
+each Newton round is constructed. The non-dense choices require an idempotent
+domain. The driver emits aggregate and per-round occurrence, active-coordinate,
+materialization, discovery, and linear-solve profiles.
 
 ## Canonical format
 

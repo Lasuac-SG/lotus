@@ -75,9 +75,11 @@ public:
 
 BitVectorSolver::Result
 ReachingDefinitions::run(llvm::Function &F, SolverStrategy strategy,
-                         LinearStrategy linearStrategy) {
+                         LinearStrategy linearStrategy,
+                         NewtonRoundStrategy roundStrategy) {
   RDInfo info(F);
-  return BitVectorSolver::run(F, info, strategy, linearStrategy);
+  return BitVectorSolver::run(F, info, strategy, linearStrategy, false,
+                              roundStrategy);
 }
 
 } // namespace npa

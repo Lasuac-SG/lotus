@@ -35,6 +35,12 @@
  * system. It does not affect `KleeneSolver<D>`, which is a separate public
  * solver in `KleeneSolver.h`.
  *
+ * `NewtonRoundStrategy` independently selects round construction. `Dense`
+ * preserves the residual formulation. `Static`, `AlwaysMaybe`, and `Sparse`
+ * use the idempotent fixed-seed identity and a source-indexed derivative
+ * subsystem; `Sparse` invokes the sound domain zero oracle before materializing
+ * an occurrence term.
+ *
  * References:
  * - Esparza et al. (JACM): NPA outer algorithm and linearization.
  * - Reps et al. (TOPLAS 2016): optional tensor regularization for suitable
@@ -45,6 +51,7 @@
 #include "Dataflow/NPA/Solver/EquationSystem.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/AdaptivePlan.h"
 #include "Dataflow/NPA/Solver/Newton/Linear/Tensor/TensorSolver.h"
+#include "Dataflow/NPA/Solver/Newton/Sparse/OccurrenceIndex.h"
 #include "Dataflow/NPA/Solver/SolveContext.h"
 #include "Dataflow/NPA/Solver/Statistics.h"
 
@@ -169,6 +176,54 @@ build_newton_round_setup(const std::vector<std::pair<Symbol, E0<D>>> &eqns,
       setup.rhs_tensor.emplace_back(eqn.first, std::move(tensor_rhs));
     }
   }
+  return setup;
+}
+
+template <class D>
+NewtonRoundSetup<D> build_sparse_newton_round_setup(
+    const SparseNewtonSystem<D> &sparse_system,
+    const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
+    LinearStrategy lin_strat, NewtonRoundStrategy round_strategy,
+    std::vector<unsigned> &dense_indices, NewtonRoundStat &round_stats) {
+  using TensorTraits = TensorSemiringTraits<D>;
+
+  auto materialized = sparse_system.buildRound(binds, round_strategy);
+  dense_indices = std::move(materialized.dense_indices);
+  round_stats = materialized.stats;
+
+  const auto tensor_start = std::chrono::steady_clock::now();
+  NewtonRoundSetup<D> setup;
+  setup.rhs = std::move(materialized.rhs);
+  setup.tensor_requested = lin_strat == LinearStrategy::TensorProduct ||
+                           lin_strat == LinearStrategy::AdaptiveScc;
+  setup.tensor_available = setup.tensor_requested && TensorTraits::available();
+  setup.tensor_admissible =
+      setup.tensor_available && TensorTraits::paper_admissible();
+  setup.tensor_laws_validated =
+      setup.tensor_admissible && tensor_paper_laws_validated<D>();
+
+  for (const auto &equation : setup.rhs) {
+    setup.has_lcfl_structure =
+        setup.has_lcfl_structure ||
+        LCFLDetector<D>::has_lcfl_structure(equation.second);
+  }
+
+  if (setup.tensor_laws_validated) {
+    setup.rhs_tensor.reserve(setup.rhs.size());
+    for (const auto &equation : setup.rhs) {
+      if (!Exp1ToTensor<D>::is_tensor_convertible(equation.second)) {
+        setup.tensor_laws_validated = false;
+        setup.rhs_tensor.clear();
+        break;
+      }
+      setup.rhs_tensor.emplace_back(equation.first,
+                                    Exp1ToTensor<D>::convert(equation.second));
+    }
+  }
+  round_stats.materialization_time +=
+      std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                    tensor_start)
+          .count();
   return setup;
 }
 
@@ -353,13 +408,12 @@ std::vector<DomVal<D>> solve_linear_adaptive_scc_impl(
 }
 
 template <class D>
-std::vector<std::pair<Symbol, DomVal<D>>>
-run_newton_iteration(bool verbose,
-                     const std::vector<std::pair<Symbol, E0<D>>> &eqns,
-                     const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
-                     LinearStrategy linStrat = LinearStrategy::SCC) {
+std::vector<DomVal<D>>
+solve_newton_linearized_system(bool verbose, const NewtonRoundSetup<D> &setup,
+                               LinearStrategy linStrat,
+                               const std::vector<DomVal<D>> *initial_values,
+                               NewtonRoundStat *round_stats = nullptr) {
   using V = DomVal<D>;
-  auto setup = build_newton_round_setup<D>(eqns, binds, linStrat);
   const bool use_tensor =
       setup.tensor_laws_validated && setup.has_lcfl_structure;
   if (linStrat == LinearStrategy::TensorProduct && verbose) {
@@ -378,9 +432,23 @@ run_newton_iteration(bool verbose,
     }
   }
 
-  std::vector<V> init(use_tensor ? setup.rhs_tensor.size() : setup.rhs.size(),
-                      D::zero()),
-      delta;
+  const auto linear_start = std::chrono::steady_clock::now();
+  const std::size_t equation_count =
+      use_tensor ? setup.rhs_tensor.size() : setup.rhs.size();
+  std::vector<V> init;
+  // Non-zero seeds make the tensor Tarjan path fall back to iterative solving.
+  // Keep its zero start when tensor regularization is actually selected.
+  const bool use_warm_start =
+      initial_values && !use_tensor && domain_max_linear_steps<D>() < 0;
+  if (use_warm_start) {
+    if (initial_values->size() != equation_count)
+      throw InvalidEquationSystemError(
+          "linear equation system and initial values differ in size");
+    init = *initial_values;
+  } else {
+    init.assign(equation_count, D::zero());
+  }
+  std::vector<V> delta;
   if (linStrat == LinearStrategy::Naive) {
     delta = fix_vec<D>(verbose, init, [&](const std::vector<V> &cur) {
       std::unordered_map<Symbol, V> env;
@@ -403,13 +471,82 @@ run_newton_iteration(bool verbose,
   } else {
     delta = solve_linear_scc_impl<D>(verbose, setup.rhs, init);
   }
+  if (round_stats) {
+    round_stats->linear_solve_time =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      linear_start)
+            .count();
+  }
+  return delta;
+}
+
+template <class D>
+std::vector<std::pair<Symbol, DomVal<D>>> run_newton_iteration(
+    bool verbose, const std::vector<std::pair<Symbol, E0<D>>> &eqns,
+    const std::vector<std::pair<Symbol, DomVal<D>>> &binds,
+    LinearStrategy lin_strat = LinearStrategy::SCC,
+    NewtonRoundStrategy round_strategy = NewtonRoundStrategy::Dense,
+    const SparseNewtonSystem<D> *sparse_system = nullptr,
+    NewtonRoundStat *round_stats = nullptr) {
+  using V = DomVal<D>;
+
+  if (round_strategy != NewtonRoundStrategy::Dense && !D::idempotent)
+    throw SparseNewtonRequiresIdempotentError{};
+
+  NewtonRoundStat local_stats;
+  NewtonRoundStat &stats = round_stats ? *round_stats : local_stats;
+  NewtonRoundSetup<D> setup;
+  std::vector<unsigned> dense_indices;
+  if (round_strategy == NewtonRoundStrategy::Dense) {
+    const auto setup_start = std::chrono::steady_clock::now();
+    setup = build_newton_round_setup<D>(eqns, binds, lin_strat);
+    stats.active_coordinates = static_cast<int>(eqns.size());
+    stats.materialization_time =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      setup_start)
+            .count();
+  } else {
+    if (!sparse_system)
+      throw std::logic_error(
+          "sparse Newton round requires an occurrence index");
+    setup = build_sparse_newton_round_setup<D>(
+        *sparse_system, binds, lin_strat, round_strategy, dense_indices, stats);
+  }
+
+  std::vector<V> warm_initial;
+  const std::vector<V> *initial_values = nullptr;
+  if (D::idempotent) {
+    // Along an exact idempotent Newton sequence, nu_i is a pre-fixpoint of
+    // both the dense residual operator and the sparse fixed-seed operator.
+    // Starting there follows the same ascending chain to the least solution.
+    if (round_strategy == NewtonRoundStrategy::Dense) {
+      warm_initial.reserve(binds.size());
+      for (const auto &binding : binds)
+        warm_initial.push_back(binding.second);
+    } else {
+      warm_initial.reserve(dense_indices.size());
+      for (unsigned dense_index : dense_indices)
+        warm_initial.push_back(binds[dense_index].second);
+    }
+    initial_values = &warm_initial;
+  }
+  std::vector<V> delta = solve_newton_linearized_system<D>(
+      verbose, setup, lin_strat, initial_values, &stats);
 
   std::vector<std::pair<Symbol, V>> out;
   out.reserve(binds.size());
-  for (size_t i = 0; i < binds.size(); ++i) {
-    V upd = delta[i];
-    V nxt = D::idempotent ? upd : D::combine(binds[i].second, upd);
-    out.emplace_back(binds[i].first, nxt);
+  if (round_strategy == NewtonRoundStrategy::Dense) {
+    for (size_t i = 0; i < binds.size(); ++i) {
+      V upd = delta[i];
+      V nxt = D::idempotent ? upd : D::combine(binds[i].second, upd);
+      out.emplace_back(binds[i].first, std::move(nxt));
+    }
+  } else {
+    std::vector<V> extended(binds.size(), D::zero());
+    for (std::size_t i = 0; i < dense_indices.size(); ++i)
+      extended[dense_indices[i]] = std::move(delta[i]);
+    for (std::size_t i = 0; i < binds.size(); ++i)
+      out.emplace_back(binds[i].first, std::move(extended[i]));
   }
   return out;
 }
@@ -433,8 +570,17 @@ template <class D> struct NewtonIter {
   static std::vector<std::pair<Symbol, V>>
   run(bool verbose, const std::vector<Eqn> &eqns,
       const std::vector<std::pair<Symbol, V>> &binds,
-      LinearStrategy linStrat = LinearStrategy::SCC) {
-    return detail::run_newton_iteration<D>(verbose, eqns, binds, linStrat);
+      LinearStrategy linStrat = LinearStrategy::SCC,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense) {
+    if (roundStrategy == NewtonRoundStrategy::Dense)
+      return detail::run_newton_iteration<D>(verbose, eqns, binds, linStrat);
+    if (!D::idempotent)
+      throw SparseNewtonRequiresIdempotentError{};
+    const auto validated = validate_equation_system<D>(eqns);
+    auto fixed_seed = init(eqns);
+    detail::SparseNewtonSystem<D> sparse_system(eqns, fixed_seed, validated);
+    return detail::run_newton_iteration<D>(verbose, eqns, binds, linStrat,
+                                           roundStrategy, &sparse_system);
   }
 };
 
@@ -444,25 +590,51 @@ template <class D> struct NPASolver {
 
 private:
   static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
-  solveOnce(const std::vector<Eqn> &eqns, bool verbose, int max,
-            LinearStrategy linear_strategy, DomainContractMode contract_mode,
-            ConvergencePolicy convergence_policy) {
-    SolveOptions options;
-    options.verbose = verbose;
-    options.max_iterations = max;
-    options.linear_strategy = linear_strategy;
-    options.contract_mode = contract_mode;
-    options.convergence_policy = convergence_policy;
+  solveOnce(const std::vector<Eqn> &eqns, const SolveOptions &requested_options,
+            const ValidatedEquationSystem &validated) {
+    SolveOptions options = requested_options;
     SolveContext<D> context(std::move(options));
+    const bool verbose = context.options.verbose;
+    const int max = context.options.max_iterations;
+    const LinearStrategy linear_strategy = context.options.linear_strategy;
+    const NewtonRoundStrategy round_strategy =
+        context.options.newton_round_strategy;
+    const DomainContractMode contract_mode = context.options.contract_mode;
+    const ConvergencePolicy convergence_policy =
+        context.options.convergence_policy;
     const bool checks_run = contract_mode != DomainContractMode::Off;
     const bool contract_ok =
         !checks_run || run_basic_domain_contract_checks<D>(verbose);
     if (contract_mode == DomainContractMode::Strict)
       require_domain_contract(contract_ok);
+
+    if (round_strategy != NewtonRoundStrategy::Dense && !D::idempotent)
+      throw SparseNewtonRequiresIdempotentError{};
+
+    const auto solve_start = std::chrono::steady_clock::now();
+    auto initial = NewtonIter<D>::init(eqns);
+    std::unique_ptr<detail::SparseNewtonSystem<D>> sparse_system;
+    double occurrence_index_time = 0.0;
+    if (round_strategy != NewtonRoundStrategy::Dense) {
+      const auto index_start = std::chrono::steady_clock::now();
+      sparse_system = std::make_unique<detail::SparseNewtonSystem<D>>(
+          eqns, initial, validated);
+      occurrence_index_time =
+          std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                        index_start)
+              .count();
+    }
+
+    std::vector<NewtonRoundStat> round_stats;
     auto result = iterate_until_stable(
-        NewtonIter<D>::init(eqns),
+        std::move(initial),
         [&](const std::vector<std::pair<Symbol, V>> &current) {
-          return NewtonIter<D>::run(verbose, eqns, current, linear_strategy);
+          NewtonRoundStat stats;
+          auto next = detail::run_newton_iteration<D>(
+              verbose, eqns, current, linear_strategy, round_strategy,
+              sparse_system.get(), &stats);
+          round_stats.push_back(std::move(stats));
+          return next;
         },
         [](const std::vector<std::pair<Symbol, V>> &lhs,
            const std::vector<std::pair<Symbol, V>> &rhs) {
@@ -481,7 +653,9 @@ private:
 
     Stat &stats = context.stats;
     stats.iters = result.iterations;
-    stats.time = result.seconds;
+    stats.time = std::chrono::duration<double>(
+                     std::chrono::steady_clock::now() - solve_start)
+                     .count();
     stats.hit_limit = npa_limit_hit();
     stats.hit_outer_limit = npa_hit_outer_limit();
     stats.hit_linear_limit = npa_hit_linear_limit();
@@ -490,6 +664,7 @@ private:
     stats.requested_max_iters = max;
     stats.effective_max_iters = max;
     stats.linear_strategy = linear_strategy;
+    stats.newton_round_strategy = round_strategy;
     stats.convergence_policy = convergence_policy;
     stats.used_approx_equal =
         DomainHasApproxEqual<D>::value &&
@@ -505,43 +680,67 @@ private:
         result.stabilized && !stats.hit_limit && !stats.used_approx_equal;
     stats.domain_contract_checks_run = checks_run;
     stats.domain_contract_checks_failed = checks_run && !contract_ok;
+    stats.occurrence_index_time = occurrence_index_time;
+    stats.indexed_derivative_occurrences =
+        sparse_system ? static_cast<long>(sparse_system->occurrenceCount()) : 0;
+    stats.newton_rounds = std::move(round_stats);
+    for (const NewtonRoundStat &round : stats.newton_rounds) {
+      stats.queried_derivative_occurrences += round.queried_occurrences;
+      stats.retained_derivative_occurrences += round.retained_occurrences;
+      stats.materialized_derivative_terms +=
+          round.materialized_derivative_terms;
+      stats.active_coordinate_visits += round.active_coordinates;
+      stats.round_discovery_time += round.discovery_time;
+      stats.round_materialization_time += round.materialization_time;
+      stats.linear_solve_time += round.linear_solve_time;
+    }
     return {std::move(result.value), std::move(stats)};
   }
 
 public:
-  static std::pair<std::vector<std::pair<Symbol, V>>, Stat> solve(
-      const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
-      LinearStrategy linStrat = LinearStrategy::SCC,
-      DomainContractMode contractMode = DomainContractMode::Off,
-      ConvergencePolicy convergencePolicy = ConvergencePolicy::DomainDefault) {
+  static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
+  solve(const std::vector<Eqn> &eqns, const SolveOptions &requested_options) {
     NPA_REQUIRE_DOMAIN(D);
     const auto validated = validate_equation_system<D>(eqns);
-    (void)validated;
-    // JACM (Esparza et al.) shows: for idempotent + commutative semirings,
-    // Newton terminates after at most n iterations for a system of n equations.
-    // We only apply this bound when the domain explicitly declares
-    // commutativity. If that declared contract is insufficient in practice,
-    // we continue uncapped rather than silently returning a bounded result.
-    int effective_max = max;
-    const bool auto_cap =
-        effective_max < 0 && D::idempotent && domain_commutative_extend<D>();
-    if (auto_cap) {
-      effective_max = static_cast<int>(eqns.size());
-    }
-    auto res = solveOnce(eqns, verbose, effective_max, linStrat, contractMode,
-                         convergencePolicy);
+    SolveOptions options = requested_options;
+    const int requested_max = options.max_iterations;
+    const bool auto_cap = options.max_iterations < 0 && D::idempotent &&
+                          domain_commutative_extend<D>();
+    if (auto_cap)
+      options.max_iterations = static_cast<int>(eqns.size());
+
+    auto res = solveOnce(eqns, options, validated);
     res.second.used_auto_n_cap = auto_cap;
-    res.second.effective_max_iters = effective_max;
+    res.second.requested_max_iters = requested_max;
+    res.second.effective_max_iters = options.max_iterations;
     if (auto_cap && !res.second.converged) {
-      if (verbose)
+      if (options.verbose)
         std::cerr << "[conv] automatic n-iteration bound was insufficient; "
                      "continuing without the cap\n";
-      res = solveOnce(eqns, verbose, -1, linStrat, contractMode,
-                      convergencePolicy);
+      options.max_iterations = -1;
+      res = solveOnce(eqns, options, validated);
       res.second.used_auto_n_cap = true;
       res.second.retried_without_auto_n_cap = true;
+      res.second.requested_max_iters = requested_max;
+      res.second.effective_max_iters = -1;
     }
     return res;
+  }
+
+  static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
+  solve(const std::vector<Eqn> &eqns, bool verbose = false, int max = -1,
+        LinearStrategy linStrat = LinearStrategy::SCC,
+        DomainContractMode contractMode = DomainContractMode::Off,
+        ConvergencePolicy convergencePolicy = ConvergencePolicy::DomainDefault,
+        NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense) {
+    SolveOptions options;
+    options.verbose = verbose;
+    options.max_iterations = max;
+    options.linear_strategy = linStrat;
+    options.newton_round_strategy = roundStrategy;
+    options.contract_mode = contractMode;
+    options.convergence_policy = convergencePolicy;
+    return solve(eqns, options);
   }
 };
 

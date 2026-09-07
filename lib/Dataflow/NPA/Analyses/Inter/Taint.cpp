@@ -581,19 +581,13 @@ private:
 
 class TaintAnalysis {
 public:
-  using FactType = llvm::APInt;
   using D = TaintTransformer;
+  using FactType = D::fact_type;
   using Engine = InterEngine<TaintTransformer, TaintAnalysis>;
-
-  static unsigned normalizeBitWidth(unsigned bit_width) {
-    return bit_width == 0 ? 1u : bit_width;
-  }
 
   TaintAnalysis(llvm::Module &M, lotus::AliasAnalysisWrapper &aa,
                 const InterTaint::Options &opts)
-      : module(M), info(M, aa), aliasAnalysis(aa),
-        bitWidth(normalizeBitWidth(info.getBitWidth())), widthScope(bitWidth),
-        entryFacts(bitWidth, 0), options(opts) {
+      : module(M), info(M, aa), aliasAnalysis(aa), options(opts) {
     initializeEntryFacts();
     scanUnsupportedSpecs();
   }
@@ -925,12 +919,7 @@ public:
   }
 
   void killBit(D::value_type &transfer, unsigned bit) const {
-    if (bit >= bitWidth)
-      return;
-    transfer.rel[bit] = llvm::APInt(bitWidth, 0);
-    for (auto &row : transfer.rel)
-      row.clearBit(bit);
-    transfer.gen.clearBit(bit);
+    D::kill(transfer, bit);
   }
 
   void killAccess(D::value_type &transfer, const llvm::Value *value,
@@ -1245,7 +1234,11 @@ public:
     return D::apply(summary, fact);
   }
 
-  FactType joinFacts(const FactType &a, const FactType &b) { return a | b; }
+  FactType joinFacts(const FactType &a, const FactType &b) {
+    FactType result = a;
+    result |= b;
+    return result;
+  }
 
   bool factsEqual(const FactType &a, const FactType &b) { return a == b; }
 
@@ -1335,8 +1328,6 @@ private:
   llvm::Module &module;
   TaintInfo info;
   lotus::AliasAnalysisWrapper &aliasAnalysis;
-  unsigned bitWidth = 1;
-  D::WidthScope widthScope;
   FactType entryFacts;
   InterTaint::Options options;
   bool unsupportedSpecsEncountered = false;
@@ -1398,7 +1389,7 @@ private:
         if (Arg.getType()->isPointerTy()) {
           unsigned bit = info.getValueBit(&Arg);
           if (bit != TaintInfo::invalidBit())
-            entryFacts.setBit(bit);
+            entryFacts.set(bit);
         }
       }
     }
@@ -1672,7 +1663,7 @@ public:
           if (!allowRet || call.getType()->isVoidTy())
             return;
           for (unsigned bit : bitsForAccess(&call, spec.access_mode)) {
-            if (bit < fact.getBitWidth() && fact[bit])
+            if (fact.test(bit))
               hits.insert(spec.access_mode == TaintSpec::VALUE ? "ret"
                                                                : "ret(mem)");
           }
@@ -1684,7 +1675,7 @@ public:
             return;
           const llvm::Value *arg = call.getArgOperand(idx);
           for (unsigned bit : bitsForAccess(arg, spec.access_mode)) {
-            if (bit < fact.getBitWidth() && fact[bit]) {
+            if (fact.test(bit)) {
               std::string label = "arg" + std::to_string(idx);
               if (spec.access_mode == TaintSpec::DIRECT_DEREF)
                 label += "(mem)";
@@ -1725,8 +1716,9 @@ public:
   }
 };
 
-static const llvm::APInt *findFactForBlock(const InterTaint::Result &result,
-                                           const llvm::BasicBlock *block) {
+static const TaintTransformer::fact_type *
+findFactForBlock(const InterTaint::Result &result,
+                 const llvm::BasicBlock *block) {
   auto exitIt = result.blockExitFacts.find(BlockKey{block});
   if (exitIt != result.blockExitFacts.end())
     return &exitIt->second;
@@ -1742,8 +1734,8 @@ bool InterTaint::Result::isValueTainted(const llvm::BasicBlock *block,
   if (bitIt == valueBits.end())
     return false;
 
-  const llvm::APInt *fact = findFactForBlock(*this, block);
-  return fact && bitIt->second < fact->getBitWidth() && (*fact)[bitIt->second];
+  const auto *fact = findFactForBlock(*this, block);
+  return fact && fact->test(bitIt->second);
 }
 
 bool InterTaint::Result::isMemoryTainted(const llvm::BasicBlock *block,
@@ -1752,11 +1744,11 @@ bool InterTaint::Result::isMemoryTainted(const llvm::BasicBlock *block,
   if (bitsIt == pointerMemoryBits.end())
     return false;
 
-  const llvm::APInt *fact = findFactForBlock(*this, block);
+  const auto *fact = findFactForBlock(*this, block);
   if (!fact)
     return false;
   for (unsigned bit : bitsIt->second) {
-    if (bit < fact->getBitWidth() && (*fact)[bit])
+    if (fact->test(bit))
       return true;
   }
   return false;
@@ -1764,7 +1756,7 @@ bool InterTaint::Result::isMemoryTainted(const llvm::BasicBlock *block,
 
 bool InterTaint::Result::isReachableMemoryTainted(
     const llvm::BasicBlock *block, const llvm::Value *pointer) const {
-  const llvm::APInt *fact = findFactForBlock(*this, block);
+  const auto *fact = findFactForBlock(*this, block);
   if (!fact)
     return false;
 
@@ -1783,7 +1775,7 @@ bool InterTaint::Result::isReachableMemoryTainted(
   }
 
   for (unsigned bit : *bits) {
-    if (bit < fact->getBitWidth() && (*fact)[bit])
+    if (fact->test(bit))
       return true;
   }
   return false;
@@ -1862,7 +1854,8 @@ InterTaint::Result InterTaint::run(llvm::Module &M,
     return res;
   }
   auto engineResult = InterEngine<TaintTransformer, TaintAnalysis>::run(
-      M, analysis, verbose, strategy, options.call_resolution_mode);
+      M, analysis, verbose, strategy, options.call_resolution_mode,
+      options.newton_round_strategy);
 
   InterTaint::Result res;
   res.status = engineResult.status;
@@ -1873,8 +1866,7 @@ InterTaint::Result InterTaint::run(llvm::Module &M,
   }
   res.summaries.insert(engineResult.summaries.begin(),
                        engineResult.summaries.end());
-  for (auto &kv : engineResult.blockEntryFacts)
-    res.blockFacts[kv.first] = kv.second;
+  res.blockFacts = engineResult.blockEntryFacts;
   res.valueBits = analysis.getValueBits();
   res.pointerMemoryBits = analysis.buildPointerMemoryBits();
   res.reachablePointerMemoryBits = analysis.buildReachablePointerMemoryBits();
@@ -1891,10 +1883,9 @@ InterTaint::Result InterTaint::run(llvm::Module &M,
       continue;
     for (auto &BB : F) {
       auto factIt = engineResult.blockEntryFacts.find(BlockKey{&BB});
-      llvm::APInt currentFact =
-          (&BB == &F.getEntryBlock())
-              ? analysis.getEntryValue()
-              : llvm::APInt(analysis.getEntryValue().getBitWidth(), 0);
+      TaintTransformer::fact_type currentFact;
+      if (&BB == &F.getEntryBlock())
+        currentFact = analysis.getEntryValue();
       if (factIt != engineResult.blockEntryFacts.end())
         currentFact = factIt->second;
       else if (&BB != &F.getEntryBlock())
@@ -1902,7 +1893,7 @@ InterTaint::Result InterTaint::run(llvm::Module &M,
       for (auto &I : BB) {
         if (auto *call = llvm::dyn_cast<llvm::CallBase>(&I)) {
           auto callTransfer = analysis.buildCallTransfer(*call, summaryMap);
-          llvm::APInt postFact =
+          TaintTransformer::fact_type postFact =
               TaintTransformer::apply(callTransfer, currentFact);
           auto taintedInputs =
               analysis.triggeredSinkInputs(*call, currentFact, postFact);
@@ -1923,9 +1914,11 @@ InterTaint::Result InterTaint::run(llvm::Module &M,
 InterTaint::Result
 InterTaint::run(llvm::Module &M, lotus::AliasAnalysisWrapper &aliasAnalysis,
                 bool verbose, LinearStrategy linearStrategy,
-                IndirectCallResolutionMode callResolutionMode) {
+                IndirectCallResolutionMode callResolutionMode,
+                NewtonRoundStrategy roundStrategy) {
   Options options;
   options.call_resolution_mode = callResolutionMode;
+  options.newton_round_strategy = roundStrategy;
   return run(M, aliasAnalysis, options, verbose, linearStrategy);
 }
 

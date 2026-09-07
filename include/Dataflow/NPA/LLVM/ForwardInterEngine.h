@@ -101,7 +101,7 @@ public:
                 IndirectCallResolutionMode mode)
         : analysis_(analysis), module_(module), mode_(mode) {}
 
-    std::vector<llvm::Function *> get(const llvm::CallBase &call) {
+    const std::vector<llvm::Function *> &get(const llvm::CallBase &call) {
       auto It = cache_.find(&call);
       if (It != cache_.end())
         return It->second;
@@ -393,6 +393,7 @@ public:
     E fullSummaryExpr;
     std::unordered_map<std::string, E> blockEntryExprs;
     std::unordered_map<std::string, E> blockExitExprs;
+    std::unordered_map<const llvm::CallBase *, E> callPrefixExprs;
   };
 
   struct PreparedFunctionArtifacts {
@@ -400,6 +401,12 @@ public:
     FunctionRegexArtifacts artifacts;
     AnalysisStatus status_delta;
     std::vector<llvm::Function *> discovered_callees;
+  };
+
+  struct PreparedCallPropagation {
+    llvm::Function *callee = nullptr;
+    Symbol callee_symbol;
+    Val entry_to_call;
   };
 
   static bool isZeroExpr(const E &expr) {
@@ -467,21 +474,28 @@ public:
     RegexToExpr(const std::vector<E> &labels, unsigned &star_counter)
         : labels_(labels), starCounter_(star_counter) {}
 
+    E translate(const lotus::pathexpressions::RegexRef<int> &regex) {
+      auto cached = cache_.find(regex.get());
+      if (cached != cache_.end())
+        return cached->second;
+      E result = regex->accept(*this, nullptr);
+      cache_.emplace(regex.get(), result);
+      return result;
+    }
+
     E visit(const lotus::pathexpressions::Union<int> &re,
             std::nullptr_t) override {
-      return combineExpr(re.getFirst()->accept(*this),
-                         re.getSecond()->accept(*this));
+      return combineExpr(translate(re.getFirst()), translate(re.getSecond()));
     }
 
     E visit(const lotus::pathexpressions::Concatenation<int> &re,
             std::nullptr_t) override {
-      return multiplyExpr(re.getSecond()->accept(*this),
-                          re.getFirst()->accept(*this));
+      return multiplyExpr(translate(re.getSecond()), translate(re.getFirst()));
     }
 
     E visit(const lotus::pathexpressions::Star<int> &re,
             std::nullptr_t) override {
-      return starExpr(re.getInner()->accept(*this), starCounter_);
+      return starExpr(translate(re.getInner()), starCounter_);
     }
 
     E visit(const lotus::pathexpressions::Literal<int> &re,
@@ -502,14 +516,8 @@ public:
   private:
     const std::vector<E> &labels_;
     unsigned &starCounter_;
+    std::unordered_map<const lotus::pathexpressions::IRegex<int> *, E> cache_;
   };
-
-  static E translateRegex(const lotus::pathexpressions::RegexRef<int> &regex,
-                          const std::vector<E> &labels,
-                          unsigned &star_counter) {
-    RegexToExpr translator(labels, star_counter);
-    return regex->accept(translator, nullptr);
-  }
 
   static E buildBlockBodyExpr(Analysis &analysis, llvm::Instruction &I,
                               E currentPath, CalleeCache &calleeCache,
@@ -520,7 +528,7 @@ public:
     if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
       if (CI->getCalledFunction() == nullptr)
         ++status.indirect_calls_seen;
-      std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
+      const auto &Callees = calleeCache.get(*CI);
       if (!Callees.empty()) {
         E callBranches = nullptr;
         for (llvm::Function *Callee : Callees) {
@@ -577,7 +585,7 @@ public:
     if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
       if (CI->getCalledFunction() == nullptr)
         ++status.indirect_calls_seen;
-      std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
+      const auto &Callees = calleeCache.get(*CI);
       if (!Callees.empty()) {
         E callBranches = nullptr;
         for (llvm::Function *Callee : Callees) {
@@ -652,6 +660,7 @@ public:
     std::vector<E> labels;
     labels.reserve(F.size() * 2U + 1U);
     std::unordered_map<std::string, E> blockBodyExprs;
+    std::unordered_map<const llvm::CallBase *, E> callPrefixExprs;
     auto addLabel = [&](E expr) {
       labels.push_back(expr ? expr : Exp::term(D::zero()));
       return static_cast<int>(labels.size() - 1);
@@ -667,10 +676,13 @@ public:
       graph.addNode(fromId);
 
       E currentPath = Exp::term(D::one());
-      for (auto &I : BB)
+      for (auto &I : BB) {
+        if (auto *call = llvm::dyn_cast<llvm::CallBase>(&I))
+          callPrefixExprs.emplace(call, currentPath);
         currentPath =
             buildBlockBodyExpr(analysis, I, currentPath, calleeCache, worklist,
                                visited, status, callResolutionMode);
+      }
       blockBodyExprs.emplace(getBlockSymbol(&BB), currentPath);
 
       auto *Term = BB.getTerminator();
@@ -695,16 +707,17 @@ public:
 
     lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
     unsigned starCounter = 0;
+    RegexToExpr translator(labels, starCounter);
 
     FunctionRegexArtifacts out;
-    out.fullSummaryExpr = translateRegex(computer.exprBetween(sourceId, exitId),
-                                         labels, starCounter);
+    out.callPrefixExprs = std::move(callPrefixExprs);
+    out.fullSummaryExpr =
+        translator.translate(computer.exprBetween(sourceId, exitId));
     out.summaryExpr = makeSummaryEquationExpr(out.fullSummaryExpr);
     for (auto &BB : F) {
       const std::string bSym = getBlockSymbol(&BB);
       E entryExpr =
-          translateRegex(computer.exprBetween(sourceId, blockIds.at(&BB)),
-                         labels, starCounter);
+          translator.translate(computer.exprBetween(sourceId, blockIds.at(&BB)));
       out.blockEntryExprs.emplace(bSym, entryExpr);
       out.blockExitExprs.emplace(
           bSym, multiplyExpr(blockBodyExprs.at(bSym), entryExpr));
@@ -751,10 +764,13 @@ public:
       graph.addNode(fromId);
 
       E currentPath = Exp::term(D::one());
-      for (auto &I : BB)
+      for (auto &I : BB) {
+        if (auto *call = llvm::dyn_cast<llvm::CallBase>(&I))
+          prepared.artifacts.callPrefixExprs.emplace(call, currentPath);
         currentPath = buildBlockBodyExprPrepared(
             analysis, I, currentPath, calleeCache, prepared.discovered_callees,
             prepared.status_delta, callResolutionMode);
+      }
       blockBodyExprs.emplace(getBlockSymbol(&BB), currentPath);
 
       auto *Term = BB.getTerminator();
@@ -767,23 +783,23 @@ public:
         auto *Succ = Term->getSuccessor(i);
         if (!Succ)
           continue;
-        E edgeExpr = Exp::seq(
-            getBlockEntryTransfer(analysis, *Succ, &BB), currentPath);
+        E edgeExpr =
+            Exp::seq(getBlockEntryTransfer(analysis, *Succ, &BB), currentPath);
         graph.addEdge(fromId, addLabel(edgeExpr), blockIds.at(Succ));
       }
     }
 
     lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
     unsigned starCounter = 0;
-    prepared.artifacts.fullSummaryExpr = translateRegex(
-        computer.exprBetween(sourceId, exitId), labels, starCounter);
+    RegexToExpr translator(labels, starCounter);
+    prepared.artifacts.fullSummaryExpr =
+        translator.translate(computer.exprBetween(sourceId, exitId));
     prepared.artifacts.summaryExpr =
         makeSummaryEquationExpr(prepared.artifacts.fullSummaryExpr);
     for (auto &BB : F) {
       const std::string bSym = getBlockSymbol(&BB);
       E entryExpr =
-          translateRegex(computer.exprBetween(sourceId, blockIds.at(&BB)),
-                         labels, starCounter);
+          translator.translate(computer.exprBetween(sourceId, blockIds.at(&BB)));
       prepared.artifacts.blockEntryExprs.emplace(bSym, entryExpr);
       prepared.artifacts.blockExitExprs.emplace(
           bSym, multiplyExpr(blockBodyExprs.at(bSym), entryExpr));
@@ -823,16 +839,19 @@ public:
     return roots.empty() ? defined : roots;
   }
 
-  static Result run(llvm::Module &M, Analysis &analysis, bool verbose = false,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    IndirectCallResolutionMode callResolutionMode =
-                        IndirectCallResolutionMode::ClosedWorldTypeCompatible) {
+  static Result
+  run(llvm::Module &M, Analysis &analysis, bool verbose = false,
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      IndirectCallResolutionMode callResolutionMode =
+          IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense) {
     std::vector<std::pair<Symbol, E>> eqns;
     std::set<llvm::Function *> visited;
     std::unordered_map<std::string, FunctionKey> functionSymbols;
     std::unordered_map<std::string, E> fullSummaryExprs;
     std::unordered_map<std::string, E> blockEntryExprs;
     std::unordered_map<std::string, E> blockExitExprs;
+    std::unordered_map<const llvm::CallBase *, E> callPrefixExprs;
     CalleeCache calleeCache(analysis, M, callResolutionMode);
 
     Result res;
@@ -865,6 +884,8 @@ public:
           blockEntryExprs.emplace(blockExpr.first, blockExpr.second);
         for (auto &blockExpr : item.artifacts.blockExitExprs)
           blockExitExprs.emplace(blockExpr.first, blockExpr.second);
+        for (auto &callExpr : item.artifacts.callPrefixExprs)
+          callPrefixExprs.emplace(callExpr.first, callExpr.second);
         res.status.indirect_calls_seen += item.status_delta.indirect_calls_seen;
         res.status.unresolved_indirect_calls +=
             item.status_delta.unresolved_indirect_calls;
@@ -886,7 +907,9 @@ public:
                                       ArtifactStart)
             .count();
 
-    auto rawRes = NPASolver<D>::solve(eqns, verbose, -1, linearStrategy);
+    auto rawRes = NPASolver<D>::solve(
+        eqns, verbose, -1, linearStrategy, DomainContractMode::Off,
+        ConvergencePolicy::DomainDefault, roundStrategy);
     std::unordered_map<Symbol, Val> solvedMap;
     for (auto &p : rawRes.first)
       solvedMap.insert_or_assign(p.first, p.second);
@@ -897,11 +920,13 @@ public:
     res.status.approximated =
         !rawRes.second.converged || res.status.used_bounded_inner_solve;
     const auto SummaryMaterializationStart = std::chrono::steady_clock::now();
+    typename I0<D>::EvaluationContext summaryEvaluationContext;
     for (const auto &entry : functionSymbols) {
       auto exprIt = fullSummaryExprs.find(entry.first);
       if (exprIt == fullSummaryExprs.end())
         continue;
-      Val summary = I0<D>::eval(false, solvedMap, exprIt->second);
+      Val summary = I0<D>::evalCachedWithContext(solvedMap, {}, exprIt->second,
+                                                 summaryEvaluationContext);
       if (summaryIsApproximate(analysis, summary, 0))
         res.status.approximated = true;
       res.summaries.insert_or_assign(entry.second, summary);
@@ -910,6 +935,8 @@ public:
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
                                       SummaryMaterializationStart)
             .count();
+    summaryEvaluationContext.values.clear();
+    summaryEvaluationContext.values.rehash(0);
 
     std::deque<llvm::Function *> worklist2;
     std::set<llvm::Function *> inWorklist2;
@@ -927,6 +954,78 @@ public:
     }
 
     const auto PropagationStart = std::chrono::steady_clock::now();
+
+    // All algebraic path summaries below depend only on the solved procedure
+    // summaries, not on the changing entry facts. Materialize them once and
+    // share evaluation state across roots that reuse expression prefixes.
+    typename I0<D>::EvaluationContext propagationEvaluationContext;
+    std::unordered_map<std::string, Val> blockExitSummaries;
+    blockExitSummaries.reserve(blockExitExprs.size());
+    for (const auto &entry : blockExitExprs) {
+      blockExitSummaries.emplace(
+          entry.first,
+          I0<D>::evalCachedWithContext(solvedMap, {}, entry.second,
+                                       propagationEvaluationContext));
+    }
+
+    std::unordered_map<const llvm::BasicBlock *, Val> blockEntrySummaries;
+    blockEntrySummaries.reserve(blockEntryExprs.size());
+    for (llvm::Function *function : visited) {
+      if (!function || function->isDeclaration())
+        continue;
+      for (auto &block : *function) {
+        const std::string blockSymbol = getBlockSymbol(&block);
+        auto entryExpression = blockEntryExprs.find(blockSymbol);
+        if (entryExpression == blockEntryExprs.end())
+          continue;
+        Val summary = D::zero();
+        if (llvm::isa<llvm::PHINode>(block.begin())) {
+          E blockExpression =
+              buildBlockEntryExpr(analysis, block, Exp::term(D::zero()), 0);
+          std::unordered_map<Symbol, Val> environment = solvedMap;
+          for (auto *predecessor : predecessors(&block)) {
+            const std::string predecessorSymbol = getBlockSymbol(predecessor);
+            auto predecessorSummary =
+                blockExitSummaries.find(predecessorSymbol);
+            if (predecessorSummary != blockExitSummaries.end())
+              environment.insert_or_assign(predecessorSymbol,
+                                           predecessorSummary->second);
+          }
+          summary = I0<D>::eval(false, environment, blockExpression);
+        } else {
+          summary = I0<D>::evalCachedWithContext(solvedMap, {},
+                                                 entryExpression->second,
+                                                 propagationEvaluationContext);
+        }
+        blockEntrySummaries.emplace(&block, std::move(summary));
+      }
+    }
+
+    std::unordered_map<const llvm::BasicBlock *,
+                       std::vector<PreparedCallPropagation>>
+        preparedCallsByBlock;
+    preparedCallsByBlock.reserve(blockEntrySummaries.size());
+    for (const auto &entry : callPrefixExprs) {
+      const llvm::CallBase *call = entry.first;
+      auto blockSummary = blockEntrySummaries.find(call->getParent());
+      if (blockSummary == blockEntrySummaries.end())
+        continue;
+      Val prefix = I0<D>::evalCachedWithContext(solvedMap, {}, entry.second,
+                                                propagationEvaluationContext);
+      auto &edges = preparedCallsByBlock[call->getParent()];
+      for (llvm::Function *callee : calleeCache.get(*call)) {
+        if (!callee || callee->isDeclaration())
+          continue;
+        Val callEntry = D::extend(
+            getCallEntryTransfer(analysis, *call, *callee, 0), prefix);
+        Val totalToCall = D::extend(callEntry, blockSummary->second);
+        edges.push_back(
+            {callee, getFuncSymbol(callee), std::move(totalToCall)});
+      }
+    }
+    propagationEvaluationContext.values.clear();
+    propagationEvaluationContext.values.rehash(0);
+
     while (!worklist2.empty()) {
       if (maxPropagationSteps >= 0 &&
           propagationSteps++ >= maxPropagationSteps) {
@@ -946,125 +1045,44 @@ public:
       Fact inputVal = funcInput[fSym];
 
       for (auto &BB : *F) {
-        std::string bSym = getBlockSymbol(&BB);
-        auto blockExprIt = blockEntryExprs.find(bSym);
-        if (blockExprIt == blockEntryExprs.end())
+        auto blockSummary = blockEntrySummaries.find(&BB);
+        if (blockSummary == blockEntrySummaries.end())
           continue;
-        Val entryToBlockStart = D::zero();
-        if (llvm::isa<llvm::PHINode>(BB.begin())) {
-          auto blockExpr =
-              buildBlockEntryExpr(analysis, BB, Exp::term(D::zero()), 0);
-          std::unordered_map<Symbol, Val> env = solvedMap;
-          for (auto *Pred : predecessors(&BB)) {
-            const std::string predSym = getBlockSymbol(Pred);
-            auto predIt = blockExitExprs.find(predSym);
-            if (predIt == blockExitExprs.end())
-              continue;
-            env.insert_or_assign(
-                predSym, I0<D>::eval(false, solvedMap, predIt->second));
-          }
-          entryToBlockStart = I0<D>::eval(false, env, blockExpr);
-        } else {
-          entryToBlockStart =
-              I0<D>::eval(false, solvedMap, blockExprIt->second);
-        }
-
         auto blockEntryFact = applySummaryWithReporting(
-            analysis, entryToBlockStart, inputVal, approx_flags, 0);
+            analysis, blockSummary->second, inputVal, approx_flags, 0);
         if (factIsApproximate(analysis, blockEntryFact, 0))
           res.status.approximated = true;
-        res.blockEntryFacts[{&BB}] = blockEntryFact;
+        res.blockEntryFacts.insert_or_assign(BlockKey{&BB},
+                                             std::move(blockEntryFact));
 
-        E currentPath = Exp::term(D::one());
-
-        for (auto &I : BB) {
-          if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
-            if (CI->getCalledFunction() == nullptr)
-              ++res.status.indirect_calls_seen;
-            std::vector<llvm::Function *> Callees = calleeCache.get(*CI);
-            if (!Callees.empty()) {
-              Val currentPathVal = I0<D>::eval(false, solvedMap, currentPath);
-              E callBranches = nullptr;
-              for (llvm::Function *Callee : Callees) {
-                E branch = nullptr;
-                if (Callee->isDeclaration()) {
-                  branch =
-                      Exp::seq(getCallReturnTransfer(analysis, *CI, *Callee, 0),
-                               currentPath);
-                } else {
-                  std::string calleeFSym = getFuncSymbol(Callee);
-
-                  Val callEntry =
-                      D::extend(getCallEntryTransfer(analysis, *CI, *Callee, 0),
-                                currentPathVal);
-                  Val totalToCall = D::extend(callEntry, entryToBlockStart);
-
-                  auto factAtCall = applySummaryWithReporting(
-                      analysis, totalToCall, inputVal, approx_flags, 0);
-
-                  if (!funcInput.count(calleeFSym)) {
-                    funcInput[calleeFSym] = factAtCall;
-                    if (inWorklist2.insert(Callee).second)
-                      worklist2.push_back(Callee);
-                  } else {
-                    auto oldVal = funcInput[calleeFSym];
-                    auto newVal = analysis.joinFacts(oldVal, factAtCall);
-                    if (!analysis.factsEqual(oldVal, newVal)) {
-                      size_t updateCount = ++funcUpdates[calleeFSym];
-                      Fact widened =
-                          widenFactsWithReporting(analysis, oldVal, newVal,
-                                                  updateCount, approx_flags, 0);
-                      if (hasCustomWidenFacts(analysis, 0))
-                        res.status.approximated = true;
-                      if (!analysis.factsEqual(oldVal, widened)) {
-                        funcInput[calleeFSym] = widened;
-                        if (inWorklist2.insert(Callee).second)
-                          worklist2.push_back(Callee);
-                      }
-                    }
-                  }
-
-                  branch =
-                      Exp::seq(getCallEntryTransfer(analysis, *CI, *Callee, 0),
-                               currentPath);
-                  branch =
-                      multiplyExpr(makeCallSummaryExpr(calleeFSym), branch);
-                  branch = Exp::seq(
-                      getCallReturnTransfer(analysis, *CI, *Callee, 0), branch);
-                }
-                callBranches =
-                    callBranches ? Exp::ndet(callBranches, branch) : branch;
-              }
-              Val fallbackTransfer =
-                  getCallFallbackTransfer(analysis, *CI, Callees, 0);
-              if (!D::equal(fallbackTransfer, D::zero())) {
-                ++res.status.fallback_call_edges;
-                E fallbackBranch = Exp::seq(fallbackTransfer, currentPath);
-                callBranches = callBranches
-                                   ? Exp::ndet(callBranches, fallbackBranch)
-                                   : fallbackBranch;
-              }
-              currentPath = callBranches;
-            } else {
-              if (CI->getCalledFunction() == nullptr) {
-                ++res.status.unresolved_indirect_calls;
-                if (res.status.call_resolution_mode ==
-                    IndirectCallResolutionMode::CustomResolverRequired) {
-                  res.status.requires_external_callee_resolver = true;
-                  res.status.approximated = true;
-                }
-              }
-              Val fallbackTransfer =
-                  getCallFallbackTransfer(analysis, *CI, Callees, 0);
-              if (!D::equal(fallbackTransfer, D::zero())) {
-                ++res.status.fallback_call_edges;
-                currentPath = Exp::seq(fallbackTransfer, currentPath);
-              } else
-                currentPath = Exp::seq(
-                    getCallToReturnTransfer(analysis, *CI, 0), currentPath);
+        auto preparedCalls = preparedCallsByBlock.find(&BB);
+        if (preparedCalls != preparedCallsByBlock.end()) {
+          for (const PreparedCallPropagation &edge : preparedCalls->second) {
+            auto factAtCall = applySummaryWithReporting(
+                analysis, edge.entry_to_call, inputVal, approx_flags, 0);
+            auto existing = funcInput.find(edge.callee_symbol);
+            if (existing == funcInput.end()) {
+              funcInput.emplace(edge.callee_symbol, std::move(factAtCall));
+              if (inWorklist2.insert(edge.callee).second)
+                worklist2.push_back(edge.callee);
+              continue;
             }
+
+            Fact joined = analysis.joinFacts(existing->second, factAtCall);
+            if (analysis.factsEqual(existing->second, joined))
+              continue;
+            size_t updateCount = ++funcUpdates[edge.callee_symbol];
+            Fact widened =
+                widenFactsWithReporting(analysis, existing->second, joined,
+                                        updateCount, approx_flags, 0);
+            if (hasCustomWidenFacts(analysis, 0))
+              res.status.approximated = true;
+            if (analysis.factsEqual(existing->second, widened))
+              continue;
+            existing->second = std::move(widened);
+            if (inWorklist2.insert(edge.callee).second)
+              worklist2.push_back(edge.callee);
           }
-          currentPath = analysis.getTransfer(I, currentPath);
         }
       }
     }

@@ -1,10 +1,11 @@
-#include "Dataflow/NPA/LLVM/BackwardInterEngine.h"
 #include "Dataflow/NPA/Analyses/Inter/ConstantPropagation.h"
 #include "Dataflow/NPA/Analyses/Inter/Interval.h"
 #include "Dataflow/NPA/Analyses/Inter/LiveVariables.h"
 #include "Dataflow/NPA/Analyses/Inter/MaybeUninitialized.h"
-#include "Dataflow/NPA/Domains/PredicateRelationDomain.h"
+#include "Dataflow/NPA/Analyses/Inter/ReachingDefinitions.h"
 #include "Dataflow/NPA/Domains/PathTransferSummary.h"
+#include "Dataflow/NPA/Domains/PredicateRelationDomain.h"
+#include "Dataflow/NPA/LLVM/BackwardInterEngine.h"
 #include "TestUtils/LLVMHelpers.h"
 
 #include <cctype>
@@ -15,10 +16,10 @@
 #include <string>
 #include <vector>
 
+#include <gtest/gtest.h>
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <gtest/gtest.h>
 
 namespace {
 
@@ -37,10 +38,47 @@ std::vector<const T *> statesForBlock(const std::map<npa::BlockKey, T> &facts,
   return out;
 }
 
-llvm::APInt unionFactForBlock(const std::map<npa::BlockKey, llvm::APInt> &facts,
-                              const llvm::BasicBlock *block) {
+TEST(NPAInterproceduralClients,
+     SparseReachingDefinitionFactsMatchDenseNewtonRounds) {
+  llvm::LLVMContext ctx;
+  auto module = parseModule(ctx, R"(
+    define i32 @main() {
+    entry:
+      %first = add i32 1, 2
+      br label %next
+    next:
+      %second = add i32 %first, 3
+      ret i32 %second
+    }
+  )");
+  ASSERT_NE(module, nullptr);
+
+  auto *main = module->getFunction("main");
+  ASSERT_NE(main, nullptr);
+  auto nextIt = std::next(main->begin());
+  ASSERT_NE(nextIt, main->end());
+  auto *next = &*nextIt;
+
+  auto dense = npa::InterReachingDefinitions::run(*module);
+  auto sparse = npa::InterReachingDefinitions::run(
+      *module, false, npa::LinearStrategy::SCC,
+      npa::IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      npa::NewtonRoundStrategy::Sparse);
+  ASSERT_TRUE(dense.status.overall_converged);
+  ASSERT_TRUE(sparse.status.overall_converged);
+
+  const auto &denseFact = dense.blockFacts.at(npa::BlockKey{next});
+  const auto &sparseFact = sparse.blockFacts.at(npa::BlockKey{next});
+  EXPECT_EQ(denseFact, sparseFact);
+  EXPECT_TRUE(sparseFact.test(0));
+  EXPECT_EQ(sparseFact.count(), 1u);
+}
+
+npa::TaintTransformer::fact_type unionFactForBlock(
+    const std::map<npa::BlockKey, npa::TaintTransformer::fact_type> &facts,
+    const llvm::BasicBlock *block) {
   bool found = false;
-  llvm::APInt fact(1, 0);
+  npa::TaintTransformer::fact_type fact;
   for (const auto &entry : facts) {
     if (entry.first.block != block)
       continue;
@@ -166,7 +204,12 @@ public:
     return Exp::seq(EntryHookDomain::singleton(label), inExpr);
   }
 
-  E getTransfer(llvm::Instruction &, E currentPath) { return currentPath; }
+  E getTransfer(llvm::Instruction &, E currentPath) {
+    ++transferBuilds;
+    return currentPath;
+  }
+
+  unsigned getTransferBuilds() const { return transferBuilds; }
 
   FactType applySummary(const FactType &summary, const FactType &fact) {
     return EntryHookDomain::extend(summary, fact);
@@ -179,6 +222,9 @@ public:
   bool factsEqual(const FactType &lhs, const FactType &rhs) const {
     return EntryHookDomain::equal(lhs, rhs);
   }
+
+private:
+  unsigned transferBuilds = 0;
 };
 
 struct LimitedBoolDomain {
@@ -417,9 +463,9 @@ TEST(NPAInterproceduralClients, MaybeUninitializedFlowsThroughCall) {
   ASSERT_NE(Id, nullptr);
 
   auto result = npa::InterMaybeUninitialized::run(*module);
-  llvm::APInt entryFact =
+  auto entryFact =
       unionFactForBlock(result.blockFacts, &Id->getEntryBlock());
-  EXPECT_GT(entryFact.countPopulation(), 0u);
+  EXPECT_GT(entryFact.count(), 0u);
 }
 
 TEST(NPAInterproceduralClients, MaybeUninitializedStoreClearsBeforeCall) {
@@ -445,9 +491,9 @@ TEST(NPAInterproceduralClients, MaybeUninitializedStoreClearsBeforeCall) {
   ASSERT_NE(Id, nullptr);
 
   auto result = npa::InterMaybeUninitialized::run(*module);
-  llvm::APInt entryFact =
+  auto entryFact =
       unionFactForBlock(result.blockFacts, &Id->getEntryBlock());
-  EXPECT_EQ(entryFact.countPopulation(), 0u);
+  EXPECT_EQ(entryFact.count(), 0u);
 }
 
 TEST(NPAInterproceduralClients,
@@ -468,9 +514,13 @@ TEST(NPAInterproceduralClients,
   ASSERT_NE(module, nullptr);
 
   EntryHookAnalysis analysis;
-  auto result =
-      npa::InterEngine<EntryHookDomain, EntryHookAnalysis>::run(
-          *module, analysis, false, npa::LinearStrategy::SCC);
+  auto result = npa::InterEngine<EntryHookDomain, EntryHookAnalysis>::run(
+      *module, analysis, false, npa::LinearStrategy::SCC);
+
+  // Transfer expressions are immutable artifacts. Fact propagation reuses
+  // their prepared block/call summaries instead of rebuilding every
+  // instruction transfer when a function is dequeued.
+  EXPECT_EQ(analysis.getTransferBuilds(), 3u);
 
   auto *Main = module->getFunction("main");
   ASSERT_NE(Main, nullptr);
@@ -503,9 +553,8 @@ TEST(NPAInterproceduralClients,
   ASSERT_NE(module, nullptr);
 
   LimitedBoolAnalysis analysis;
-  auto result =
-      npa::InterEngine<LimitedBoolDomain, LimitedBoolAnalysis>::run(
-          *module, analysis, false, npa::LinearStrategy::SCC);
+  auto result = npa::InterEngine<LimitedBoolDomain, LimitedBoolAnalysis>::run(
+      *module, analysis, false, npa::LinearStrategy::SCC);
 
   EXPECT_FALSE(result.status.summary_solve.converged);
   EXPECT_TRUE(result.status.summary_solve.hit_limit);
@@ -536,10 +585,9 @@ TEST(NPAInterproceduralClients,
   ASSERT_NE(module, nullptr);
 
   RecursivePropagationLimitedForwardAnalysis analysis;
-  auto result =
-      npa::InterEngine<RecursiveSummaryDomain,
+  auto result = npa::InterEngine<RecursiveSummaryDomain,
                                  RecursivePropagationLimitedForwardAnalysis>::
-          run(*module, analysis, false, npa::LinearStrategy::SCC);
+      run(*module, analysis, false, npa::LinearStrategy::SCC);
 
   auto *Recur = module->getFunction("recur");
   ASSERT_NE(Recur, nullptr);
@@ -675,10 +723,9 @@ TEST(NPAInterproceduralClients,
   ASSERT_NE(module, nullptr);
 
   ProjectedSummaryAnalysis analysis;
-  auto result = npa::InterEngine<
-      ProjectedStringDomain,
-      ProjectedSummaryAnalysis>::run(*module, analysis, false,
-                                     npa::LinearStrategy::SCC);
+  auto result =
+      npa::InterEngine<ProjectedStringDomain, ProjectedSummaryAnalysis>::run(
+          *module, analysis, false, npa::LinearStrategy::SCC);
 
   auto *Callee = module->getFunction("callee");
   ASSERT_NE(Callee, nullptr);
@@ -705,10 +752,9 @@ TEST(NPAInterproceduralClients,
   ASSERT_NE(module, nullptr);
 
   ProjectedSummaryAnalysis analysis;
-  auto result = npa::InterEngine<
-      ProjectedStringDomain,
-      ProjectedSummaryAnalysis>::run(*module, analysis, false,
-                                     npa::LinearStrategy::SCC);
+  auto result =
+      npa::InterEngine<ProjectedStringDomain, ProjectedSummaryAnalysis>::run(
+          *module, analysis, false, npa::LinearStrategy::SCC);
 
   auto *Main = module->getFunction("main");
   auto *Callee = module->getFunction("callee");

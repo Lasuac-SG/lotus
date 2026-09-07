@@ -1,8 +1,8 @@
 #ifndef NPA_BIT_VECTOR_SOLVER_H
 #define NPA_BIT_VECTOR_SOLVER_H
 
-#include "Dataflow/NPA/LLVM/BitVectorProblem.h"
 #include "Dataflow/NPA/Domains/BitSetDomain.h"
+#include "Dataflow/NPA/LLVM/BitVectorProblem.h"
 #include "Dataflow/NPA/NPA.h"
 
 #include <unordered_map>
@@ -31,10 +31,11 @@ public:
   /**
    * @brief Run the analysis on a function
    */
-  static Result run(llvm::Function &F, const BitVectorProblem &info,
-                    SolverStrategy strategy = SolverStrategy::Newton,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    bool verbose = false);
+  static Result
+  run(llvm::Function &F, const BitVectorProblem &info,
+      SolverStrategy strategy = SolverStrategy::Newton,
+      LinearStrategy linearStrategy = LinearStrategy::SCC, bool verbose = false,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense);
 };
 
 } // namespace npa

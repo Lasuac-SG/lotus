@@ -364,9 +364,9 @@ TEST(NPAInterproceduralClients, LiveVariablesFlowBackThroughCall) {
   auto BitIt = result.valueBits.find(Arg);
   ASSERT_NE(BitIt, result.valueBits.end());
 
-  llvm::APInt liveIn =
+  auto liveIn =
       unionFactForBlock(result.blockFacts, &Id->getEntryBlock());
-  EXPECT_TRUE(liveIn[BitIt->second]);
+  EXPECT_TRUE(liveIn.test(BitIt->second));
 }
 
 TEST(NPAInterproceduralClients,

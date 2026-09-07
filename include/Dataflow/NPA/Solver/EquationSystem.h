@@ -40,12 +40,36 @@ inline void require_bound_symbol(const Symbol &symbol,
     throw InvalidEquationSystemError("unbound local equation symbol");
 }
 
+struct ScopedExpressionKey {
+  const void *expression = nullptr;
+  std::size_t scope = 0;
+
+  bool operator==(const ScopedExpressionKey &other) const {
+    return expression == other.expression && scope == other.scope;
+  }
+};
+
+struct ScopedExpressionKeyHash {
+  std::size_t operator()(const ScopedExpressionKey &key) const {
+    const std::size_t pointerHash = std::hash<const void *>{}(key.expression);
+    return pointerHash ^ (key.scope + static_cast<std::size_t>(0x9e3779b9) +
+                          (pointerHash << 6) + (pointerHash >> 2));
+  }
+};
+
+using ScopedExpressionSet =
+    std::unordered_set<ScopedExpressionKey, ScopedExpressionKeyHash>;
+
 template <class D>
-void collect_free_symbols(const E0<D> &expr,
-                          const std::unordered_set<Symbol> &bound,
-                          std::unordered_set<Symbol> &free) {
+void collect_free_symbols_impl(const E0<D> &expr,
+                               const std::unordered_set<Symbol> &bound,
+                               std::unordered_set<Symbol> &free,
+                               ScopedExpressionSet &visited,
+                               std::size_t scope, std::size_t &next_scope) {
   if (!expr)
     throw InvalidEquationSystemError("null polynomial equation expression");
+  if (!visited.insert({expr.get(), scope}).second)
+    return;
 
   using K = typename Exp0<D>::K;
   switch (expr->k) {
@@ -53,17 +77,21 @@ void collect_free_symbols(const E0<D> &expr,
     return;
   case K::Seq:
   case K::Project:
-    collect_free_symbols(expr->t, bound, free);
+    collect_free_symbols_impl(expr->t, bound, free, visited, scope,
+                              next_scope);
     return;
   case K::Mul:
   case K::Cond:
   case K::Ndet:
-    collect_free_symbols(expr->t1, bound, free);
-    collect_free_symbols(expr->t2, bound, free);
+    collect_free_symbols_impl(expr->t1, bound, free, visited, scope,
+                              next_scope);
+    collect_free_symbols_impl(expr->t2, bound, free, visited, scope,
+                              next_scope);
     return;
   case K::Call:
     free.insert(expr->sym);
-    collect_free_symbols(expr->t, bound, free);
+    collect_free_symbols_impl(expr->t, bound, free, visited, scope,
+                              next_scope);
     return;
   case K::Hole:
     free.insert(expr->sym);
@@ -74,14 +102,87 @@ void collect_free_symbols(const E0<D> &expr,
   case K::Concat:
     if (bound.find(expr->sym) == bound.end())
       free.insert(expr->sym);
-    collect_free_symbols(expr->t1, bound, free);
-    collect_free_symbols(expr->t2, bound, free);
+    collect_free_symbols_impl(expr->t1, bound, free, visited, scope,
+                              next_scope);
+    collect_free_symbols_impl(expr->t2, bound, free, visited, scope,
+                              next_scope);
     return;
   case K::Star:
   case K::Mu: {
     auto body_bound = bound;
     body_bound.insert(expr->sym);
-    collect_free_symbols(expr->t, body_bound, free);
+    const std::size_t body_scope = next_scope++;
+    collect_free_symbols_impl(expr->t, body_bound, free, visited, body_scope,
+                              next_scope);
+    return;
+  }
+  }
+}
+
+template <class D>
+void collect_free_symbols(const E0<D> &expr,
+                          const std::unordered_set<Symbol> &bound,
+                          std::unordered_set<Symbol> &free) {
+  ScopedExpressionSet visited;
+  std::size_t next_scope = 1;
+  collect_free_symbols_impl(expr, bound, free, visited, 0, next_scope);
+}
+
+template <class D>
+void collect_free_symbols_impl(const E1<D> &expr,
+                               const std::unordered_set<Symbol> &bound,
+                               std::unordered_set<Symbol> &free,
+                               ScopedExpressionSet &visited,
+                               std::size_t scope, std::size_t &next_scope) {
+  if (!expr)
+    throw InvalidEquationSystemError("null linear equation expression");
+  if (!visited.insert({expr.get(), scope}).second)
+    return;
+
+  using K = typename Exp1<D>::K;
+  switch (expr->k) {
+  case K::Term:
+    return;
+  case K::Seq:
+  case K::SeqR:
+  case K::Project:
+    collect_free_symbols_impl(expr->t, bound, free, visited, scope,
+                              next_scope);
+    return;
+  case K::Cond:
+  case K::Ndet:
+  case K::Add:
+  case K::Sub:
+    collect_free_symbols_impl(expr->t1, bound, free, visited, scope,
+                              next_scope);
+    collect_free_symbols_impl(expr->t2, bound, free, visited, scope,
+                              next_scope);
+    return;
+  case K::Call:
+    if (bound.find(expr->sym) == bound.end())
+      free.insert(expr->sym);
+    return;
+  case K::Hole:
+    free.insert(expr->sym);
+    return;
+  case K::Bound:
+    require_bound_symbol(expr->sym, bound);
+    return;
+  case K::Concat:
+    if (bound.find(expr->sym) == bound.end())
+      free.insert(expr->sym);
+    collect_free_symbols_impl(expr->t1, bound, free, visited, scope,
+                              next_scope);
+    collect_free_symbols_impl(expr->t2, bound, free, visited, scope,
+                              next_scope);
+    return;
+  case K::Star:
+  case K::Mu: {
+    auto body_bound = bound;
+    body_bound.insert(expr->sym);
+    const std::size_t body_scope = next_scope++;
+    collect_free_symbols_impl(expr->t, body_bound, free, visited, body_scope,
+                              next_scope);
     return;
   }
   }
@@ -91,49 +192,9 @@ template <class D>
 void collect_free_symbols(const E1<D> &expr,
                           const std::unordered_set<Symbol> &bound,
                           std::unordered_set<Symbol> &free) {
-  if (!expr)
-    throw InvalidEquationSystemError("null linear equation expression");
-
-  using K = typename Exp1<D>::K;
-  switch (expr->k) {
-  case K::Term:
-    return;
-  case K::Seq:
-  case K::SeqR:
-  case K::Project:
-    collect_free_symbols(expr->t, bound, free);
-    return;
-  case K::Cond:
-  case K::Ndet:
-  case K::Add:
-  case K::Sub:
-    collect_free_symbols(expr->t1, bound, free);
-    collect_free_symbols(expr->t2, bound, free);
-    return;
-  case K::Call:
-    if (bound.find(expr->sym) == bound.end())
-      free.insert(expr->sym);
-    return;
-  case K::Hole:
-    free.insert(expr->sym);
-    return;
-  case K::Bound:
-    require_bound_symbol(expr->sym, bound);
-    return;
-  case K::Concat:
-    if (bound.find(expr->sym) == bound.end())
-      free.insert(expr->sym);
-    collect_free_symbols(expr->t1, bound, free);
-    collect_free_symbols(expr->t2, bound, free);
-    return;
-  case K::Star:
-  case K::Mu: {
-    auto body_bound = bound;
-    body_bound.insert(expr->sym);
-    collect_free_symbols(expr->t, body_bound, free);
-    return;
-  }
-  }
+  ScopedExpressionSet visited;
+  std::size_t next_scope = 1;
+  collect_free_symbols_impl(expr, bound, free, visited, 0, next_scope);
 }
 
 template <class D, class E>

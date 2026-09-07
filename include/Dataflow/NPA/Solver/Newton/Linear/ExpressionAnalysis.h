@@ -14,12 +14,23 @@
 
 #include "Dataflow/NPA/Core/Expr/Expressions.h"
 
+#include <unordered_set>
+
 namespace npa {
 
 template <class D> struct LCFLDetector {
   /// True if e contains Concat or Star (two-sided or starred structure).
   static bool has_lcfl_structure(const E1<D> &e) {
+    std::unordered_set<const Exp1<D> *> visited;
+    return has_lcfl_structure(e, visited);
+  }
+
+private:
+  static bool has_lcfl_structure(
+      const E1<D> &e, std::unordered_set<const Exp1<D> *> &visited) {
     if (!e)
+      return false;
+    if (!visited.insert(e.get()).second)
       return false;
     using K = typename Exp1<D>::K;
     switch (e->k) {
@@ -29,11 +40,11 @@ template <class D> struct LCFLDetector {
     default:
       break;
     }
-    if (e->t && has_lcfl_structure(e->t))
+    if (e->t && has_lcfl_structure(e->t, visited))
       return true;
-    if (e->t1 && has_lcfl_structure(e->t1))
+    if (e->t1 && has_lcfl_structure(e->t1, visited))
       return true;
-    if (e->t2 && has_lcfl_structure(e->t2))
+    if (e->t2 && has_lcfl_structure(e->t2, visited))
       return true;
     return false;
   }

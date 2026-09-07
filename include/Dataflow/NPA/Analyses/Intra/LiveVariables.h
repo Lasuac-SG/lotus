@@ -11,7 +11,8 @@ class LiveVariables {
 public:
   static BitVectorSolver::Result
   run(llvm::Function &F, SolverStrategy strategy = SolverStrategy::Newton,
-      LinearStrategy linearStrategy = LinearStrategy::SCC);
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense);
 };
 
 } // namespace npa

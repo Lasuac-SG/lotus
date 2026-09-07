@@ -4,71 +4,68 @@
  */
 #include "Dataflow/NPA/Domains/TaintDomain.h"
 
+#include <utility>
+#include <vector>
+
 namespace npa {
 
-unsigned TaintTransformer::requireBitWidth() {
-  return width_context::require(
-      "TaintTransformer width must be installed via WidthScope");
-}
-
-unsigned TaintTransformer::bitWidthOf(const value_type &value) {
-  return value.gen.getBitWidth();
-}
-
-std::vector<llvm::APInt> TaintTransformer::identityRel(unsigned bit_width) {
-  std::vector<llvm::APInt> rel;
-  rel.reserve(bit_width);
-  for (unsigned i = 0; i < bit_width; ++i) {
-    llvm::APInt row(bit_width, 0);
-    row.setBit(i);
-    rel.push_back(row);
-  }
-  return rel;
-}
-
-TaintTransformer::value_type TaintTransformer::zero() {
-  return zero(requireBitWidth());
-}
-
-TaintTransformer::value_type TaintTransformer::zero(unsigned bit_width) {
-  value_type out;
-  out.rel.assign(bit_width, llvm::APInt(bit_width, 0));
-  out.gen = llvm::APInt(bit_width, 0);
-  return out;
-}
+TaintTransformer::value_type TaintTransformer::zero() { return {}; }
 
 TaintTransformer::value_type TaintTransformer::one() {
-  return one(requireBitWidth());
+  value_type result;
+  result.identity = true;
+  return result;
 }
 
-TaintTransformer::value_type TaintTransformer::one(unsigned bit_width) {
-  value_type out;
-  out.rel = identityRel(bit_width);
-  out.gen = llvm::APInt(bit_width, 0);
-  return out;
+TaintTransformer::fact_type TaintTransformer::row(
+    const value_type &transfer, unsigned input) {
+  if (const fact_type *override = transfer.rows.find(input))
+    return *override;
+  fact_type result;
+  if (transfer.identity)
+    result.set(input);
+  return result;
+}
+
+void TaintTransformer::setRow(value_type &transfer, unsigned input,
+                              fact_type newRow) {
+  fact_type defaultRow;
+  if (transfer.identity)
+    defaultRow.set(input);
+  if (newRow == defaultRow) {
+    transfer.rows.erase(input);
+    return;
+  }
+  transfer.rows.set(input, newRow);
 }
 
 bool TaintTransformer::equal(const value_type &a, const value_type &b) {
-  if (a.gen != b.gen || a.rel.size() != b.rel.size())
-    return false;
-  for (unsigned i = 0; i < a.rel.size(); ++i) {
-    if (a.rel[i] != b.rel[i])
-      return false;
-  }
-  return true;
+  return a == b;
 }
 
 TaintTransformer::value_type
 TaintTransformer::combine(const value_type &a, const value_type &b) {
-  const unsigned bit_width = bitWidthOf(a);
-  assert(bit_width == bitWidthOf(b) && "taint widths must match");
-  value_type out;
-  out.rel.resize(bit_width, llvm::APInt(bit_width, 0));
-  for (unsigned i = 0; i < bit_width; ++i) {
-    out.rel[i] = a.rel[i] | b.rel[i];
+  if (equal(a, b))
+    return a;
+  if (!a.identity && a.rows.empty() && a.gen.empty())
+    return b;
+  if (!b.identity && b.rows.empty() && b.gen.empty())
+    return a;
+
+  value_type result;
+  result.identity = a.identity || b.identity;
+  result.gen = a.gen;
+  result.gen |= b.gen;
+
+  fact_type keys;
+  a.rows.collectKeys(keys);
+  b.rows.collectKeys(keys);
+  for (unsigned input : keys) {
+    fact_type joined = row(a, input);
+    joined |= row(b, input);
+    setRow(result, input, std::move(joined));
   }
-  out.gen = a.gen | b.gen;
-  return out;
+  return result;
 }
 
 TaintTransformer::value_type
@@ -82,30 +79,45 @@ TaintTransformer::condCombine(bool phi, const value_type &t,
   return phi ? t : e;
 }
 
-llvm::APInt TaintTransformer::applyRel(const std::vector<llvm::APInt> &rel,
-                                       const llvm::APInt &in) {
-  const unsigned bit_width = in.getBitWidth();
-  assert(rel.size() == bit_width && "taint relation width must match input");
-  llvm::APInt out(bit_width, 0);
-  for (unsigned i = 0; i < bit_width; ++i) {
-    if (in[i])
-      out |= rel[i];
+TaintTransformer::fact_type TaintTransformer::applyRelation(
+    const value_type &transfer, const fact_type &input) {
+  fact_type result = transfer.identity ? input : fact_type{};
+  for (unsigned source : input) {
+    const fact_type *outputs = transfer.rows.find(source);
+    if (!outputs)
+      continue;
+    if (transfer.identity)
+      result.reset(source);
+    result |= *outputs;
   }
-  return out;
+  return result;
 }
 
 TaintTransformer::value_type
 TaintTransformer::extend(const value_type &a, const value_type &b) {
-  // a after b: a o b
-  const unsigned bit_width = bitWidthOf(a);
-  assert(bit_width == bitWidthOf(b) && "taint widths must match");
-  value_type out;
-  out.rel.resize(bit_width, llvm::APInt(bit_width, 0));
-  for (unsigned i = 0; i < bit_width; ++i) {
-    out.rel[i] = applyRel(a.rel, b.rel[i]);
+  // a after b: a composed with b.
+  if (!a.identity && a.rows.empty() && a.gen.empty())
+    return zero();
+  if (a.identity && a.rows.empty() && a.gen.empty())
+    return b;
+  if (b.identity && b.rows.empty() && b.gen.empty())
+    return a;
+
+  value_type result;
+  result.identity = a.identity && b.identity;
+
+  fact_type keys;
+  b.rows.collectKeys(keys);
+  if (b.identity)
+    a.rows.collectKeys(keys);
+  for (unsigned input : keys) {
+    fact_type composed = applyRelation(a, row(b, input));
+    setRow(result, input, std::move(composed));
   }
-  out.gen = applyRel(a.rel, b.gen) | a.gen;
-  return out;
+
+  result.gen = applyRelation(a, b.gen);
+  result.gen |= a.gen;
+  return result;
 }
 
 TaintTransformer::value_type
@@ -114,27 +126,66 @@ TaintTransformer::extend_lin(const value_type &a, const value_type &b) {
 }
 
 TaintTransformer::value_type
-TaintTransformer::subtract(const value_type &a, const value_type &b) {
-  (void)b;
+TaintTransformer::subtract(const value_type &a, const value_type &) {
   return a;
 }
 
-llvm::APInt TaintTransformer::apply(const value_type &f,
-                                    const llvm::APInt &in) {
-  return applyRel(f.rel, in) | f.gen;
+TaintTransformer::value_type
+TaintTransformer::star(const value_type &value) {
+  value_type closure = one();
+  for (;;) {
+    value_type next = combine(closure, extend(value, closure));
+    if (equal(next, closure))
+      return next;
+    closure = std::move(next);
+  }
 }
 
-void TaintTransformer::addEdge(value_type &f, unsigned from, unsigned to) {
-  const unsigned bit_width = bitWidthOf(f);
-  if (from >= bit_width || to >= bit_width)
-    return;
-  f.rel[from].setBit(to);
+TaintTransformer::fact_type
+TaintTransformer::apply(const value_type &transfer, const fact_type &input) {
+  fact_type result = applyRelation(transfer, input);
+  result |= transfer.gen;
+  return result;
 }
 
-void TaintTransformer::addGen(value_type &f, unsigned bit) {
-  if (bit >= bitWidthOf(f))
-    return;
-  f.gen.setBit(bit);
+void TaintTransformer::addEdge(value_type &transfer, unsigned from,
+                               unsigned to) {
+  fact_type outputs = row(transfer, from);
+  outputs.set(to);
+  setRow(transfer, from, std::move(outputs));
+}
+
+void TaintTransformer::addGen(value_type &transfer, unsigned bit) {
+  transfer.gen.set(bit);
+}
+
+void TaintTransformer::clearInput(value_type &transfer, unsigned input) {
+  setRow(transfer, input, {});
+}
+
+void TaintTransformer::clearOutput(value_type &transfer, unsigned output) {
+  std::vector<std::pair<unsigned, fact_type>> updates;
+  transfer.rows.forEach([&](unsigned input, const fact_type &outputs) {
+    if (!outputs.test(output))
+      return;
+    fact_type updated = outputs;
+    updated.reset(output);
+    updates.emplace_back(input, std::move(updated));
+  });
+  for (auto &update : updates)
+    setRow(transfer, update.first, std::move(update.second));
+
+  if (transfer.identity) {
+    fact_type outputRow = row(transfer, output);
+    outputRow.reset(output);
+    setRow(transfer, output, std::move(outputRow));
+  }
+  transfer.gen.reset(output);
+}
+
+void TaintTransformer::kill(value_type &transfer, unsigned bit) {
+  clearInput(transfer, bit);
+  clearOutput(transfer, bit);
 }
 
 } // namespace npa

@@ -15,13 +15,15 @@ public:
   struct Result {
     AnalysisStatus status;
     std::map<FunctionKey, GenKillTransformer::value_type> summaries;
-    std::map<BlockKey, llvm::APInt> blockFacts;
+    std::map<BlockKey, GenKillTransformer::fact_type> blockFacts;
   };
 
-  static Result run(llvm::Module &M, bool verbose = false,
-                    LinearStrategy linearStrategy = LinearStrategy::SCC,
-                    IndirectCallResolutionMode callResolutionMode =
-                        IndirectCallResolutionMode::ClosedWorldTypeCompatible);
+  static Result
+  run(llvm::Module &M, bool verbose = false,
+      LinearStrategy linearStrategy = LinearStrategy::SCC,
+      IndirectCallResolutionMode callResolutionMode =
+          IndirectCallResolutionMode::ClosedWorldTypeCompatible,
+      NewtonRoundStrategy roundStrategy = NewtonRoundStrategy::Dense);
 };
 
 } // namespace npa

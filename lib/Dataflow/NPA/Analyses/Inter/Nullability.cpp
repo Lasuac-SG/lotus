@@ -564,8 +564,8 @@ private:
 
 class NullabilityAnalysis {
 public:
-  using FactType = llvm::APInt;
   using D = TaintTransformer;
+  using FactType = D::fact_type;
   using Exp = Exp0<D>;
   using E = E0<D>;
   using Engine = InterEngine<D, NullabilityAnalysis>;
@@ -578,8 +578,7 @@ public:
 
   NullabilityAnalysis(llvm::Module &M, lotus::AliasAnalysisWrapper &aa,
                       const InterNullability::Options &opts)
-      : module(M), info(M, aa), options(opts), bitWidth(info.getBitWidth()),
-        widthScope(bitWidth), entryFacts(bitWidth, 0) {
+      : module(M), info(M, aa), options(opts) {
     initializeEntryFacts();
   }
 
@@ -791,7 +790,9 @@ public:
   }
 
   FactType joinFacts(const FactType &lhs, const FactType &rhs) const {
-    return lhs | rhs;
+    FactType result = lhs;
+    result |= rhs;
+    return result;
   }
 
   bool factsEqual(const FactType &lhs, const FactType &rhs) const {
@@ -816,8 +817,6 @@ private:
   llvm::Module &module;
   NullabilityInfo info;
   InterNullability::Options options;
-  unsigned bitWidth = 1;
-  D::WidthScope widthScope;
   FactType entryFacts;
 
   struct SourceInfo {
@@ -911,7 +910,7 @@ private:
         continue;
       unsigned bit = info.getMemoryBit(Pointer);
       if (bit != NullabilityInfo::invalidBit())
-        entryFacts.setBit(bit);
+        entryFacts.set(bit);
     }
   }
 
@@ -925,7 +924,7 @@ private:
             continue;
           unsigned valueBit = info.getValueBit(&Arg);
           if (valueBit != NullabilityInfo::invalidBit())
-            entryFacts.setBit(valueBit);
+            entryFacts.set(valueBit);
           seedDerivedMemoryFromRoot(&Arg, Entry);
         }
       }
@@ -948,14 +947,14 @@ private:
           continue;
 
         if (Global.isDeclaration() || relative.unknown) {
-          entryFacts.setBit(memBit);
+          entryFacts.set(memBit);
           continue;
         }
 
         auto kindIt = initializerKinds.find(relative.offset);
         if (kindIt == initializerKinds.end() ||
             kindIt->second != NullKind::KnownNonNull) {
-          entryFacts.setBit(memBit);
+          entryFacts.set(memBit);
         }
       }
     }
@@ -964,9 +963,7 @@ private:
   void clearDestination(D::value_type &transfer, unsigned destBit) const {
     if (destBit == NullabilityInfo::invalidBit())
       return;
-    for (auto &row : transfer.rel)
-      row.clearBit(destBit);
-    transfer.gen.clearBit(destBit);
+    D::clearOutput(transfer, destBit);
   }
 
   bool assignFromSources(D::value_type &transfer, unsigned destBit,
@@ -1183,7 +1180,7 @@ private:
 
 } // namespace
 
-static const llvm::APInt *
+static const TaintTransformer::fact_type *
 findFactForBlock(const InterNullability::Result &result,
                  const llvm::BasicBlock *block) {
   auto exitIt = result.blockExitFacts.find(BlockKey{block});
@@ -1200,37 +1197,36 @@ bool InterNullability::Result::isMaybeNull(const llvm::BasicBlock *block,
   auto bitIt = valueBits.find(value);
   if (bitIt == valueBits.end())
     return false;
-  const llvm::APInt *fact = findFactForBlock(*this, block);
-  return fact && bitIt->second < fact->getBitWidth() && (*fact)[bitIt->second];
+  const auto *fact = findFactForBlock(*this, block);
+  return fact && fact->test(bitIt->second);
 }
 
 bool InterNullability::Result::isMaybeNullMemory(
     const llvm::BasicBlock *block, const llvm::Value *pointer) const {
-  const llvm::APInt *fact = findFactForBlock(*this, block);
+  const auto *fact = findFactForBlock(*this, block);
   if (!fact)
     return false;
 
   auto pointerBitsIt = pointerMemoryBits.find(pointer);
   if (pointerBitsIt != pointerMemoryBits.end()) {
     for (unsigned bit : pointerBitsIt->second) {
-      if (bit < fact->getBitWidth() && (*fact)[bit])
+      if (fact->test(bit))
         return true;
     }
     return false;
   }
 
   auto bitIt = memoryBits.find(pointer);
-  return bitIt != memoryBits.end() && bitIt->second < fact->getBitWidth() &&
-         (*fact)[bitIt->second];
+  return bitIt != memoryBits.end() && fact->test(bitIt->second);
 }
 
 InterNullability::Result InterNullability::run(
     llvm::Module &M, lotus::AliasAnalysisWrapper &aliasAnalysis,
     const Options &options, bool verbose, LinearStrategy linearStrategy) {
   NullabilityAnalysis analysis(M, aliasAnalysis, options);
-  auto engineResult =
-      InterEngine<TaintTransformer, NullabilityAnalysis>::run(
-          M, analysis, verbose, linearStrategy, options.call_resolution_mode);
+  auto engineResult = InterEngine<TaintTransformer, NullabilityAnalysis>::run(
+      M, analysis, verbose, linearStrategy, options.call_resolution_mode,
+      options.newton_round_strategy);
 
   InterNullability::Result result;
   result.status = engineResult.status;
@@ -1251,10 +1247,9 @@ InterNullability::Result InterNullability::run(
       continue;
     for (auto &BB : F) {
       auto factIt = engineResult.blockEntryFacts.find(BlockKey{&BB});
-      llvm::APInt currentFact =
-          (&BB == &F.getEntryBlock())
-              ? analysis.getEntryValue()
-              : llvm::APInt(analysis.getEntryValue().getBitWidth(), 0);
+      TaintTransformer::fact_type currentFact;
+      if (&BB == &F.getEntryBlock())
+        currentFact = analysis.getEntryValue();
       if (factIt != engineResult.blockEntryFacts.end())
         currentFact = factIt->second;
       else if (&BB != &F.getEntryBlock())
@@ -1283,9 +1278,11 @@ InterNullability::Result
 InterNullability::run(llvm::Module &M,
                       lotus::AliasAnalysisWrapper &aliasAnalysis, bool verbose,
                       LinearStrategy linearStrategy,
-                      IndirectCallResolutionMode callResolutionMode) {
+                      IndirectCallResolutionMode callResolutionMode,
+                      NewtonRoundStrategy roundStrategy) {
   Options options;
   options.call_resolution_mode = callResolutionMode;
+  options.newton_round_strategy = roundStrategy;
   return run(M, aliasAnalysis, options, verbose, linearStrategy);
 }
 
@@ -1300,9 +1297,11 @@ InterNullability::Result InterNullability::run(llvm::Module &M,
 InterNullability::Result
 InterNullability::run(llvm::Module &M, bool verbose,
                       LinearStrategy linearStrategy,
-                      IndirectCallResolutionMode callResolutionMode) {
+                      IndirectCallResolutionMode callResolutionMode,
+                      NewtonRoundStrategy roundStrategy) {
   Options options;
   options.call_resolution_mode = callResolutionMode;
+  options.newton_round_strategy = roundStrategy;
   return run(M, options, verbose, linearStrategy);
 }
 

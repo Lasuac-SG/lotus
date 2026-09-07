@@ -79,6 +79,8 @@ public:
   using test_type = bool;
   static constexpr bool idempotent = true;
   static constexpr bool project_newton_safe = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
 
   static void configure(unsigned predicate_count,
                         unsigned local_predicate_count = 0);
@@ -107,9 +109,9 @@ public:
   static value_type intersect(const value_type &a, const value_type &b);
   static value_type fromFormula(const PredicateFormula &formula);
   static value_type guard(const PredicateFormula &formula);
-  static value_type
-  parallelAssign(const std::vector<PredicateUpdate> &updates,
-                 const std::optional<PredicateFormula> &constraint = std::nullopt);
+  static value_type parallelAssign(
+      const std::vector<PredicateUpdate> &updates,
+      const std::optional<PredicateFormula> &constraint = std::nullopt);
   static value_type transpose(const value_type &relation);
   static value_type project(const value_type &relation);
   static value_type merge(const value_type &lhs, const value_type &rhs);
@@ -141,6 +143,8 @@ public:
   using test_type = bool;
   static constexpr bool idempotent = true;
   static constexpr bool project_newton_safe = true;
+  static constexpr bool sparse_npa_zero_left_annihilator = true;
+  static constexpr bool sparse_npa_zero_right_annihilator = true;
 
   static value_type zero();
   static value_type one();
