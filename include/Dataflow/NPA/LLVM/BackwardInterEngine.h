@@ -185,6 +185,7 @@ private:
   }
 
   struct FunctionRegexArtifacts {
+    std::vector<std::pair<Symbol, E>> equations;
     E summaryExpr;
     E fullSummaryExpr;
     std::unordered_map<std::string, E> blockSummaryExprs;
@@ -460,73 +461,65 @@ private:
   }
 
   static PreparedFunctionArtifacts prepareFunctionRegexArtifacts(
-      llvm::Module &M, llvm::Function &F, Analysis &analysis,
+      llvm::Module &, llvm::Function &F, Analysis &analysis,
       typename InterEngine<D, Analysis>::CalleeCache &calleeCache,
       IndirectCallResolutionMode callResolutionMode) {
-    using Graph = lotus::pathexpressions::GenericLabeledGraph<int, int>;
-
-    std::unordered_map<const llvm::BasicBlock *, int> blockIds;
-    int nextId = 0;
-    for (auto &BB : F)
-      blockIds[&BB] = nextId++;
-    const int exitId = nextId;
-
-    Graph graph;
-    graph.addNode(exitId);
-
-    std::vector<E> labels;
-    labels.reserve(F.size() * 2U + 1U);
-    auto addLabel = [&](E expr) {
-      labels.push_back(expr ? expr : Exp::term(D::zero()));
-      return static_cast<int>(labels.size() - 1);
-    };
+    std::unordered_map<const llvm::BasicBlock *, E> block_bodies;
 
     PreparedFunctionArtifacts prepared;
     prepared.function = &F;
 
     for (auto &BB : F) {
-      const int fromId = blockIds.at(&BB);
-      graph.addNode(fromId);
-
-      E currentPath = Exp::term(D::one());
-      for (auto It = BB.rbegin(); It != BB.rend(); ++It)
-        currentPath = buildBlockBodyExprPrepared(
-            analysis, *It, currentPath, calleeCache,
+      E current_path = Exp::term(D::one());
+      for (auto it = BB.rbegin(); it != BB.rend(); ++it) {
+        current_path = buildBlockBodyExprPrepared(
+            analysis, *it, current_path, calleeCache,
             prepared.discovered_callees, prepared.status_delta,
             callResolutionMode);
-
-      auto *Term = BB.getTerminator();
-      if (!Term || Term->getNumSuccessors() == 0) {
-        graph.addEdge(fromId, addLabel(currentPath), exitId);
-        continue;
       }
-
-      for (unsigned i = 0; i < Term->getNumSuccessors(); ++i) {
-        auto *Succ = Term->getSuccessor(i);
-        if (!Succ)
-          continue;
-        E edgeExpr =
-            Exp::seq(getEdgeTransfer(analysis, *Term, *Succ, 0), currentPath);
-        graph.addEdge(fromId, addLabel(edgeExpr), blockIds.at(Succ));
-      }
+      block_bodies.emplace(&BB, std::move(current_path));
     }
 
-    lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
-    unsigned starCounter = 0;
-    RegexToExpr translator(labels, starCounter);
-    llvm::BasicBlock *Entry = F.empty() ? nullptr : &F.getEntryBlock();
-    prepared.artifacts.fullSummaryExpr =
-        Entry ? translator.translate(
-                    computer.exprBetween(blockIds.at(Entry), exitId))
-              : Exp::term(D::one());
+    for (auto &BB : F) {
+      E rhs;
+      E body = block_bodies.at(&BB);
+      auto *term = BB.getTerminator();
+      if (!term || term->getNumSuccessors() == 0) {
+        rhs = body;
+      } else {
+        for (unsigned index = 0; index < term->getNumSuccessors(); ++index) {
+          llvm::BasicBlock *successor = term->getSuccessor(index);
+          if (!successor)
+            continue;
+          E edge_body = Exp::seq(
+              getEdgeTransfer(analysis, *term, *successor, 0), body);
+          E branch = multiplyExpr(
+              Exp::hole(InterEngine<D, Analysis>::getBlockSymbol(successor)),
+              std::move(edge_body));
+          rhs = combineExpr(std::move(rhs), std::move(branch));
+        }
+      }
+      if (!rhs)
+        rhs = Exp::term(D::zero());
+
+      const Symbol block_symbol =
+          InterEngine<D, Analysis>::getBlockSymbol(&BB);
+      prepared.artifacts.equations.emplace_back(block_symbol, rhs);
+      prepared.artifacts.blockSummaryExprs.emplace(
+          block_symbol, Exp::hole(block_symbol));
+    }
+
+    if (F.empty()) {
+      prepared.artifacts.fullSummaryExpr = Exp::term(D::one());
+    } else {
+      prepared.artifacts.fullSummaryExpr = Exp::hole(
+          InterEngine<D, Analysis>::getBlockSymbol(&F.getEntryBlock()));
+    }
     prepared.artifacts.summaryExpr =
         makeSummaryEquationExpr(prepared.artifacts.fullSummaryExpr);
-    for (auto &BB : F) {
-      const std::string bSym = InterEngine<D, Analysis>::getBlockSymbol(&BB);
-      prepared.artifacts.blockSummaryExprs.emplace(
-          bSym,
-          translator.translate(computer.exprBetween(blockIds.at(&BB), exitId)));
-    }
+    prepared.artifacts.equations.emplace_back(
+        InterEngine<D, Analysis>::getFuncSymbol(&F),
+        prepared.artifacts.summaryExpr);
     return prepared;
   }
 
@@ -694,10 +687,9 @@ public:
         std::string fSym = InterEngine<D, Analysis>::getFuncSymbol(F);
         functionSymbols[fSym] = {F};
         functionsBySymbol[fSym] = F;
-        eqns.emplace_back(fSym, item.artifacts.summaryExpr);
+        for (auto &equation : item.artifacts.equations)
+          eqns.push_back(std::move(equation));
         fullSummaryExprs.emplace(fSym, item.artifacts.fullSummaryExpr);
-        for (const auto &blockExpr : item.artifacts.blockSummaryExprs)
-          eqns.emplace_back(blockExpr.first, blockExpr.second);
         res.status.indirect_calls_seen += item.status_delta.indirect_calls_seen;
         res.status.unresolved_indirect_calls +=
             item.status_delta.unresolved_indirect_calls;

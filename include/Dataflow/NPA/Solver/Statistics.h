@@ -19,6 +19,8 @@ struct NewtonRoundStat {
 
 struct Stat {
   double time{};
+  double equation_validation_time = 0.0;
+  double newton_initialization_time = 0.0;
   int iters{};
   bool converged = true;
   bool hit_limit = false;

@@ -52,19 +52,28 @@ TaintTransformer::combine(const value_type &a, const value_type &b) {
   if (!b.identity && b.rows.empty() && b.gen.empty())
     return a;
 
-  value_type result;
-  result.identity = a.identity || b.identity;
+  const bool result_identity = a.identity || b.identity;
+  const value_type *base = nullptr;
+  if (a.identity == result_identity && b.identity == result_identity)
+    base = a.rows.size() >= b.rows.size() ? &a : &b;
+  else
+    base = a.identity == result_identity ? &a : &b;
+  value_type result = *base;
+  result.identity = result_identity;
   result.gen = a.gen;
   result.gen |= b.gen;
 
-  fact_type keys;
-  a.rows.collectKeys(keys);
-  b.rows.collectKeys(keys);
-  for (unsigned input : keys) {
+  auto combine_row = [&](unsigned input) {
     fact_type joined = row(a, input);
     joined |= row(b, input);
     setRow(result, input, std::move(joined));
-  }
+  };
+  a.rows.forEach(
+      [&](unsigned input, const fact_type &) { combine_row(input); });
+  b.rows.forEach([&](unsigned input, const fact_type &) {
+    if (!a.rows.find(input))
+      combine_row(input);
+  });
   return result;
 }
 
@@ -104,16 +113,23 @@ TaintTransformer::extend(const value_type &a, const value_type &b) {
   if (b.identity && b.rows.empty() && b.gen.empty())
     return a;
 
+  const bool result_identity = a.identity && b.identity;
   value_type result;
-  result.identity = a.identity && b.identity;
+  result.identity = result_identity;
+  if (b.identity == result_identity)
+    result.rows = b.rows;
 
-  fact_type keys;
-  b.rows.collectKeys(keys);
-  if (b.identity)
-    a.rows.collectKeys(keys);
-  for (unsigned input : keys) {
+  auto compose_row = [&](unsigned input) {
     fact_type composed = applyRelation(a, row(b, input));
     setRow(result, input, std::move(composed));
+  };
+  b.rows.forEach(
+      [&](unsigned input, const fact_type &) { compose_row(input); });
+  if (b.identity) {
+    a.rows.forEach([&](unsigned input, const fact_type &) {
+      if (!b.rows.find(input))
+        compose_row(input);
+    });
   }
 
   result.gen = applyRelation(a, b.gen);

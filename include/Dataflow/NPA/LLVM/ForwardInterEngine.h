@@ -389,6 +389,7 @@ public:
   }
 
   struct FunctionRegexArtifacts {
+    std::vector<std::pair<Symbol, E>> equations;
     E summaryExpr;
     E fullSummaryExpr;
     std::unordered_map<std::string, E> blockEntryExprs;
@@ -726,84 +727,69 @@ public:
   }
 
   static PreparedFunctionArtifacts
-  prepareFunctionRegexArtifacts(llvm::Module &M, llvm::Function &F,
+  prepareFunctionRegexArtifacts(llvm::Module &, llvm::Function &F,
                                 Analysis &analysis, CalleeCache &calleeCache,
                                 IndirectCallResolutionMode callResolutionMode) {
-    using Graph = lotus::pathexpressions::GenericLabeledGraph<int, int>;
-
-    std::unordered_map<const llvm::BasicBlock *, int> blockIds;
-    int nextId = 1;
-    for (auto &BB : F)
-      blockIds[&BB] = nextId++;
-    const int sourceId = 0;
-    const int entryId = blockIds.at(&F.getEntryBlock());
-    const int exitId = nextId;
-
-    Graph graph;
-    graph.addNode(sourceId);
-    graph.addNode(exitId);
-
-    std::vector<E> labels;
-    labels.reserve(F.size() * 2U + 1U);
-    std::unordered_map<std::string, E> blockBodyExprs;
-    auto addLabel = [&](E expr) {
-      labels.push_back(expr ? expr : Exp::term(D::zero()));
-      return static_cast<int>(labels.size() - 1);
-    };
+    std::unordered_map<const llvm::BasicBlock *, E> block_bodies;
 
     PreparedFunctionArtifacts prepared;
     prepared.function = &F;
 
-    graph.addEdge(sourceId,
-                  addLabel(Exp::term(getBlockEntryTransfer(
-                      analysis, F.getEntryBlock(), nullptr))),
-                  entryId);
-
     for (auto &BB : F) {
-      const int fromId = blockIds.at(&BB);
-      graph.addNode(fromId);
-
-      E currentPath = Exp::term(D::one());
+      E current_path = Exp::term(D::one());
       for (auto &I : BB) {
         if (auto *call = llvm::dyn_cast<llvm::CallBase>(&I))
-          prepared.artifacts.callPrefixExprs.emplace(call, currentPath);
-        currentPath = buildBlockBodyExprPrepared(
-            analysis, I, currentPath, calleeCache, prepared.discovered_callees,
-            prepared.status_delta, callResolutionMode);
+          prepared.artifacts.callPrefixExprs.emplace(call, current_path);
+        current_path = buildBlockBodyExprPrepared(
+            analysis, I, current_path, calleeCache,
+            prepared.discovered_callees, prepared.status_delta,
+            callResolutionMode);
       }
-      blockBodyExprs.emplace(getBlockSymbol(&BB), currentPath);
-
-      auto *Term = BB.getTerminator();
-      if (!Term || Term->getNumSuccessors() == 0) {
-        graph.addEdge(fromId, addLabel(currentPath), exitId);
-        continue;
-      }
-
-      for (unsigned i = 0; i < Term->getNumSuccessors(); ++i) {
-        auto *Succ = Term->getSuccessor(i);
-        if (!Succ)
-          continue;
-        E edgeExpr =
-            Exp::seq(getBlockEntryTransfer(analysis, *Succ, &BB), currentPath);
-        graph.addEdge(fromId, addLabel(edgeExpr), blockIds.at(Succ));
-      }
+      block_bodies.emplace(&BB, std::move(current_path));
     }
 
-    lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
-    unsigned starCounter = 0;
-    RegexToExpr translator(labels, starCounter);
-    prepared.artifacts.fullSummaryExpr =
-        translator.translate(computer.exprBetween(sourceId, exitId));
-    prepared.artifacts.summaryExpr =
-        makeSummaryEquationExpr(prepared.artifacts.fullSummaryExpr);
+    E function_summary;
     for (auto &BB : F) {
-      const std::string bSym = getBlockSymbol(&BB);
-      E entryExpr =
-          translator.translate(computer.exprBetween(sourceId, blockIds.at(&BB)));
-      prepared.artifacts.blockEntryExprs.emplace(bSym, entryExpr);
+      E incoming;
+      if (&BB == &F.getEntryBlock())
+        incoming = Exp::term(D::one());
+
+      for (llvm::BasicBlock *pred : predecessors(&BB)) {
+        auto *term = pred->getTerminator();
+        Val edge_transfer =
+            term ? getEdgeTransfer(analysis, *term, BB, 0) : D::one();
+        E branch =
+            Exp::seq(std::move(edge_transfer),
+                     Exp::hole(getBlockSymbol(pred)));
+        incoming = combineExpr(std::move(incoming), std::move(branch));
+      }
+      if (!incoming)
+        incoming = Exp::term(D::zero());
+
+      E entry_expr =
+          buildBlockEntryExpr(analysis, BB, std::move(incoming), 0);
+      const Symbol block_symbol = getBlockSymbol(&BB);
+      E exit_expr =
+          multiplyExpr(block_bodies.at(&BB), entry_expr);
+      prepared.artifacts.equations.emplace_back(block_symbol, exit_expr);
+      prepared.artifacts.blockEntryExprs.emplace(block_symbol, entry_expr);
       prepared.artifacts.blockExitExprs.emplace(
-          bSym, multiplyExpr(blockBodyExprs.at(bSym), entryExpr));
+          block_symbol, Exp::hole(block_symbol));
+
+      auto *term = BB.getTerminator();
+      if (!term || term->getNumSuccessors() == 0) {
+        function_summary = combineExpr(
+            std::move(function_summary), Exp::hole(block_symbol));
+      }
     }
+
+    if (!function_summary)
+      function_summary = Exp::term(D::zero());
+    prepared.artifacts.fullSummaryExpr = function_summary;
+    prepared.artifacts.summaryExpr =
+        makeSummaryEquationExpr(function_summary);
+    prepared.artifacts.equations.emplace_back(
+        getFuncSymbol(&F), prepared.artifacts.summaryExpr);
     return prepared;
   }
 
@@ -878,7 +864,8 @@ public:
         llvm::Function *F = item.function;
         std::string fSym = getFuncSymbol(F);
         functionSymbols[fSym] = {F};
-        eqns.emplace_back(fSym, item.artifacts.summaryExpr);
+        for (auto &equation : item.artifacts.equations)
+          eqns.push_back(std::move(equation));
         fullSummaryExprs.emplace(fSym, item.artifacts.fullSummaryExpr);
         for (auto &blockExpr : item.artifacts.blockEntryExprs)
           blockEntryExprs.emplace(blockExpr.first, blockExpr.second);

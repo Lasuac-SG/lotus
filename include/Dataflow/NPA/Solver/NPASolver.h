@@ -612,7 +612,12 @@ private:
       throw SparseNewtonRequiresIdempotentError{};
 
     const auto solve_start = std::chrono::steady_clock::now();
+    const auto initialization_start = std::chrono::steady_clock::now();
     auto initial = NewtonIter<D>::init(eqns);
+    const double initialization_time =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      initialization_start)
+            .count();
     std::unique_ptr<detail::SparseNewtonSystem<D>> sparse_system;
     double occurrence_index_time = 0.0;
     if (round_strategy != NewtonRoundStrategy::Dense) {
@@ -653,6 +658,7 @@ private:
 
     Stat &stats = context.stats;
     stats.iters = result.iterations;
+    stats.newton_initialization_time = initialization_time;
     stats.time = std::chrono::duration<double>(
                      std::chrono::steady_clock::now() - solve_start)
                      .count();
@@ -703,7 +709,12 @@ public:
   static std::pair<std::vector<std::pair<Symbol, V>>, Stat>
   solve(const std::vector<Eqn> &eqns, const SolveOptions &requested_options) {
     NPA_REQUIRE_DOMAIN(D);
+    const auto validation_start = std::chrono::steady_clock::now();
     const auto validated = validate_equation_system<D>(eqns);
+    const double validation_time =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      validation_start)
+            .count();
     SolveOptions options = requested_options;
     const int requested_max = options.max_iterations;
     const bool auto_cap = options.max_iterations < 0 && D::idempotent &&
@@ -712,6 +723,7 @@ public:
       options.max_iterations = static_cast<int>(eqns.size());
 
     auto res = solveOnce(eqns, options, validated);
+    res.second.equation_validation_time = validation_time;
     res.second.used_auto_n_cap = auto_cap;
     res.second.requested_max_iters = requested_max;
     res.second.effective_max_iters = options.max_iterations;
@@ -721,6 +733,7 @@ public:
                      "continuing without the cap\n";
       options.max_iterations = -1;
       res = solveOnce(eqns, options, validated);
+      res.second.equation_validation_time = validation_time;
       res.second.used_auto_n_cap = true;
       res.second.retried_without_auto_n_cap = true;
       res.second.requested_max_iters = requested_max;

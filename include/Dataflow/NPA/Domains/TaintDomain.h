@@ -188,10 +188,6 @@ public:
     SparseTaintRows::forEach(root_, fn);
   }
 
-  void collectKeys(SparseFactSet &keys) const {
-    forEach([&](unsigned key, const SparseFactSet &) { keys.set(key); });
-  }
-
   bool operator==(const SparseTaintRows &other) const {
     return equalTrees(root_, other.root_);
   }

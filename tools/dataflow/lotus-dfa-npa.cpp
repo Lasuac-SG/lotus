@@ -298,6 +298,10 @@ npa::NewtonRoundStrategy parseNewtonRoundStrategy(StringRef Name) {
 void printNewtonProfile(raw_ostream &OS, const npa::Stat &Stats) {
   if (NewtonRoundOpt.getNumOccurrences() == 0 || Stats.newton_rounds.empty())
     return;
+  OS << "  [profile] equation_validation_seconds="
+     << Stats.equation_validation_time
+     << " newton_initialization_seconds="
+     << Stats.newton_initialization_time << "\n";
   OS << "  [profile] sparse_index_seconds=" << Stats.occurrence_index_time
      << " indexed_occurrences=" << Stats.indexed_derivative_occurrences
      << " queried_occurrences=" << Stats.queried_derivative_occurrences
