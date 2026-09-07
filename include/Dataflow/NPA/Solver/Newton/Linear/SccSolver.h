@@ -65,75 +65,26 @@ make_dense_value_buffer(const std::vector<DomVal<D>> &values) {
 }
 
 template <class D>
-LinearSccPlan<D>
-build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
-  LinearSccPlan<D> plan;
+void complete_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs,
+                              LinearSccPlan<D> &plan,
+                              bool inspect_lcfl_structure = true) {
   const int n = static_cast<int>(rhs.size());
-  const auto validated = validate_linear_equation_system<D>(rhs);
-  plan.sym_to_idx.reserve(validated.symbol_to_index.size());
-  for (const auto &entry : validated.symbol_to_index)
-    plan.sym_to_idx.emplace(entry.first, static_cast<int>(entry.second));
-
-  plan.out_edges.resize(static_cast<std::size_t>(n));
-  for (int i = 0; i < n; ++i) {
-    const auto &dependencies =
-        validated.dependencies[static_cast<std::size_t>(i)];
-    auto &edges = plan.out_edges[static_cast<std::size_t>(i)];
-    edges.reserve(dependencies.size());
-    for (unsigned dependency : dependencies)
-      edges.push_back(static_cast<int>(dependency));
-  }
-
-  std::vector<int> index(n, -1), low(n, -1);
-  plan.scc_id.assign(static_cast<std::size_t>(n), -1);
-  std::vector<int> stack;
-  stack.reserve(static_cast<std::size_t>(n));
-  int next_index = 0;
-  int scc_count = 0;
-
-  std::function<void(int)> tarjan = [&](int v) {
-    index[v] = low[v] = next_index++;
-    stack.push_back(v);
-    for (int w : plan.out_edges[static_cast<std::size_t>(v)]) {
-      if (index[w] == -1) {
-        tarjan(w);
-        low[v] = std::min(low[v], low[w]);
-      } else if (plan.scc_id[static_cast<std::size_t>(w)] == -1) {
-        low[v] = std::min(low[v], index[w]);
-      }
-    }
-    if (low[v] == index[v]) {
-      for (;;) {
-        int u = stack.back();
-        stack.pop_back();
-        plan.scc_id[static_cast<std::size_t>(u)] = scc_count;
-        if (u == v)
-          break;
-      }
-      ++scc_count;
-    }
-  };
-
-  for (int i = 0; i < n; ++i)
-    if (index[i] == -1)
-      tarjan(i);
-
-  plan.sccs.assign(static_cast<std::size_t>(scc_count), {});
-  for (int i = 0; i < n; ++i)
-    plan.sccs[static_cast<std::size_t>(
-                  plan.scc_id[static_cast<std::size_t>(i)])]
-        .push_back(i);
-  plan.infos.assign(static_cast<std::size_t>(scc_count), {});
-  for (int sid = 0; sid < scc_count; ++sid)
+  const int scc_count = static_cast<int>(plan.sccs.size());
+  plan.infos.assign(plan.sccs.size(), {});
+  for (int sid = 0; sid < scc_count; ++sid) {
     plan.infos[static_cast<std::size_t>(sid)].members =
         plan.sccs[static_cast<std::size_t>(sid)];
+  }
 
   for (int sid = 0; sid < scc_count; ++sid) {
     auto &info = plan.infos[static_cast<std::size_t>(sid)];
     for (int idx : info.members) {
-      info.has_lcfl_structure = info.has_lcfl_structure ||
-                                LCFLDetector<D>::has_lcfl_structure(
-                                    rhs[static_cast<std::size_t>(idx)].second);
+      if (inspect_lcfl_structure) {
+        info.has_lcfl_structure =
+            info.has_lcfl_structure ||
+            LCFLDetector<D>::has_lcfl_structure(
+                rhs[static_cast<std::size_t>(idx)].second);
+      }
       for (int dep : plan.out_edges[static_cast<std::size_t>(idx)]) {
         if (plan.scc_id[static_cast<std::size_t>(dep)] != sid)
           continue;
@@ -208,7 +159,129 @@ build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
     }
     ready.swap(next_ready);
   }
+}
 
+template <class D>
+LinearSccPlan<D>
+build_linear_scc_plan(const std::vector<std::pair<Symbol, E1<D>>> &rhs) {
+  LinearSccPlan<D> plan;
+  const int n = static_cast<int>(rhs.size());
+  const auto validated = validate_linear_equation_system<D>(rhs);
+  plan.sym_to_idx.reserve(validated.symbol_to_index.size());
+  for (const auto &entry : validated.symbol_to_index)
+    plan.sym_to_idx.emplace(entry.first, static_cast<int>(entry.second));
+
+  plan.out_edges.resize(static_cast<std::size_t>(n));
+  for (int i = 0; i < n; ++i) {
+    const auto &dependencies =
+        validated.dependencies[static_cast<std::size_t>(i)];
+    auto &edges = plan.out_edges[static_cast<std::size_t>(i)];
+    edges.reserve(dependencies.size());
+    for (unsigned dependency : dependencies)
+      edges.push_back(static_cast<int>(dependency));
+  }
+
+  std::vector<int> index(n, -1), low(n, -1);
+  plan.scc_id.assign(static_cast<std::size_t>(n), -1);
+  std::vector<int> stack;
+  stack.reserve(static_cast<std::size_t>(n));
+  int next_index = 0;
+  int scc_count = 0;
+
+  std::function<void(int)> tarjan = [&](int v) {
+    index[v] = low[v] = next_index++;
+    stack.push_back(v);
+    for (int w : plan.out_edges[static_cast<std::size_t>(v)]) {
+      if (index[w] == -1) {
+        tarjan(w);
+        low[v] = std::min(low[v], low[w]);
+      } else if (plan.scc_id[static_cast<std::size_t>(w)] == -1) {
+        low[v] = std::min(low[v], index[w]);
+      }
+    }
+    if (low[v] == index[v]) {
+      for (;;) {
+        int u = stack.back();
+        stack.pop_back();
+        plan.scc_id[static_cast<std::size_t>(u)] = scc_count;
+        if (u == v)
+          break;
+      }
+      ++scc_count;
+    }
+  };
+
+  for (int i = 0; i < n; ++i) {
+    if (index[i] == -1)
+      tarjan(i);
+  }
+
+  plan.sccs.assign(static_cast<std::size_t>(scc_count), {});
+  for (int i = 0; i < n; ++i) {
+    plan.sccs[static_cast<std::size_t>(
+                  plan.scc_id[static_cast<std::size_t>(i)])]
+        .push_back(i);
+  }
+  complete_linear_scc_plan(rhs, plan);
+  return plan;
+}
+
+/// Build a solve plan for an already validated reduced system. Sparse round
+/// construction supplies exact dependencies and a cached SCC partition, so
+/// this path does not rescan the materialized Exp1 DAG or rerun Tarjan.
+template <class D>
+LinearSccPlan<D> build_linear_scc_plan_from_partition(
+    const std::vector<std::pair<Symbol, E1<D>>> &rhs,
+    const std::vector<std::vector<unsigned>> &dependencies,
+    const std::vector<std::vector<unsigned>> &partition,
+    bool inspect_lcfl_structure = true) {
+  if (dependencies.size() != rhs.size())
+    throw InvalidEquationSystemError(
+        "linear equation system and dependency plan differ in size");
+
+  LinearSccPlan<D> plan;
+  const std::size_t count = rhs.size();
+  plan.sym_to_idx.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    if (!plan.sym_to_idx.emplace(rhs[index].first, static_cast<int>(index))
+             .second) {
+      throw InvalidEquationSystemError("duplicate equation LHS symbol");
+    }
+  }
+
+  plan.out_edges.resize(count);
+  for (std::size_t user = 0; user < count; ++user) {
+    auto &edges = plan.out_edges[user];
+    edges.reserve(dependencies[user].size());
+    for (unsigned dependency : dependencies[user]) {
+      if (dependency >= count)
+        throw InvalidEquationSystemError("invalid reduced dependency index");
+      edges.push_back(static_cast<int>(dependency));
+    }
+  }
+
+  plan.scc_id.assign(count, -1);
+  plan.sccs.reserve(partition.size());
+  for (const auto &component : partition) {
+    const int sid = static_cast<int>(plan.sccs.size());
+    plan.sccs.emplace_back();
+    auto &members = plan.sccs.back();
+    members.reserve(component.size());
+    for (unsigned member : component) {
+      if (member >= count || plan.scc_id[member] != -1)
+        throw InvalidEquationSystemError("invalid reduced SCC partition");
+      plan.scc_id[member] = sid;
+      members.push_back(static_cast<int>(member));
+    }
+    if (members.empty())
+      plan.sccs.pop_back();
+  }
+  for (int sid : plan.scc_id) {
+    if (sid == -1)
+      throw InvalidEquationSystemError("incomplete reduced SCC partition");
+  }
+
+  complete_linear_scc_plan(rhs, plan, inspect_lcfl_structure);
   return plan;
 }
 

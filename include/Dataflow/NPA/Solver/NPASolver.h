@@ -55,6 +55,8 @@
 #include "Dataflow/NPA/Solver/SolveContext.h"
 #include "Dataflow/NPA/Solver/Statistics.h"
 
+#include <optional>
+
 namespace npa {
 
 namespace detail {
@@ -99,6 +101,7 @@ template <class D> struct NewtonRoundSetup {
   using tensor_domain = typename TensorSemiringTraits<D>::tensor_domain;
   std::vector<std::pair<Symbol, E1<D>>> rhs;
   std::vector<std::pair<Symbol, E1<tensor_domain>>> rhs_tensor;
+  std::optional<LinearSccPlan<D>> scc_plan;
   bool has_lcfl_structure = false;
   bool tensor_requested = false;
   bool tensor_available = false;
@@ -202,10 +205,25 @@ NewtonRoundSetup<D> build_sparse_newton_round_setup(
   setup.tensor_laws_validated =
       setup.tensor_admissible && tensor_paper_laws_validated<D>();
 
-  for (const auto &equation : setup.rhs) {
-    setup.has_lcfl_structure =
-        setup.has_lcfl_structure ||
-        LCFLDetector<D>::has_lcfl_structure(equation.second);
+  if (lin_strat != LinearStrategy::Naive) {
+    const bool inspect_lcfl_structure =
+        lin_strat == LinearStrategy::AdaptiveScc;
+    setup.scc_plan.emplace(build_linear_scc_plan_from_partition<D>(
+        setup.rhs, materialized.dependencies, materialized.scc_partition,
+        inspect_lcfl_structure));
+    if (inspect_lcfl_structure) {
+      for (const auto &info : setup.scc_plan->infos) {
+        setup.has_lcfl_structure =
+            setup.has_lcfl_structure || info.has_lcfl_structure;
+      }
+    }
+  }
+  if (lin_strat == LinearStrategy::TensorProduct) {
+    for (const auto &equation : setup.rhs) {
+      setup.has_lcfl_structure =
+          setup.has_lcfl_structure ||
+          LCFLDetector<D>::has_lcfl_structure(equation.second);
+    }
   }
 
   if (setup.tensor_laws_validated) {
@@ -461,15 +479,33 @@ solve_newton_linearized_system(bool verbose, const NewtonRoundSetup<D> &setup,
       return nxt;
     });
   } else if (linStrat == LinearStrategy::SCC) {
-    delta = solve_linear_scc_impl<D>(verbose, setup.rhs, init);
+    if (setup.scc_plan) {
+      delta = detail::solve_linear_scc_serial_from_plan<D>(
+          verbose, setup.rhs, std::move(init), *setup.scc_plan);
+    } else {
+      delta = solve_linear_scc_impl<D>(verbose, setup.rhs, std::move(init));
+    }
   } else if (linStrat == LinearStrategy::AdaptiveScc) {
-    delta = solve_linear_adaptive_scc_impl<D>(verbose, setup.rhs,
-                                              setup.rhs_tensor, init, setup);
+    if (setup.scc_plan) {
+      auto execution = choose_adaptive_scc_backends<D>(*setup.scc_plan,
+                                                       setup.rhs_tensor, setup);
+      delta = solve_linear_adaptive_scc_from_plan<D>(
+          verbose, setup.rhs, setup.rhs_tensor, std::move(init),
+          *setup.scc_plan, execution);
+    } else {
+      delta = solve_linear_adaptive_scc_impl<D>(
+          verbose, setup.rhs, setup.rhs_tensor, std::move(init), setup);
+    }
   } else if (use_tensor) {
     delta = solve_linear_tensor_paper_impl<D>(verbose, setup.rhs,
                                               setup.rhs_tensor, init);
   } else {
-    delta = solve_linear_scc_impl<D>(verbose, setup.rhs, init);
+    if (setup.scc_plan) {
+      delta = detail::solve_linear_scc_serial_from_plan<D>(
+          verbose, setup.rhs, std::move(init), *setup.scc_plan);
+    } else {
+      delta = solve_linear_scc_impl<D>(verbose, setup.rhs, std::move(init));
+    }
   }
   if (round_stats) {
     round_stats->linear_solve_time =

@@ -3,7 +3,6 @@
 
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
 #include "Dataflow/NPA/NPA.h"
-#include "Utils/Algorithms/PathExpressions/PathExpressions.h"
 
 #include <chrono>
 #include <deque>
@@ -184,7 +183,7 @@ private:
     return D::one();
   }
 
-  struct FunctionRegexArtifacts {
+  struct FunctionArtifacts {
     std::vector<std::pair<Symbol, E>> equations;
     E summaryExpr;
     E fullSummaryExpr;
@@ -193,7 +192,7 @@ private:
 
   struct PreparedFunctionArtifacts {
     llvm::Function *function = nullptr;
-    FunctionRegexArtifacts artifacts;
+    FunctionArtifacts artifacts;
     AnalysisStatus status_delta;
     std::vector<llvm::Function *> discovered_callees;
   };
@@ -234,66 +233,6 @@ private:
     return Exp::mul(lhs, rhs);
   }
 
-  static E starExpr(E inner, unsigned &counter) {
-    if (!inner || isZeroExpr(inner) || isOneExpr(inner))
-      return Exp::term(D::one());
-    Symbol bound = "__bwd_regex_star_" + std::to_string(counter++);
-    return Exp::star(
-        combineExpr(Exp::term(D::one()), Exp::mul(Exp::bound(bound), inner)),
-        bound);
-  }
-
-  class RegexToExpr final
-      : public lotus::pathexpressions::IRegexVisitor<int, E, std::nullptr_t> {
-  public:
-    RegexToExpr(const std::vector<E> &labels, unsigned &star_counter)
-        : labels_(labels), starCounter_(star_counter) {}
-
-    E translate(const lotus::pathexpressions::RegexRef<int> &regex) {
-      auto cached = cache_.find(regex.get());
-      if (cached != cache_.end())
-        return cached->second;
-      E result = regex->accept(*this, nullptr);
-      cache_.emplace(regex.get(), result);
-      return result;
-    }
-
-    E visit(const lotus::pathexpressions::Union<int> &re,
-            std::nullptr_t) override {
-      return combineExpr(translate(re.getFirst()), translate(re.getSecond()));
-    }
-
-    E visit(const lotus::pathexpressions::Concatenation<int> &re,
-            std::nullptr_t) override {
-      return multiplyExpr(translate(re.getSecond()), translate(re.getFirst()));
-    }
-
-    E visit(const lotus::pathexpressions::Star<int> &re,
-            std::nullptr_t) override {
-      return starExpr(translate(re.getInner()), starCounter_);
-    }
-
-    E visit(const lotus::pathexpressions::Literal<int> &re,
-            std::nullptr_t) override {
-      return labels_.at(static_cast<std::size_t>(re.getLetter()));
-    }
-
-    E visit(const lotus::pathexpressions::Epsilon<int> &,
-            std::nullptr_t) override {
-      return Exp::term(D::one());
-    }
-
-    E visit(const lotus::pathexpressions::EmptySet<int> &,
-            std::nullptr_t) override {
-      return Exp::term(D::zero());
-    }
-
-  private:
-    const std::vector<E> &labels_;
-    unsigned &starCounter_;
-    std::unordered_map<const lotus::pathexpressions::IRegex<int> *, E> cache_;
-  };
-
   template <class T = D>
   static typename std::enable_if<DomainHasProject<T>::value, E>::type
   makeSummaryEquationExpr(E expr) {
@@ -307,47 +246,6 @@ private:
   }
 
   static E makeCallSummaryExpr(Symbol sym) { return Exp::hole(std::move(sym)); }
-
-  static E buildBlockBodyExpr(
-      Analysis &analysis, llvm::Instruction &I, E currentPath,
-      typename InterEngine<D, Analysis>::CalleeCache &calleeCache,
-      std::deque<llvm::Function *> &worklist,
-      std::set<llvm::Function *> &visited, AnalysisStatus &status,
-      IndirectCallResolutionMode callResolutionMode) {
-    if (auto *CI = llvm::dyn_cast<llvm::CallBase>(&I)) {
-      if (CI->getCalledFunction() == nullptr)
-        ++status.indirect_calls_seen;
-      const auto &Callees = calleeCache.get(*CI);
-      if (!Callees.empty()) {
-        E callBranches = nullptr;
-        for (llvm::Function *Callee : Callees) {
-          const Symbol callee_sym =
-              InterEngine<D, Analysis>::getFuncSymbol(Callee);
-          if (visited.insert(Callee).second)
-            worklist.push_back(Callee);
-          E branch = Exp::seq(getCallReturnTransfer(analysis, *CI, *Callee, 0),
-                              currentPath);
-          branch = multiplyExpr(makeCallSummaryExpr(callee_sym), branch);
-          branch =
-              Exp::seq(getCallEntryTransfer(analysis, *CI, *Callee, 0), branch);
-          callBranches = combineExpr(callBranches, branch);
-        }
-        currentPath = callBranches;
-      } else {
-        if (CI->getCalledFunction() == nullptr) {
-          ++status.unresolved_indirect_calls;
-          if (callResolutionMode ==
-              IndirectCallResolutionMode::CustomResolverRequired) {
-            status.requires_external_callee_resolver = true;
-            status.approximated = true;
-          }
-        }
-        currentPath =
-            Exp::seq(getCallToReturnTransfer(analysis, *CI, 0), currentPath);
-      }
-    }
-    return analysis.getTransfer(I, currentPath);
-  }
 
   static E buildBlockBodyExprPrepared(
       Analysis &analysis, llvm::Instruction &I, E currentPath,
@@ -390,77 +288,7 @@ private:
     return analysis.getTransfer(I, currentPath);
   }
 
-  static FunctionRegexArtifacts buildFunctionRegexArtifacts(
-      llvm::Module &M, llvm::Function &F, Analysis &analysis,
-      typename InterEngine<D, Analysis>::CalleeCache &calleeCache,
-      std::deque<llvm::Function *> &worklist,
-      std::set<llvm::Function *> &visited, AnalysisStatus &status,
-      IndirectCallResolutionMode callResolutionMode) {
-    using Graph = lotus::pathexpressions::GenericLabeledGraph<int, int>;
-
-    std::unordered_map<const llvm::BasicBlock *, int> blockIds;
-    int nextId = 0;
-    for (auto &BB : F)
-      blockIds[&BB] = nextId++;
-    const int exitId = nextId;
-
-    Graph graph;
-    graph.addNode(exitId);
-
-    std::vector<E> labels;
-    labels.reserve(F.size() * 2U + 1U);
-    auto addLabel = [&](E expr) {
-      labels.push_back(expr ? expr : Exp::term(D::zero()));
-      return static_cast<int>(labels.size() - 1);
-    };
-
-    for (auto &BB : F) {
-      const int fromId = blockIds.at(&BB);
-      graph.addNode(fromId);
-
-      E currentPath = Exp::term(D::one());
-      for (auto It = BB.rbegin(); It != BB.rend(); ++It)
-        currentPath =
-            buildBlockBodyExpr(analysis, *It, currentPath, calleeCache,
-                               worklist, visited, status, callResolutionMode);
-
-      auto *Term = BB.getTerminator();
-      if (!Term || Term->getNumSuccessors() == 0) {
-        graph.addEdge(fromId, addLabel(currentPath), exitId);
-        continue;
-      }
-
-      for (unsigned i = 0; i < Term->getNumSuccessors(); ++i) {
-        auto *Succ = Term->getSuccessor(i);
-        if (!Succ)
-          continue;
-        E edgeExpr =
-            Exp::seq(getEdgeTransfer(analysis, *Term, *Succ, 0), currentPath);
-        graph.addEdge(fromId, addLabel(edgeExpr), blockIds.at(Succ));
-      }
-    }
-
-    lotus::pathexpressions::PathExpressionComputer<int, int> computer(graph);
-    unsigned starCounter = 0;
-    RegexToExpr translator(labels, starCounter);
-
-    FunctionRegexArtifacts out;
-    llvm::BasicBlock *Entry = F.empty() ? nullptr : &F.getEntryBlock();
-    out.fullSummaryExpr =
-        Entry ? translator.translate(
-                    computer.exprBetween(blockIds.at(Entry), exitId))
-              : Exp::term(D::one());
-    out.summaryExpr = makeSummaryEquationExpr(out.fullSummaryExpr);
-    for (auto &BB : F) {
-      const std::string bSym = InterEngine<D, Analysis>::getBlockSymbol(&BB);
-      out.blockSummaryExprs.emplace(
-          bSym,
-          translator.translate(computer.exprBetween(blockIds.at(&BB), exitId)));
-    }
-    return out;
-  }
-
-  static PreparedFunctionArtifacts prepareFunctionRegexArtifacts(
+  static PreparedFunctionArtifacts prepareFunctionArtifacts(
       llvm::Module &, llvm::Function &F, Analysis &analysis,
       typename InterEngine<D, Analysis>::CalleeCache &calleeCache,
       IndirectCallResolutionMode callResolutionMode) {
@@ -491,8 +319,8 @@ private:
           llvm::BasicBlock *successor = term->getSuccessor(index);
           if (!successor)
             continue;
-          E edge_body = Exp::seq(
-              getEdgeTransfer(analysis, *term, *successor, 0), body);
+          E edge_body =
+              Exp::seq(getEdgeTransfer(analysis, *term, *successor, 0), body);
           E branch = multiplyExpr(
               Exp::hole(InterEngine<D, Analysis>::getBlockSymbol(successor)),
               std::move(edge_body));
@@ -502,11 +330,10 @@ private:
       if (!rhs)
         rhs = Exp::term(D::zero());
 
-      const Symbol block_symbol =
-          InterEngine<D, Analysis>::getBlockSymbol(&BB);
+      const Symbol block_symbol = InterEngine<D, Analysis>::getBlockSymbol(&BB);
       prepared.artifacts.equations.emplace_back(block_symbol, rhs);
-      prepared.artifacts.blockSummaryExprs.emplace(
-          block_symbol, Exp::hole(block_symbol));
+      prepared.artifacts.blockSummaryExprs.emplace(block_symbol,
+                                                   Exp::hole(block_symbol));
     }
 
     if (F.empty()) {
@@ -676,9 +503,9 @@ public:
     while (!frontier.empty()) {
       std::vector<PreparedFunctionArtifacts> prepared(frontier.size());
       for (std::size_t index = 0; index < frontier.size(); ++index) {
-        prepared[index] = prepareFunctionRegexArtifacts(
-            M, *frontier[index], analysis, calleeCache,
-            res.status.call_resolution_mode);
+        prepared[index] =
+            prepareFunctionArtifacts(M, *frontier[index], analysis, calleeCache,
+                                     res.status.call_resolution_mode);
       }
 
       std::vector<llvm::Function *> next_frontier;

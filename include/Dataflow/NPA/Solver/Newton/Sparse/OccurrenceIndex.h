@@ -6,11 +6,12 @@
  * \brief Lazy DAG analysis and filtered differentiation for sparse Newton.
  *
  * The sparse plan stores only the source-to-target dependency skeleton up
- * front. A target's expression DAG is indexed when demand first reaches it.
- * Each round then computes source influence once per shared Exp0 node instead
- * of enumerating root-to-leaf occurrence paths. Joining contexts at a shared
- * node is deliberately conservative: it can retain extra terms, but cannot
- * remove a potentially non-zero derivative contribution.
+ * front. When demand first reaches a target in a round, one memoized traversal
+ * of its Exp0 DAG computes its value, source influence, and derivative DAG.
+ * The same traversal lazily records unique DAG leaves. A cheap structural
+ * slice of that derivative retains demanded sources without reevaluating
+ * domain operations. The result also carries the exact reduced dependency
+ * graph; an unchanged graph reuses its SCC partition in the next round.
  */
 
 #include "Dataflow/NPA/Core/Expr/Eval.h"
@@ -22,6 +23,7 @@
 #include <algorithm>
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <optional>
@@ -107,6 +109,8 @@ namespace detail {
 template <class D> struct SparseRoundMaterialization {
   std::vector<std::pair<Symbol, E1<D>>> rhs;
   std::vector<unsigned> dense_indices;
+  std::vector<std::vector<unsigned>> dependencies;
+  std::vector<std::vector<unsigned>> scc_partition;
   NewtonRoundStat stats;
 };
 
@@ -121,7 +125,8 @@ public:
                      const std::vector<std::pair<Symbol, V>> &fixed_seed,
                      const ValidatedEquationSystem &validated)
       : symbol_to_index_(validated.symbol_to_index),
-        targets_by_source_(equations.size()), target_indexes_(equations.size()) {
+        targets_by_source_(equations.size()),
+        target_indexes_(equations.size()) {
     symbols_.reserve(equations.size());
     equations_.reserve(equations.size());
     seed_.reserve(equations.size());
@@ -151,31 +156,33 @@ public:
 
     const auto discovery_start = std::chrono::steady_clock::now();
     std::vector<bool> active(symbols_.size(), false);
-    std::vector<std::shared_ptr<const InfluenceResult>> influences(
-        symbols_.size());
+    std::vector<SharedDerivative> derivatives(symbols_.size());
     long queries = 0;
     long retained = 0;
 
-    auto ensureInfluence = [&](unsigned target) -> const InfluenceResult & {
-      if (!influences[target]) {
-        InfluenceContext context;
-        influences[target] = analyzeExpression(
-            equations_[target], nu, {}, {}, context, 0);
+    auto ensureDerivative = [&](unsigned target) -> const DerivativeResult & {
+      if (!derivatives[target]) {
+        DerivativeBuildContext context;
+        context.prune_zero = strategy == NewtonRoundStrategy::Sparse;
+
+        std::optional<TargetIndex> new_index;
+        if (!target_indexes_[target]) {
+          new_index.emplace(symbols_.size());
+          context.index = &*new_index;
+        }
+
+        derivatives[target] =
+            differentiateExpression(equations_[target], nu, {}, {}, context, 0);
+        if (new_index) {
+          indexed_leaf_count_ += new_index->leaf_count;
+          target_indexes_[target].emplace(std::move(*new_index));
+        }
       }
-      return *influences[target];
+      return *derivatives[target];
     };
 
     if (strategy == NewtonRoundStrategy::Static) {
       active = static_active_;
-      for (std::size_t target = 0; target < active.size(); ++target) {
-        if (!active[target])
-          continue;
-        const TargetIndex &index = ensureTargetIndex(target);
-        for (std::size_t source = 0; source < active.size(); ++source) {
-          if (active[source])
-            retained += index.source_counts[source];
-        }
-      }
     } else {
       std::deque<unsigned> worklist;
       for (std::size_t source = 0; source < seed_support_.size(); ++source) {
@@ -189,16 +196,15 @@ public:
         const unsigned source = worklist.front();
         worklist.pop_front();
         for (unsigned target : targets_by_source_[source]) {
-          const TargetIndex &index = ensureTargetIndex(target);
+          const DerivativeResult &derivative = ensureDerivative(target);
+          const TargetIndex &index = *target_indexes_[target];
           const long source_occurrences = index.source_counts[source];
           queries += source_occurrences;
 
-          const InfluenceResult &influence = ensureInfluence(target);
           const bool keep = strategy == NewtonRoundStrategy::AlwaysMaybe ||
-                            influence.sources.count(source) != 0;
+                            derivative.sources.count(source) != 0;
           if (!keep)
             continue;
-          retained += source_occurrences;
           if (!active[target]) {
             active[target] = true;
             worklist.push_back(target);
@@ -213,7 +219,6 @@ public:
                                       discovery_start)
             .count();
     result.stats.queried_occurrences = queries;
-    result.stats.retained_occurrences = retained;
     result.stats.active_coordinates =
         static_cast<int>(std::count(active.begin(), active.end(), true));
 
@@ -222,38 +227,50 @@ public:
         static_cast<std::size_t>(result.stats.active_coordinates));
     result.dense_indices.reserve(
         static_cast<std::size_t>(result.stats.active_coordinates));
+    result.dependencies.reserve(
+        static_cast<std::size_t>(result.stats.active_coordinates));
     long materialized_terms = 0;
 
+    std::vector<int> reduced_index(symbols_.size(), -1);
     for (std::size_t target = 0; target < symbols_.size(); ++target) {
       if (!active[target])
         continue;
-
-      std::vector<bool> allowed_sources(symbols_.size(), false);
-      const InfluenceResult *influence = nullptr;
-      if (strategy == NewtonRoundStrategy::Sparse)
-        influence = &ensureInfluence(static_cast<unsigned>(target));
-      const TargetIndex &index = ensureTargetIndex(target);
-      for (std::size_t source = 0; source < symbols_.size(); ++source) {
-        allowed_sources[source] =
-            active[source] &&
-            (!influence || influence->sources.count(source) != 0);
-        if (allowed_sources[source])
-          materialized_terms += index.source_counts[source];
-      }
-
-      FilteredBuildContext build_context;
-      auto filtered = buildFilteredDerivative(
-          equations_[target], nu, {}, {}, allowed_sources, build_context, 0);
-      E1<D> rhs = Exp1<D>::term(seed_[target]);
-      if (filtered->derivative) {
-        rhs = Exp1<D>::add(std::move(rhs),
-                           filtered->derivative);
-      }
-      result.rhs.emplace_back(symbols_[target], std::move(rhs));
+      reduced_index[target] = static_cast<int>(result.dense_indices.size());
       result.dense_indices.push_back(static_cast<unsigned>(target));
     }
 
+    for (unsigned target : result.dense_indices) {
+      const DerivativeResult &derivative = ensureDerivative(target);
+      const TargetIndex &index = *target_indexes_[target];
+      std::vector<unsigned> dependencies;
+      std::vector<bool> allowed_sources(symbols_.size(), false);
+      for (std::size_t source = 0; source < symbols_.size(); ++source) {
+        if (!active[source])
+          continue;
+        if (!derivative.sources.count(static_cast<unsigned>(source))) {
+          continue;
+        }
+        allowed_sources[source] = true;
+        retained += index.source_counts[source];
+        materialized_terms += index.source_counts[source];
+        dependencies.push_back(static_cast<unsigned>(reduced_index[source]));
+      }
+
+      LinearSliceContext slice_context;
+      E1<D> linear_terms = sliceDerivative(derivative.derivative,
+                                           allowed_sources, slice_context);
+      E1<D> rhs = Exp1<D>::term(seed_[target]);
+      if (linear_terms)
+        rhs = Exp1<D>::add(std::move(rhs), std::move(linear_terms));
+      result.rhs.emplace_back(symbols_[target], std::move(rhs));
+      result.dependencies.push_back(std::move(dependencies));
+    }
+
+    result.scc_partition =
+        getSccPartition(result.dense_indices, result.dependencies);
+
     result.stats.materialized_derivative_terms = materialized_terms;
+    result.stats.retained_occurrences = retained;
     result.stats.materialization_time =
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
                                       materialization_start)
@@ -275,9 +292,8 @@ private:
     std::size_t operator()(const NodeScopeKey &key) const {
       const std::size_t pointer_hash =
           std::hash<const Exp0<D> *>{}(key.expression);
-      return pointer_hash ^
-             (key.scope + static_cast<std::size_t>(0x9e3779b9) +
-              (pointer_hash << 6) + (pointer_hash >> 2));
+      return pointer_hash ^ (key.scope + static_cast<std::size_t>(0x9e3779b9) +
+                             (pointer_hash << 6) + (pointer_hash >> 2));
     }
   };
 
@@ -289,33 +305,23 @@ private:
     std::size_t leaf_count = 0;
   };
 
-  struct IndexContext {
-    std::unordered_set<NodeScopeKey, NodeScopeKeyHash> visited;
-    std::size_t next_scope = 1;
-  };
-
-  struct InfluenceResult {
+  struct DerivativeResult {
     V value;
     SourceSet sources;
-  };
-
-  using SharedInfluence = std::shared_ptr<const InfluenceResult>;
-
-  struct InfluenceContext {
-    std::unordered_map<NodeScopeKey, SharedInfluence, NodeScopeKeyHash> memo;
-    std::size_t next_scope = 1;
-  };
-
-  struct FilteredDerivativeResult {
-    V value;
     E1<D> derivative;
   };
 
-  using SharedFiltered = std::shared_ptr<const FilteredDerivativeResult>;
+  using SharedDerivative = std::shared_ptr<const DerivativeResult>;
 
-  struct FilteredBuildContext {
-    std::unordered_map<NodeScopeKey, SharedFiltered, NodeScopeKeyHash> memo;
+  struct DerivativeBuildContext {
+    std::unordered_map<NodeScopeKey, SharedDerivative, NodeScopeKeyHash> memo;
     std::size_t next_scope = 1;
+    bool prune_zero = false;
+    TargetIndex *index = nullptr;
+  };
+
+  struct LinearSliceContext {
+    std::unordered_map<const Exp1<D> *, E1<D>> memo;
   };
 
   enum class ZeroOperationKind { LeftMultiply, RightMultiply };
@@ -334,7 +340,10 @@ private:
   std::vector<std::vector<unsigned>> targets_by_source_;
   mutable std::vector<std::optional<TargetIndex>> target_indexes_;
   mutable std::size_t indexed_leaf_count_ = 0;
-  mutable double lazy_index_time_ = 0.0;
+  mutable std::vector<unsigned> cached_scc_dense_indices_;
+  mutable std::vector<std::vector<unsigned>> cached_scc_dependencies_;
+  mutable std::vector<std::vector<unsigned>> cached_scc_partition_;
+  double lazy_index_time_ = 0.0;
 
   unsigned sourceIndex(const Symbol &symbol) const {
     return symbol_to_index_.at(symbol);
@@ -360,75 +369,70 @@ private:
     return active;
   }
 
-  const TargetIndex &ensureTargetIndex(std::size_t target) const {
-    if (target_indexes_[target])
-      return *target_indexes_[target];
+  static std::vector<std::vector<unsigned>>
+  computeSccPartition(const std::vector<std::vector<unsigned>> &dependencies) {
+    const int count = static_cast<int>(dependencies.size());
+    std::vector<int> index(static_cast<std::size_t>(count), -1);
+    std::vector<int> low(static_cast<std::size_t>(count), -1);
+    std::vector<int> scc_id(static_cast<std::size_t>(count), -1);
+    std::vector<unsigned> stack;
+    stack.reserve(static_cast<std::size_t>(count));
+    int next_index = 0;
+    int scc_count = 0;
 
-    const auto start = std::chrono::steady_clock::now();
-    TargetIndex index(symbols_.size());
-    IndexContext context;
-    indexExpression(equations_[target], {}, index, context, 0);
-    indexed_leaf_count_ += index.leaf_count;
-    target_indexes_[target].emplace(std::move(index));
-    lazy_index_time_ +=
-        std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
-            .count();
-    return *target_indexes_[target];
-  }
+    std::function<void(unsigned)> tarjan = [&](unsigned node) {
+      index[node] = low[node] = next_index++;
+      stack.push_back(node);
+      for (unsigned dependency : dependencies[node]) {
+        if (index[dependency] == -1) {
+          tarjan(dependency);
+          low[node] = std::min(low[node], low[dependency]);
+        } else if (scc_id[dependency] == -1) {
+          low[node] = std::min(low[node], index[dependency]);
+        }
+      }
+      if (low[node] != index[node])
+        return;
+      for (;;) {
+        const unsigned member = stack.back();
+        stack.pop_back();
+        scc_id[member] = scc_count;
+        if (member == node)
+          break;
+      }
+      ++scc_count;
+    };
 
-  void noteLeaf(const Symbol &symbol, TargetIndex &index) const {
-    ++index.source_counts[sourceIndex(symbol)];
-    ++index.leaf_count;
-  }
-
-  void indexExpression(const E0<D> &expression,
-                       const std::unordered_set<Symbol> &bound,
-                       TargetIndex &index, IndexContext &context,
-                       std::size_t scope) const {
-    if (!context.visited.insert({expression.get(), scope}).second)
-      return;
-
-    using K = typename Exp0<D>::K;
-    switch (expression->k) {
-    case K::Term:
-    case K::Bound:
-      return;
-    case K::Seq:
-    case K::Project:
-      indexExpression(expression->t, bound, index, context, scope);
-      return;
-    case K::Mul:
-    case K::Cond:
-    case K::Ndet:
-      indexExpression(expression->t1, bound, index, context, scope);
-      indexExpression(expression->t2, bound, index, context, scope);
-      return;
-    case K::Call:
-      indexExpression(expression->t, bound, index, context, scope);
-      noteLeaf(expression->sym, index);
-      return;
-    case K::Hole:
-      noteLeaf(expression->sym, index);
-      return;
-    case K::Concat:
-      indexExpression(expression->t1, bound, index, context, scope);
-      if (!bound.count(expression->sym))
-        noteLeaf(expression->sym, index);
-      indexExpression(expression->t2, bound, index, context, scope);
-      return;
-    case K::Star:
-    case K::Mu: {
-      auto body_bound = bound;
-      body_bound.insert(expression->sym);
-      const std::size_t body_scope = context.next_scope++;
-      indexExpression(expression->t, body_bound, index, context, body_scope);
-      return;
+    for (unsigned node = 0; node < dependencies.size(); ++node) {
+      if (index[node] == -1)
+        tarjan(node);
     }
+
+    std::vector<std::vector<unsigned>> partition(
+        static_cast<std::size_t>(scc_count));
+    for (unsigned node = 0; node < dependencies.size(); ++node) {
+      partition[static_cast<std::size_t>(scc_id[node])].push_back(node);
     }
+    return partition;
   }
 
-  static void mergeSources(SourceSet &destination, const SourceSet &source) {
-    destination.insert(source.begin(), source.end());
+  const std::vector<std::vector<unsigned>> &getSccPartition(
+      const std::vector<unsigned> &dense_indices,
+      const std::vector<std::vector<unsigned>> &dependencies) const {
+    if (dense_indices != cached_scc_dense_indices_ ||
+        dependencies != cached_scc_dependencies_) {
+      cached_scc_dense_indices_ = dense_indices;
+      cached_scc_dependencies_ = dependencies;
+      cached_scc_partition_ = computeSccPartition(dependencies);
+    }
+    return cached_scc_partition_;
+  }
+
+  void noteLeaf(const Symbol &symbol, DerivativeBuildContext &context) const {
+    if (!context.index)
+      return;
+    ++context.index->source_counts[sourceIndex(symbol)];
+    ++context.index->leaf_count;
   }
 
   static void applyZeroOperation(std::optional<V> &constant,
@@ -451,18 +455,11 @@ private:
     }
   }
 
-  static bool contextIsZero(
-      std::initializer_list<ZeroOperation> operations) {
+  static bool contextIsZero(std::initializer_list<ZeroOperation> operations) {
     std::optional<V> constant;
     for (const ZeroOperation &operation : operations)
       applyZeroOperation(constant, operation);
     return constant && SparseNewtonZeroOracle<D>::isZero(*constant);
-  }
-
-  static void filterSources(SourceSet &sources,
-                            std::initializer_list<ZeroOperation> operations) {
-    if (contextIsZero(operations))
-      sources.clear();
   }
 
   static ZeroOperation left(const V &coefficient) {
@@ -473,151 +470,6 @@ private:
     return {ZeroOperationKind::RightMultiply, &coefficient};
   }
 
-  SharedInfluence analyzeExpression(
-      const E0<D> &expression, const std::unordered_map<Symbol, V> &nu,
-      const Env &env, const std::unordered_set<Symbol> &bound,
-      InfluenceContext &context, std::size_t scope) const {
-    const NodeScopeKey key{expression.get(), scope};
-    auto cached = context.memo.find(key);
-    if (cached != context.memo.end())
-      return cached->second;
-
-    SharedInfluence result = analyzeExpressionUncached(
-        expression, nu, env, bound, context, scope);
-    context.memo.emplace(key, result);
-    return result;
-  }
-
-  SharedInfluence analyzeExpressionUncached(
-      const E0<D> &expression, const std::unordered_map<Symbol, V> &nu,
-      const Env &env, const std::unordered_set<Symbol> &bound,
-      InfluenceContext &context, std::size_t scope) const {
-    using K = typename Exp0<D>::K;
-    switch (expression->k) {
-    case K::Term:
-      return std::make_shared<InfluenceResult>(
-          InfluenceResult{expression->c, {}});
-    case K::Seq: {
-      SharedInfluence child = analyzeExpression(
-          expression->t, nu, env, bound, context, scope);
-      SourceSet sources = child->sources;
-      filterSources(sources, {left(expression->c)});
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::extend(expression->c, child->value), std::move(sources)});
-    }
-    case K::Mul: {
-      SharedInfluence lhs = analyzeExpression(
-          expression->t1, nu, env, bound, context, scope);
-      SharedInfluence rhs = analyzeExpression(
-          expression->t2, nu, env, bound, context, scope);
-      SourceSet sources = lhs->sources;
-      filterSources(sources, {right(rhs->value)});
-      SourceSet rhs_sources = rhs->sources;
-      filterSources(rhs_sources, {left(lhs->value)});
-      mergeSources(sources, rhs_sources);
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::extend(lhs->value, rhs->value), std::move(sources)});
-    }
-    case K::Call: {
-      SharedInfluence argument = analyzeExpression(
-          expression->t, nu, env, bound, context, scope);
-      const V &callee = nu.at(expression->sym);
-      SourceSet sources = argument->sources;
-      filterSources(sources, {left(callee)});
-      if (!contextIsZero({right(argument->value)}))
-        sources.insert(sourceIndex(expression->sym));
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::extend(callee, argument->value), std::move(sources)});
-    }
-    case K::Cond: {
-      SharedInfluence then_result = analyzeExpression(
-          expression->t1, nu, env, bound, context, scope);
-      SharedInfluence else_result = analyzeExpression(
-          expression->t2, nu, env, bound, context, scope);
-      SourceSet sources =
-          expression->phi ? then_result->sources : else_result->sources;
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::condCombine(expression->phi, then_result->value,
-                         else_result->value),
-          std::move(sources)});
-    }
-    case K::Ndet: {
-      SharedInfluence lhs = analyzeExpression(
-          expression->t1, nu, env, bound, context, scope);
-      SharedInfluence rhs = analyzeExpression(
-          expression->t2, nu, env, bound, context, scope);
-      SourceSet sources = lhs->sources;
-      mergeSources(sources, rhs->sources);
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::ndetCombine(lhs->value, rhs->value), std::move(sources)});
-    }
-    case K::Project: {
-      SharedInfluence child = analyzeExpression(
-          expression->t, nu, env, bound, context, scope);
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          domain_project<D>(child->value), child->sources});
-    }
-    case K::Hole:
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          nu.at(expression->sym), {sourceIndex(expression->sym)}});
-    case K::Bound:
-      return std::make_shared<InfluenceResult>(
-          InfluenceResult{env.at(expression->sym), {}});
-    case K::Concat: {
-      SharedInfluence lhs = analyzeExpression(
-          expression->t1, nu, env, bound, context, scope);
-      SharedInfluence rhs = analyzeExpression(
-          expression->t2, nu, env, bound, context, scope);
-      auto local = env.find(expression->sym);
-      const V &middle =
-          local == env.end() ? nu.at(expression->sym) : local->second;
-
-      SourceSet sources = lhs->sources;
-      const V middle_right = D::extend(middle, rhs->value);
-      filterSources(sources, {right(middle_right)});
-      SourceSet rhs_sources = rhs->sources;
-      filterSources(rhs_sources, {left(middle), left(lhs->value)});
-      mergeSources(sources, rhs_sources);
-      if (!bound.count(expression->sym) &&
-          !contextIsZero({left(lhs->value), right(rhs->value)})) {
-        sources.insert(sourceIndex(expression->sym));
-      }
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          D::extend(lhs->value, D::extend(middle, rhs->value)),
-          std::move(sources)});
-    }
-    case K::Star: {
-      V star_value = I0<D>::evalWithEnvironment(nu, env, expression);
-      if constexpr (DomainHasStar<D>::value) {
-        if (E0<D> operand = matchSemiringStarOperand<D>(expression)) {
-          SharedInfluence body = analyzeExpression(
-              operand, nu, env, bound, context, scope);
-          SourceSet sources = body->sources;
-          filterSources(sources,
-                        {right(star_value), left(star_value)});
-          return std::make_shared<InfluenceResult>(InfluenceResult{
-              std::move(star_value), std::move(sources)});
-        }
-      }
-
-      Env body_env = env;
-      body_env.insert_or_assign(expression->sym, star_value);
-      auto body_bound = bound;
-      body_bound.insert(expression->sym);
-      const std::size_t body_scope = context.next_scope++;
-      SharedInfluence body = analyzeExpression(
-          expression->t, nu, body_env, body_bound, context, body_scope);
-      SourceSet sources = body->sources;
-      filterSources(sources, {right(star_value), left(star_value)});
-      return std::make_shared<InfluenceResult>(InfluenceResult{
-          std::move(star_value), std::move(sources)});
-    }
-    case K::Mu:
-      throw UnsupportedNewtonMuError{};
-    }
-    return nullptr;
-  }
-
   static E1<D> combineLinear(E1<D> lhs, E1<D> rhs) {
     if (!lhs)
       return rhs;
@@ -626,187 +478,295 @@ private:
     return Exp1<D>::add(std::move(lhs), std::move(rhs));
   }
 
-  SharedFiltered buildFilteredDerivative(
+  static void mergeSources(SourceSet &destination, const SourceSet &source) {
+    destination.insert(source.begin(), source.end());
+  }
+
+  static void filterSources(SourceSet &sources, bool enabled,
+                            std::initializer_list<ZeroOperation> operations) {
+    if (enabled && contextIsZero(operations))
+      sources.clear();
+  }
+
+  E1<D> sliceDerivative(const E1<D> &expression,
+                        const std::vector<bool> &allowed_sources,
+                        LinearSliceContext &context) const {
+    if (!expression)
+      return nullptr;
+    auto cached = context.memo.find(expression.get());
+    if (cached != context.memo.end())
+      return cached->second;
+
+    using K = typename Exp1<D>::K;
+    E1<D> result;
+    switch (expression->k) {
+    case K::Term:
+    case K::Bound:
+      result = expression;
+      break;
+    case K::Seq: {
+      E1<D> child = sliceDerivative(expression->t, allowed_sources, context);
+      if (child)
+        result = Exp1<D>::seq(expression->c, std::move(child));
+      break;
+    }
+    case K::SeqR: {
+      E1<D> child = sliceDerivative(expression->t, allowed_sources, context);
+      if (child)
+        result = Exp1<D>::seqR(std::move(child), expression->c);
+      break;
+    }
+    case K::Call:
+    case K::Hole:
+      if (allowed_sources[sourceIndex(expression->sym)])
+        result = expression;
+      break;
+    case K::Cond:
+      result =
+          sliceDerivative(expression->phi ? expression->t1 : expression->t2,
+                          allowed_sources, context);
+      break;
+    case K::Ndet:
+    case K::Add: {
+      E1<D> lhs = sliceDerivative(expression->t1, allowed_sources, context);
+      E1<D> rhs = sliceDerivative(expression->t2, allowed_sources, context);
+      result = combineLinear(std::move(lhs), std::move(rhs));
+      break;
+    }
+    case K::Sub: {
+      E1<D> lhs = sliceDerivative(expression->t1, allowed_sources, context);
+      E1<D> rhs = sliceDerivative(expression->t2, allowed_sources, context);
+      if (lhs || rhs) {
+        if (!lhs)
+          lhs = Exp1<D>::term(D::zero());
+        if (!rhs)
+          rhs = Exp1<D>::term(D::zero());
+        result = Exp1<D>::sub(std::move(lhs), std::move(rhs));
+      }
+      break;
+    }
+    case K::Project: {
+      E1<D> child = sliceDerivative(expression->t, allowed_sources, context);
+      if (child)
+        result = Exp1<D>::project(std::move(child));
+      break;
+    }
+    case K::Concat:
+      if (allowed_sources[sourceIndex(expression->sym)])
+        result = expression;
+      break;
+    case K::Star:
+    case K::Mu: {
+      E1<D> child = sliceDerivative(expression->t, allowed_sources, context);
+      if (child) {
+        result = expression->k == K::Star
+                     ? Exp1<D>::star(std::move(child), expression->sym)
+                     : Exp1<D>::mu(std::move(child), expression->sym);
+      }
+      break;
+    }
+    }
+    context.memo.emplace(expression.get(), result);
+    return result;
+  }
+
+  SharedDerivative differentiateExpression(
       const E0<D> &expression, const std::unordered_map<Symbol, V> &nu,
       const Env &env, const std::unordered_set<Symbol> &bound,
-      const std::vector<bool> &allowed_sources,
-      FilteredBuildContext &context, std::size_t scope) const {
+      DerivativeBuildContext &context, std::size_t scope) const {
     const NodeScopeKey key{expression.get(), scope};
     auto cached = context.memo.find(key);
     if (cached != context.memo.end())
       return cached->second;
-    SharedFiltered result = buildFilteredDerivativeUncached(
-        expression, nu, env, bound, allowed_sources, context, scope);
+
+    SharedDerivative result = differentiateExpressionUncached(
+        expression, nu, env, bound, context, scope);
     context.memo.emplace(key, result);
     return result;
   }
 
-  SharedFiltered buildFilteredDerivativeUncached(
+  SharedDerivative differentiateExpressionUncached(
       const E0<D> &expression, const std::unordered_map<Symbol, V> &nu,
       const Env &env, const std::unordered_set<Symbol> &bound,
-      const std::vector<bool> &allowed_sources,
-      FilteredBuildContext &context, std::size_t scope) const {
+      DerivativeBuildContext &context, std::size_t scope) const {
     using K = typename Exp0<D>::K;
     switch (expression->k) {
     case K::Term:
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{expression->c, nullptr});
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{expression->c, {}, nullptr});
     case K::Seq: {
-      SharedFiltered child = buildFilteredDerivative(
-          expression->t, nu, env, bound, allowed_sources, context, scope);
+      SharedDerivative child = differentiateExpression(expression->t, nu, env,
+                                                       bound, context, scope);
+      SourceSet sources = child->sources;
+      filterSources(sources, context.prune_zero, {left(expression->c)});
       E1<D> derivative = child->derivative
                              ? Exp1<D>::seq(expression->c, child->derivative)
                              : nullptr;
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::extend(expression->c, child->value),
-              std::move(derivative)});
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{D::extend(expression->c, child->value),
+                           std::move(sources), std::move(derivative)});
     }
     case K::Mul: {
-      SharedFiltered lhs = buildFilteredDerivative(
-          expression->t1, nu, env, bound, allowed_sources, context, scope);
-      SharedFiltered rhs = buildFilteredDerivative(
-          expression->t2, nu, env, bound, allowed_sources, context, scope);
+      SharedDerivative lhs = differentiateExpression(expression->t1, nu, env,
+                                                     bound, context, scope);
+      SharedDerivative rhs = differentiateExpression(expression->t2, nu, env,
+                                                     bound, context, scope);
+      SourceSet sources = lhs->sources;
+      filterSources(sources, context.prune_zero, {right(rhs->value)});
+      SourceSet rhs_sources = rhs->sources;
+      filterSources(rhs_sources, context.prune_zero, {left(lhs->value)});
+      mergeSources(sources, rhs_sources);
       E1<D> lhs_term = lhs->derivative
                            ? Exp1<D>::seqR(lhs->derivative, rhs->value)
                            : nullptr;
-      E1<D> rhs_term = rhs->derivative
-                           ? Exp1<D>::seq(lhs->value, rhs->derivative)
-                           : nullptr;
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::extend(lhs->value, rhs->value),
-              combineLinear(std::move(lhs_term), std::move(rhs_term))});
+      E1<D> rhs_term =
+          rhs->derivative ? Exp1<D>::seq(lhs->value, rhs->derivative) : nullptr;
+      return std::make_shared<DerivativeResult>(DerivativeResult{
+          D::extend(lhs->value, rhs->value), std::move(sources),
+          combineLinear(std::move(lhs_term), std::move(rhs_term))});
     }
     case K::Call: {
-      SharedFiltered argument = buildFilteredDerivative(
-          expression->t, nu, env, bound, allowed_sources, context, scope);
+      SharedDerivative argument = differentiateExpression(
+          expression->t, nu, env, bound, context, scope);
       const V &callee = nu.at(expression->sym);
-      E1<D> argument_term =
-          argument->derivative
-              ? Exp1<D>::seq(callee, argument->derivative)
-              : nullptr;
-      E1<D> callee_term;
-      if (allowed_sources[sourceIndex(expression->sym)]) {
-        callee_term = Exp1<D>::call(expression->sym, argument->value);
-      }
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::extend(callee, argument->value),
-              combineLinear(std::move(argument_term),
-                            std::move(callee_term))});
+      SourceSet sources = argument->sources;
+      filterSources(sources, context.prune_zero, {left(callee)});
+      noteLeaf(expression->sym, context);
+      if (!context.prune_zero || !contextIsZero({right(argument->value)}))
+        sources.insert(sourceIndex(expression->sym));
+      E1<D> argument_term = argument->derivative
+                                ? Exp1<D>::seq(callee, argument->derivative)
+                                : nullptr;
+      E1<D> callee_term = Exp1<D>::call(expression->sym, argument->value);
+      return std::make_shared<DerivativeResult>(DerivativeResult{
+          D::extend(callee, argument->value), std::move(sources),
+          combineLinear(std::move(argument_term), std::move(callee_term))});
     }
     case K::Cond: {
-      SharedFiltered then_result = buildFilteredDerivative(
-          expression->t1, nu, env, bound, allowed_sources, context, scope);
-      SharedFiltered else_result = buildFilteredDerivative(
-          expression->t2, nu, env, bound, allowed_sources, context, scope);
-      E1<D> derivative = expression->phi ? then_result->derivative
-                                         : else_result->derivative;
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::condCombine(expression->phi, then_result->value,
-                             else_result->value),
-              std::move(derivative)});
+      SharedDerivative then_result = differentiateExpression(
+          expression->t1, nu, env, bound, context, scope);
+      SharedDerivative else_result = differentiateExpression(
+          expression->t2, nu, env, bound, context, scope);
+      SourceSet sources =
+          expression->phi ? then_result->sources : else_result->sources;
+      E1<D> derivative =
+          expression->phi ? then_result->derivative : else_result->derivative;
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{D::condCombine(expression->phi, then_result->value,
+                                          else_result->value),
+                           std::move(sources), std::move(derivative)});
     }
     case K::Ndet: {
-      SharedFiltered lhs = buildFilteredDerivative(
-          expression->t1, nu, env, bound, allowed_sources, context, scope);
-      SharedFiltered rhs = buildFilteredDerivative(
-          expression->t2, nu, env, bound, allowed_sources, context, scope);
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::ndetCombine(lhs->value, rhs->value),
-              combineLinear(lhs->derivative, rhs->derivative)});
+      SharedDerivative lhs = differentiateExpression(expression->t1, nu, env,
+                                                     bound, context, scope);
+      SharedDerivative rhs = differentiateExpression(expression->t2, nu, env,
+                                                     bound, context, scope);
+      SourceSet sources = lhs->sources;
+      mergeSources(sources, rhs->sources);
+      return std::make_shared<DerivativeResult>(DerivativeResult{
+          D::ndetCombine(lhs->value, rhs->value), std::move(sources),
+          combineLinear(lhs->derivative, rhs->derivative)});
     }
     case K::Project: {
-      SharedFiltered child = buildFilteredDerivative(
-          expression->t, nu, env, bound, allowed_sources, context, scope);
-      E1<D> derivative = child->derivative
-                             ? Exp1<D>::project(child->derivative)
-                             : nullptr;
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{domain_project<D>(child->value),
-                                   std::move(derivative)});
+      SharedDerivative child = differentiateExpression(expression->t, nu, env,
+                                                       bound, context, scope);
+      E1<D> derivative =
+          child->derivative ? Exp1<D>::project(child->derivative) : nullptr;
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{domain_project<D>(child->value), child->sources,
+                           std::move(derivative)});
     }
     case K::Hole: {
-      E1<D> derivative;
-      if (allowed_sources[sourceIndex(expression->sym)])
-        derivative = Exp1<D>::hole(expression->sym);
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{nu.at(expression->sym),
-                                   std::move(derivative)});
+      noteLeaf(expression->sym, context);
+      const unsigned source = sourceIndex(expression->sym);
+      return std::make_shared<DerivativeResult>(DerivativeResult{
+          nu.at(expression->sym), {source}, Exp1<D>::hole(expression->sym)});
     }
     case K::Bound:
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{env.at(expression->sym), nullptr});
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{env.at(expression->sym), {}, nullptr});
     case K::Concat: {
-      SharedFiltered lhs = buildFilteredDerivative(
-          expression->t1, nu, env, bound, allowed_sources, context, scope);
-      SharedFiltered rhs = buildFilteredDerivative(
-          expression->t2, nu, env, bound, allowed_sources, context, scope);
+      SharedDerivative lhs = differentiateExpression(expression->t1, nu, env,
+                                                     bound, context, scope);
+      SharedDerivative rhs = differentiateExpression(expression->t2, nu, env,
+                                                     bound, context, scope);
       auto local = env.find(expression->sym);
       const V &middle =
           local == env.end() ? nu.at(expression->sym) : local->second;
-      E1<D> lhs_term =
-          lhs->derivative
-              ? Exp1<D>::seqR(lhs->derivative,
-                              D::extend(middle, rhs->value))
-              : nullptr;
+
+      const V middle_right = D::extend(middle, rhs->value);
+      SourceSet sources = lhs->sources;
+      filterSources(sources, context.prune_zero, {right(middle_right)});
+      SourceSet rhs_sources = rhs->sources;
+      filterSources(rhs_sources, context.prune_zero,
+                    {left(middle), left(lhs->value)});
+      mergeSources(sources, rhs_sources);
+
+      if (!bound.count(expression->sym)) {
+        noteLeaf(expression->sym, context);
+        if (!context.prune_zero ||
+            !contextIsZero({left(lhs->value), right(rhs->value)}))
+          sources.insert(sourceIndex(expression->sym));
+      }
+
+      E1<D> lhs_term = lhs->derivative
+                           ? Exp1<D>::seqR(lhs->derivative, middle_right)
+                           : nullptr;
       E1<D> middle_term;
-      if (!bound.count(expression->sym) &&
-          allowed_sources[sourceIndex(expression->sym)]) {
-        middle_term = Exp1<D>::concat(Exp1<D>::term(lhs->value),
-                                      expression->sym,
-                                      Exp1<D>::term(rhs->value));
+      if (!bound.count(expression->sym)) {
+        middle_term =
+            Exp1<D>::concat(Exp1<D>::term(lhs->value), expression->sym,
+                            Exp1<D>::term(rhs->value));
       }
       E1<D> rhs_term =
           rhs->derivative
-              ? Exp1<D>::seq(
-                    lhs->value, Exp1<D>::seq(middle, rhs->derivative))
+              ? Exp1<D>::seq(lhs->value, Exp1<D>::seq(middle, rhs->derivative))
               : nullptr;
       E1<D> derivative = combineLinear(
           combineLinear(std::move(lhs_term), std::move(middle_term)),
           std::move(rhs_term));
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{
-              D::extend(lhs->value, D::extend(middle, rhs->value)),
-              std::move(derivative)});
+      return std::make_shared<DerivativeResult>(
+          DerivativeResult{D::extend(lhs->value, middle_right),
+                           std::move(sources), std::move(derivative)});
     }
     case K::Star: {
-      V star_value = I0<D>::evalWithEnvironment(nu, env, expression);
       if constexpr (DomainHasStar<D>::value) {
         if (E0<D> operand = matchSemiringStarOperand<D>(expression)) {
-          SharedFiltered body = buildFilteredDerivative(
-              operand, nu, env, bound, allowed_sources, context, scope);
+          SharedDerivative body =
+              differentiateExpression(operand, nu, env, bound, context, scope);
+          V star_value = D::star(body->value);
+          SourceSet sources = body->sources;
+          filterSources(sources, context.prune_zero,
+                        {right(star_value), left(star_value)});
           E1<D> derivative =
               body->derivative
-                  ? Exp1<D>::seq(
-                        star_value,
-                        Exp1<D>::seqR(body->derivative, star_value))
+                  ? Exp1<D>::seq(star_value,
+                                 Exp1<D>::seqR(body->derivative, star_value))
                   : nullptr;
-          return std::make_shared<FilteredDerivativeResult>(
-              FilteredDerivativeResult{std::move(star_value),
-                                       std::move(derivative)});
+          return std::make_shared<DerivativeResult>(
+              DerivativeResult{std::move(star_value), std::move(sources),
+                               std::move(derivative)});
         }
       }
 
+      V star_value = I0<D>::evalWithEnvironment(nu, env, expression);
       Env body_env = env;
       body_env.insert_or_assign(expression->sym, star_value);
       auto body_bound = bound;
       body_bound.insert(expression->sym);
       const std::size_t body_scope = context.next_scope++;
-      SharedFiltered body = buildFilteredDerivative(
-          expression->t, nu, body_env, body_bound, allowed_sources, context,
-          body_scope);
+      SharedDerivative body = differentiateExpression(
+          expression->t, nu, body_env, body_bound, context, body_scope);
+      SourceSet sources = body->sources;
+      filterSources(sources, context.prune_zero,
+                    {right(star_value), left(star_value)});
       E1<D> derivative =
           body->derivative
               ? Exp1<D>::seq(star_value,
                              Exp1<D>::seqR(body->derivative, star_value))
               : nullptr;
-      return std::make_shared<FilteredDerivativeResult>(
-          FilteredDerivativeResult{std::move(star_value),
-                                   std::move(derivative)});
+      return std::make_shared<DerivativeResult>(DerivativeResult{
+          std::move(star_value), std::move(sources), std::move(derivative)});
     }
     case K::Mu:
       throw UnsupportedNewtonMuError{};

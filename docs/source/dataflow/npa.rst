@@ -196,11 +196,18 @@ The core headers implement the algorithms from Esparza et al. (JACM) and Reps et
 * **Solver/Newton/Differential.h**: Builds the differential :math:`Df|_\nu` from a polynomial expression
   (Esparza et al. JACM, Defn. 3.1, 3.5) and caches differential shape plans across
   Newton rounds.
+* **Solver/Newton/Sparse/OccurrenceIndex.h**: Implements demand-driven sparse
+  rounds. One memoized traversal of each demanded ``Exp0`` DAG computes its
+  value, source influence, and derivative. A structural slice keeps only active
+  sources, emits the exact reduced dependency graph, and reuses its SCC
+  partition when that graph is unchanged in the next round.
 * **Core/Expr/Eval.h**: Evaluates full and linearized equation ASTs.
 * **Solver/Fixpoint.h**: Generic fixpoint utilities.
 * **Solver/Newton/Linear/SccSolver.h**: Worklist and SCC linear solvers.
 * **Solver/Newton/Linear/Tensor/**: Tensor-product solver machinery.
-* **LLVM/**: LLVM bit-vector and interprocedural integration.
+* **LLVM/**: LLVM bit-vector and interprocedural integration. Interprocedural
+  engines uniformly encode one equation per basic block plus a function-summary
+  equation; they do not construct whole-function path expressions.
 * **Domains/**: Concrete semiring and transformer domains.
 * **Analyses/Intra/** and **Analyses/Inter/**: Concrete LLVM analysis clients.
 
