@@ -14,6 +14,12 @@ add_lotus_targeted_test(interleaved_dyck_spds_test
         CanaryInterleavedDyckSPDS)
 include(${CMAKE_SOURCE_DIR}/tests/regress/CFL/InterleavedDyck/SPDS/Tests.cmake)
 
+add_lotus_targeted_test(interleaved_dyck_affine_spds_test
+    InterleavedDyckAffineSPDSTest.cpp
+    LINK_LIBS
+        CanaryInterleavedDyckAffineSPDS)
+include(${CMAKE_SOURCE_DIR}/tests/regress/CFL/InterleavedDyck/AffineSPDS/Tests.cmake)
+
 add_lotus_targeted_test(ClassicalArchitectureTest
     ClassicalArchitectureTest.cpp
     LINK_LIBS
