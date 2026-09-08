@@ -37,8 +37,7 @@ std::vector<unsigned> stack(std::string_view text) {
 void usage() {
   std::cout
       << "Usage: lotus-cfl-interleaved-dyck-affine-spds [options] graph.dot\n"
-         "  --all-pairs             analyze every source/target pair "
-         "(default)\n"
+         "  --all-pairs             analyze every source/target pair\n"
          "  --query SOURCE TARGET   one query (default post*)\n"
          "  --source V              query all successors using post*\n"
          "  --target V              query all predecessors using pre*\n"
@@ -65,6 +64,7 @@ void usage() {
          "  --json                  emit machine-readable results and "
          "statistics\n"
          "  --pairs                 include sorted candidate pairs\n"
+         "  --timings               include instrumented phase times\n"
          "  --vertex V              add a vertex (including isolated "
          "vertices)\n"
          "  --max-dimension N       matrix-dimension cap; 0 = unlimited\n"
@@ -74,8 +74,7 @@ void usage() {
          "  --max-updates N         SPDS weight-promotion limit per "
          "projection\n"
          "  --help                  display this help\n"
-         "Default: all-pairs, empty endpoint stacks. Every mode is an upper "
-         "bound.\n"
+         "A query scope is required. Every mode is an upper bound.\n"
          "Pre* queries refer to predecessor stacks; the target stacks are "
          "empty.\n"
          "Exit codes: 0 complete; 2 invalid input/I/O; 3 resource failure (no "
@@ -138,20 +137,32 @@ std::vector<dyck::Pair> ordered(const dyck::PairSet &set) {
 }
 const char *boolean(bool b) { return b ? "true" : "false"; }
 const char *answer(bool b) { return b ? "may-reach" : "unreachable"; }
-void statistics(std::ostream &out, const affine::Statistics &stats, bool json) {
+void statistics(std::ostream &out, const affine::Statistics &stats, bool json,
+                bool timings) {
   const auto &s = stats.saturation;
   if (json) {
     out << "\"statistics\":{\"matrix_dimension\":" << stats.matrix_dimension
         << ",\"max_transition_rank\":" << stats.maximum_affine_rank
         << ",\"states\":" << s.states << ",\"transitions\":" << s.transitions
         << ",\"updates\":" << s.updates << ",\"processed\":" << s.processed
-        << ",\"rules\":" << s.rules << '}';
+        << ",\"rules\":" << s.rules;
+    if (timings)
+      out << ",\"setup_us\":" << s.setup_microseconds
+          << ",\"saturation_us\":" << s.saturation_microseconds
+          << ",\"readout_us\":" << s.readout_microseconds
+          << ",\"projection_us\":" << s.projection_microseconds;
+    out << '}';
   } else {
     out << "matrix-dimension: " << stats.matrix_dimension
         << "\nmax-transition-rank: " << stats.maximum_affine_rank
         << "\nstates: " << s.states << "\ntransitions: " << s.transitions
         << "\nweight-updates: " << s.updates << "\nprocessed: " << s.processed
         << "\nrules: " << s.rules << '\n';
+    if (timings)
+      out << "setup-us: " << s.setup_microseconds
+          << "\nsaturation-us: " << s.saturation_microseconds
+          << "\nreadout-us: " << s.readout_microseconds
+          << "\nprojection-us: " << s.projection_microseconds << '\n';
   }
 }
 void certificate(std::ostream &out, const affine::HistoryComparison &comparison,
@@ -188,7 +199,7 @@ int main(int argc, char **argv) {
     std::optional<std::vector<unsigned>> call_stack, field_stack;
     bool single = false, all_pairs = false, identity = false, pairs = false;
     bool json = false, show_certificate = false, positional = false,
-         feature_options = false;
+         timings = false, feature_options = false;
     std::string path, observer_path, dump_path, queries_path, mode = "joint";
     spds::DemandDirection demand_direction = spds::DemandDirection::Auto;
     std::vector<dyck::Vertex> vertices;
@@ -267,6 +278,8 @@ int main(int argc, char **argv) {
         json = true;
       else if (!positional && arg == "--pairs")
         pairs = true;
+      else if (!positional && arg == "--timings")
+        timings = true;
       else if (!positional && arg == "--vertex")
         vertices.push_back(number<dyck::Vertex>(argument(i)));
       else if (!positional && arg == "--max-dimension")
@@ -288,7 +301,9 @@ int main(int argc, char **argv) {
     if (path.empty())
       throw std::invalid_argument("missing graph.dot; use --help");
     if (!all_pairs && !source && !target && queries_path.empty())
-      all_pairs = true;
+      throw std::invalid_argument(
+          "missing query scope; use --all-pairs, --query, --source, "
+          "--target, or --queries");
     if (mode != "joint" && mode != "independent" && mode != "spds")
       throw std::invalid_argument("invalid --mode");
     const auto comparison_mode = mode == "joint" ? affine::ComparisonMode::Joint
@@ -391,11 +406,11 @@ int main(int argc, char **argv) {
         out << "\"requested_pairs\":" << demands.size() << ',';
       else
         out << "requested-pairs: " << demands.size() << '\n';
-      statistics(out, result.statistics, json);
+      statistics(out, result.statistics, json, timings);
     } else if (source || target) {
-      auto result =
-          reverse ? analysis.queryTo(*target) : analysis.queryFrom(*source);
       if (single) {
+        auto result =
+            reverse ? analysis.queryTo(*target) : analysis.queryFrom(*source);
         const auto vertex = reverse ? *source : *target;
         auto comparison =
             call_stack || field_stack
@@ -435,24 +450,17 @@ int main(int argc, char **argv) {
           if (show_certificate)
             certificate(out, comparison, false);
         }
+        statistics(out, result.statistics(), json, timings);
       } else {
-        for (auto v : graph.vertices()) {
-          const bool selected =
-              comparison_mode == affine::ComparisonMode::Joint
-                  ? result.mayReach(v)
-              : comparison_mode == affine::ComparisonMode::Independent
-                  ? result.independentMayReach(v)
-                  : result.spdsMayReach(v);
-          if (selected)
-            candidates.insert(reverse ? dyck::Pair{v, *target}
-                                      : dyck::Pair{*source, v});
-        }
+        auto result = reverse ? analysis.analyzeTo(*target, comparison_mode)
+                              : analysis.analyzeFrom(*source, comparison_mode);
+        candidates = std::move(result.pairs);
+        statistics(out, result.statistics, json, timings);
       }
-      statistics(out, result.statistics(), json);
     } else {
       auto result = analysis.analyzeAll(comparison_mode);
       candidates = result.pairs;
-      statistics(out, result.statistics, json);
+      statistics(out, result.statistics, json, timings);
     }
     if (json) {
       out << ",\"candidate_pairs\":" << candidates.size();

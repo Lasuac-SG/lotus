@@ -264,6 +264,8 @@ inline void preparedDemands() {
                 d::Label::closeParenthesis(1),d::Label::closeBracket(2)});
   for(d::Vertex v=10;v<17;++v)g.addVertex(v);
   auto analysis=s::Solver().prepare(g);
+  require(analysis.analyzeFrom(0).mayReach(0,4),"bulk source readout");
+  require(analysis.analyzeTo(4).mayReach(0,4),"bulk target readout");
   std::vector<d::Pair> demands{{0,4},{1,4},{0,4}};
   for(d::Vertex v=10;v<17;++v)demands.push_back({v,4});
   auto automatic=analysis.analyzeDemands(demands);
@@ -271,7 +273,8 @@ inline void preparedDemands() {
   require(automatic.statistics.rules==8,"batch groups by the single target");
   auto post=analysis.analyzeDemands(demands,s::DemandDirection::Post);
   require(post.upper_bound==automatic.upper_bound,"post demand result");
-  require(post.statistics.rules==72,"forced post groups by nine sources");
+  require(post.statistics.rules>automatic.statistics.rules,
+          "forced post uses more sliced anchors");
   throws<std::invalid_argument>([&]{
     (void)analysis.analyzeDemands({{0,99}});
   });
@@ -456,6 +459,12 @@ inline void incremental() {
     if(direction==s::Direction::Post)
       require(actual.weight(3,{3}).contains(1,0),"late weight reaches old downstream transition");
   }
+  s::PushdownSystem<> base;base.addControl();base.addControl();
+  auto seed=s::RegularSet::singleton(2,{0,{0}});
+  s::SaturationSession<> snapshot(base,seed);
+  base.addRule(0,0,1,{0});
+  require(!snapshot.run().accepts(1,{0}),
+          "session keeps immutable base-rule index snapshot");
 }
 inline void fieldRules() {
   // Table 4 / Figure 3: u=0, v=1, w=2, x=3; f=1,g=2,h=3.

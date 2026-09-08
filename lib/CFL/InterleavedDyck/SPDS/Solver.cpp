@@ -1,5 +1,7 @@
 #include "CFL/InterleavedDyck/SPDS/Solver.h"
 
+#include <chrono>
+
 namespace lotus::cfl::interleaved_dyck::spds {
 namespace {
 
@@ -65,6 +67,10 @@ void accumulate(Statistics &to, const Statistics &from) {
   to.updates += from.updates;
   to.processed += from.processed;
   to.rules += from.rules;
+  to.setup_microseconds += from.setup_microseconds;
+  to.saturation_microseconds += from.saturation_microseconds;
+  to.readout_microseconds += from.readout_microseconds;
+  to.projection_microseconds += from.projection_microseconds;
 }
 } // namespace
 
@@ -99,18 +105,73 @@ bool QueryResult::mayAccept(Vertex v, const std::vector<unsigned> &parentheses,
          calls_.accepts(p->second, stackWord(parentheses)) &&
          fields_.accepts(p->second, stackWord(brackets));
 }
-PreparedAnalysis::PreparedAnalysis(Options options,
+PreparedAnalysis::PreparedAnalysis(Options options, const Graph &graph,
                                    std::map<Vertex, State> controls,
                                    PushdownSystem<BooleanSemiring> calls,
                                    PushdownSystem<BooleanSemiring> fields)
     : options_(options),
       controls_(
           std::make_shared<const std::map<Vertex, State>>(std::move(controls))),
-      calls_(std::move(calls)), fields_(std::move(fields)) {}
-QueryResult PreparedAnalysis::query(Vertex anchor, Direction direction) const {
+      calls_(std::move(calls)), fields_(std::move(fields)),
+      vertices_(controls_->size()), edges_(graph.edges()),
+      successors_(controls_->size()), predecessors_(controls_->size()) {
+  for (const auto &entry : *controls_)
+    vertices_[entry.second] = entry.first;
+  for (const auto &edge : edges_) {
+    const State from = controls_->at(edge.source);
+    const State to = controls_->at(edge.target);
+    successors_[from].push_back(to);
+    predecessors_[to].push_back(from);
+  }
+}
+std::optional<Graph>
+PreparedAnalysis::relevantGraph(Vertex anchor, Direction direction) const {
+  const State start = controls_->at(anchor);
+  const auto &adjacency =
+      direction == Direction::Post ? successors_ : predecessors_;
+  std::vector<bool> live(controls_->size(), false);
+  std::vector<State> worklist{start};
+  live[start] = true;
+  for (std::size_t cursor = 0; cursor < worklist.size(); ++cursor)
+    for (State next : adjacency[worklist[cursor]])
+      if (!live[next]) {
+        live[next] = true;
+        worklist.push_back(next);
+      }
+  if (worklist.size() == controls_->size())
+    return std::nullopt;
+  Graph result;
+  for (State state : worklist)
+    result.addVertex(vertices_[state]);
+  for (const auto &edge : edges_)
+    if (live[controls_->at(edge.source)] && live[controls_->at(edge.target)])
+      result.addEdge(edge.source, edge.target, edge.label);
+  return result;
+}
+QueryResult PreparedAnalysis::query(Vertex anchor, Direction direction,
+                                    bool slice_graph) const {
   auto found = controls_->find(anchor);
   if (found == controls_->end())
     throw std::invalid_argument("SPDS query vertex is not in graph");
+  if (slice_graph) {
+    const auto slice_started = std::chrono::steady_clock::now();
+    if (auto graph = relevantGraph(anchor, direction)) {
+      auto systems = project(*graph);
+      const auto slice_projection_microseconds = static_cast<std::uint64_t>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::steady_clock::now() - slice_started)
+              .count());
+      const State state = systems.controls.at(anchor);
+      auto calls = saturate(systems.calls, state, direction, options_.limits);
+      auto fields = saturate(systems.fields, state, direction, options_.limits);
+      auto controls = std::make_shared<const std::map<Vertex, State>>(
+          std::move(systems.controls));
+      QueryResult result(anchor, direction, options_, std::move(controls),
+                         std::move(calls), std::move(fields));
+      result.projection_microseconds_ = slice_projection_microseconds;
+      return result;
+    }
+  }
   auto calls = saturate(calls_, found->second, direction, options_.limits);
   auto fields = saturate(fields_, found->second, direction, options_.limits);
   return QueryResult(anchor, direction, options_, controls_, std::move(calls),
@@ -122,20 +183,76 @@ QueryResult PreparedAnalysis::queryFrom(Vertex source) const {
 QueryResult PreparedAnalysis::queryTo(Vertex target) const {
   return query(target, Direction::Pre);
 }
+namespace {
+std::vector<BooleanSemiring::Weight>
+endpointWeights(const Automaton<BooleanSemiring> &automaton,
+                StackAcceptance acceptance) {
+  return acceptance == StackAcceptance::Empty
+             ? automaton.controlWeights({0})
+             : automaton.controlWeightsWithPrefix({});
+}
+} // namespace
+Result PreparedAnalysis::analyzeFrom(Vertex source) const {
+  auto query = queryFrom(source);
+  Result result;
+  result.statistics.projection_microseconds = projection_microseconds_;
+  const auto calls =
+      endpointWeights(query.callAutomaton(), options_.parentheses);
+  const auto fields =
+      endpointWeights(query.fieldAutomaton(), options_.brackets);
+  result.statistics.projection_microseconds += query.projection_microseconds_;
+  accumulate(result.statistics, query.callAutomaton().statistics());
+  accumulate(result.statistics, query.fieldAutomaton().statistics());
+  for (const auto &target : *controls_) {
+    const auto found = query.controls_->find(target.first);
+    if (found == query.controls_->end())
+      continue;
+    const Pair pair{source, target.first};
+    if (calls[found->second])
+      result.parenthesis_pairs.insert(pair);
+    if (fields[found->second])
+      result.bracket_pairs.insert(pair);
+    if (calls[found->second] && fields[found->second])
+      result.upper_bound.insert(pair);
+  }
+  return result;
+}
+Result PreparedAnalysis::analyzeTo(Vertex target) const {
+  auto query = queryTo(target);
+  Result result;
+  result.statistics.projection_microseconds = projection_microseconds_;
+  const auto calls =
+      endpointWeights(query.callAutomaton(), options_.parentheses);
+  const auto fields =
+      endpointWeights(query.fieldAutomaton(), options_.brackets);
+  result.statistics.projection_microseconds += query.projection_microseconds_;
+  accumulate(result.statistics, query.callAutomaton().statistics());
+  accumulate(result.statistics, query.fieldAutomaton().statistics());
+  for (const auto &source : *controls_) {
+    const auto found = query.controls_->find(source.first);
+    if (found == query.controls_->end())
+      continue;
+    const Pair pair{source.first, target};
+    if (calls[found->second])
+      result.parenthesis_pairs.insert(pair);
+    if (fields[found->second])
+      result.bracket_pairs.insert(pair);
+    if (calls[found->second] && fields[found->second])
+      result.upper_bound.insert(pair);
+  }
+  return result;
+}
 Result PreparedAnalysis::analyzeAll() const {
   Result result;
+  result.statistics.projection_microseconds = projection_microseconds_;
   for (const auto &source : *controls_) {
-    auto query = queryFrom(source.first);
+    auto query = this->query(source.first, Direction::Post, false);
+    const auto call_weights =
+        endpointWeights(query.callAutomaton(), options_.parentheses);
+    const auto field_weights =
+        endpointWeights(query.fieldAutomaton(), options_.brackets);
     accumulate(result.statistics, query.callAutomaton().statistics());
     accumulate(result.statistics, query.fieldAutomaton().statistics());
-    const auto call_weights =
-        options_.parentheses == StackAcceptance::Empty
-            ? query.callAutomaton().controlWeights({0})
-            : query.callAutomaton().controlWeightsWithPrefix({});
-    const auto field_weights =
-        options_.brackets == StackAcceptance::Empty
-            ? query.fieldAutomaton().controlWeights({0})
-            : query.fieldAutomaton().controlWeightsWithPrefix({});
     for (const auto &target : *controls_) {
       const Pair pair{source.first, target.first};
       const bool call = call_weights[target.second];
@@ -169,83 +286,70 @@ Result PreparedAnalysis::analyzeDemands(const std::vector<Pair> &demands,
                         (direction == DemandDirection::Auto &&
                          by_source.size() <= by_target.size());
   Result result;
-  auto record = [&](const QueryResult &query, Vertex source, Vertex target,
-                    Vertex queried) {
-    const Pair pair{source, target};
-    const bool call = query.parenthesisReachable(queried);
-    const bool field = query.bracketReachable(queried);
-    if (call)
-      result.parenthesis_pairs.insert(pair);
-    if (field)
-      result.bracket_pairs.insert(pair);
-    if (call && field)
-      result.upper_bound.insert(pair);
-  };
+  result.statistics.projection_microseconds = projection_microseconds_;
   if (use_post) {
     for (const auto &entry : by_source) {
       auto query = queryFrom(entry.first);
+      const auto calls =
+          endpointWeights(query.callAutomaton(), options_.parentheses);
+      const auto fields =
+          endpointWeights(query.fieldAutomaton(), options_.brackets);
+      result.statistics.projection_microseconds +=
+          query.projection_microseconds_;
       accumulate(result.statistics, query.callAutomaton().statistics());
       accumulate(result.statistics, query.fieldAutomaton().statistics());
-      if (entry.second.size() < 8) {
-        for (Vertex target : entry.second)
-          record(query, entry.first, target, target);
-      } else {
-        const auto calls =
-            options_.parentheses == StackAcceptance::Empty
-                ? query.callAutomaton().controlWeights({0})
-                : query.callAutomaton().controlWeightsWithPrefix({});
-        const auto fields =
-            options_.brackets == StackAcceptance::Empty
-                ? query.fieldAutomaton().controlWeights({0})
-                : query.fieldAutomaton().controlWeightsWithPrefix({});
-        for (Vertex target : entry.second) {
-          const Pair pair{entry.first, target};
-          const State state = controls_->at(target);
-          if (calls[state])
-            result.parenthesis_pairs.insert(pair);
-          if (fields[state])
-            result.bracket_pairs.insert(pair);
-          if (calls[state] && fields[state])
-            result.upper_bound.insert(pair);
-        }
+      for (Vertex target : entry.second) {
+        const Pair pair{entry.first, target};
+        const auto found = query.controls_->find(target);
+        if (found == query.controls_->end())
+          continue;
+        const State state = found->second;
+        if (calls[state])
+          result.parenthesis_pairs.insert(pair);
+        if (fields[state])
+          result.bracket_pairs.insert(pair);
+        if (calls[state] && fields[state])
+          result.upper_bound.insert(pair);
       }
     }
   } else {
     for (const auto &entry : by_target) {
       auto query = queryTo(entry.first);
+      const auto calls =
+          endpointWeights(query.callAutomaton(), options_.parentheses);
+      const auto fields =
+          endpointWeights(query.fieldAutomaton(), options_.brackets);
+      result.statistics.projection_microseconds +=
+          query.projection_microseconds_;
       accumulate(result.statistics, query.callAutomaton().statistics());
       accumulate(result.statistics, query.fieldAutomaton().statistics());
-      if (entry.second.size() < 8) {
-        for (Vertex source : entry.second)
-          record(query, source, entry.first, source);
-      } else {
-        const auto calls =
-            options_.parentheses == StackAcceptance::Empty
-                ? query.callAutomaton().controlWeights({0})
-                : query.callAutomaton().controlWeightsWithPrefix({});
-        const auto fields =
-            options_.brackets == StackAcceptance::Empty
-                ? query.fieldAutomaton().controlWeights({0})
-                : query.fieldAutomaton().controlWeightsWithPrefix({});
-        for (Vertex source : entry.second) {
-          const Pair pair{source, entry.first};
-          const State state = controls_->at(source);
-          if (calls[state])
-            result.parenthesis_pairs.insert(pair);
-          if (fields[state])
-            result.bracket_pairs.insert(pair);
-          if (calls[state] && fields[state])
-            result.upper_bound.insert(pair);
-        }
+      for (Vertex source : entry.second) {
+        const Pair pair{source, entry.first};
+        const auto found = query.controls_->find(source);
+        if (found == query.controls_->end())
+          continue;
+        const State state = found->second;
+        if (calls[state])
+          result.parenthesis_pairs.insert(pair);
+        if (fields[state])
+          result.bracket_pairs.insert(pair);
+        if (calls[state] && fields[state])
+          result.upper_bound.insert(pair);
       }
     }
   }
   return result;
 }
 PreparedAnalysis Solver::prepare(const Graph &graph) const {
+  const auto started = std::chrono::steady_clock::now();
   auto systems = project(graph);
-  return PreparedAnalysis(options_, std::move(systems.controls),
+  PreparedAnalysis result(options_, graph, std::move(systems.controls),
                           std::move(systems.calls), std::move(systems.fields));
+  result.projection_microseconds_ = static_cast<std::uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - started)
+          .count());
+  return result;
 }
 
 } // namespace lotus::cfl::interleaved_dyck::spds

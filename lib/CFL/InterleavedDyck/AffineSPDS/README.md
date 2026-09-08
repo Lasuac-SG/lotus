@@ -36,8 +36,8 @@ The implementation computes exact affine hulls for the **fixed observer** on
 each individual projection. It does not retain exact sets of matrices and does
 not solve arbitrary same-path two-stack reachability exactly. Intersecting two
 nonempty hulls may retain a false positive. Consequently, all APIs use `mayReach`
-and `upper_bound`: false establishes unreachability under the supplied graph
-semantics; true is not a concrete witness or a feasible program execution.
+and candidate pair sets: false establishes unreachability under the supplied
+graph semantics; true is not a concrete witness or a feasible program execution.
 
 The library supports arbitrary directed graphs, typed labels, neutral edges,
 cycles, sparse signed 64-bit vertices, maximum unsigned label IDs, isolated
@@ -89,6 +89,7 @@ int main() {
 
   affine::Solver solver;
   auto analysis = solver.prepare(graph);
+  auto successors = analysis.analyzeFrom(0, affine::ComparisonMode::Joint);
   auto forward = analysis.queryFrom(0);
   auto backward = analysis.queryTo(4);
   const auto &comparison = forward.compare(4);
@@ -106,7 +107,8 @@ at the target and ask about predecessor stacks. `Options::parentheses` and
 `Options::brackets` select `spds::StackAcceptance::Any` for an existential stack
 at the queried vertex instead of the default empty stack.
 
-`analyzeAll(mode)` returns the pair set selected by `ComparisonMode::Joint`,
+`analyzeAll(mode)`, `analyzeFrom`, and `analyzeTo` return the pair set selected
+by `ComparisonMode::Joint`,
 `Independent`, or `Projection`, plus saturation statistics. It computes only
 the selected comparison. `analyzeDemands` groups requested pairs by source or
 target and likewise computes only the selected mode. The graph-to-PDS conversion
@@ -126,8 +128,11 @@ Bit vectors of up to four machine words are stored inline, covering the default
 automatic observer without per-vector heap allocation. Identity observers use
 the Boolean prepared analysis for all-pairs and batch scopes; this is exact
 because every reachable affine history is the singleton identity matrix.
-Affine bases keep their first two directions inline as well; transition weights
-on the benchmark corpus are usually below that rank.
+Affine bases keep their first two directions inline and share immutable storage
+across weight snapshots; mutation detaches on demand. Product candidates are
+inserted as a stream and reduced in one batch, so a full-rank result stops early.
+Existing transition updates fuse affine product generation with basis insertion,
+avoiding a separately canonicalized temporary product.
 
 An affine space is either empty or `a + span(B)`. `B` is a canonical reduced
 row-echelon basis; `a` is reduced by that basis. Equality is semantic, so redundant
@@ -153,36 +158,15 @@ For `U = a + span(u_i)` and `V = b + span(v_j)`, multiplication computes
 ab + span( u_i*b, a*v_j, u_i*v_j ).
 ```
 
-The bilinear `u_i*v_j` terms must not be omitted. The implementation does not
-enumerate the exponentially many points in a represented affine space.
-Bilinearity implies
-
-```
-aff( aff(S) * aff(T) ) = aff(S*T).
-```
-
-Together with exact joins, this means intermediate saturation summaries lose no
-information beyond taking the affine hull of concrete projected histories.
-Associativity, distributivity, zero annihilation, and idempotent combine then
-justify using the existing finite-height weighted pushdown algorithm.
-
-For matrix dimension `r`, the ambient vector dimension is `D = r*r`. A summary
-has at most `D` independent directions, and an increasing chain has at most
-`D+2` elements including bottom. This provides finite-height termination without
-any bound on stack depth.
-
-A rank-h summary stores O((h+1)*ceil(D/64)) packed words, plus container overhead.
-Multiplying rank-h and rank-k summaries generates at most `1+h+k+h*k` candidate
-vectors before reduction. Matrix multiplication uses packed row slices; basis
-insertion uses Gaussian elimination. These bounds describe the domain costs;
-they do not establish practical scalability for arbitrary large observers.
+The bilinear terms are required; points are never enumerated. For matrix
+dimension `r`, the ambient dimension is `D=r*r`, so affine rank and strict
+ascending chains are finite. Multiplying ranks `h` and `k` produces at most
+`1+h+k+h*k` vectors before basis reduction.
 
 ## How matrices are chosen
 
-The fixed algebra is not restricted to triangular matrices, parity counts, or
-pattern observers. `HistoryObserver::set(edge, matrix)` accepts arbitrary square
-GF(2) matrices, including singular and zero matrices. Both projections use the
-same matrix for the same original edge.
+`HistoryObserver::set(edge, matrix)` accepts arbitrary square GF(2) matrices;
+both projections use the same matrix for an original edge.
 
 The default **deterministic graph-only heuristic** works as follows:
 
@@ -194,15 +178,9 @@ The default **deterministic graph-only heuristic** works as follows:
 4. Form their direct sum and saturate the **joint** affine hull. Default matrix
    dimension is at most 14. No selection yields the 1x1 identity observer.
 
-Pair enumeration is prefix-stable under increasing the event budget. Increasing
-these budgets retains the existing component observations, up to block
-permutation, so it does not weaken the joint result. `directSum` is also an
-explicit monotone extension operation.
-
-This policy requires no client-written algebraic laws, no random edge hashes,
-and no SAT/automata synthesis. It is an experimental default, not a claim that
-these few selected events suffice for all clients or programs. No real-program
-benchmark evaluation of the policy is included.
+Increasing the budgets retains earlier component observations. This is an
+experimental graph-only default, not a claim that the selected events suffice
+for every client.
 
 Additional deterministic constructors:
 
@@ -214,12 +192,7 @@ Additional deterministic constructors:
   distinctions not expressible by the earlier truncated unary parity hierarchy.
 - `directSum(observers)`: one joint observation with component boundaries.
 
-These are observer constructors within ONE computational algebra, not separate
-saturation engines or client-selected algebra laws.
-
-An edge not explicitly mapped carries identity. Core deduplicates identical
-`(source,target,label)` edges; distinct semantic events must therefore be distinct
-graph edges or be represented using the lower-level PDS/client API.
+These are constructors within one algebra. Unmapped edges carry identity.
 
 ## Joint versus independent synchronization
 
@@ -239,19 +212,12 @@ The result includes:
 
 ```
 query: unreachable
-joint: unreachable
-spds: may-reach
-independent: may-reach
-joint-reason: affine-separated
+reason: affine-separated
 certificate-functional: 0100/0000/0001/0000
 certificate-call-value: 0
 certificate-field-value: 1
 certificate-verified-against-hulls: true
 ```
-
-The functional is `M[0,1] XOR M[2,3]`: x XOR y. Its constant value differs
-between the two projected witness hulls. No client supplied that equation; it
-was obtained from the joint relations.
 
 `--mode independent` selects the weaker per-block readout and retains this pair.
 `--mode spds` selects endpoint nonemptiness. **Both modes still compute the same
@@ -260,10 +226,8 @@ performance implementations. For a Boolean performance baseline, use the
 original SPDS executable, not `--mode spds`. `--identity` is another semantic
 baseline, with a trivial observer and very small domain overhead.
 
-For custom non-block-diagonal matrices, independent mode is a projection of the
-full computed hull onto diagonal blocks. It remains a sound weakening, but it
-need not equal a separately composed block observer. Default/direct-sum matrices
-are block diagonal, where the two interpretations agree.
+For non-block-diagonal custom matrices, independent mode projects the full hull
+onto declared diagonal blocks; it need not equal a separately composed observer.
 
 ## Certificates
 
@@ -301,8 +265,13 @@ block metadata, enabling reproducible experiments.
 `--json` emits numeric statistics, the selected result, optional sorted pairs,
 and optional joint certificates. Query scope is selected with `--all-pairs`,
 `--source`, `--target`, `--query`, or `--queries FILE`; `--direction` selects
-post*, pre*, or automatic batch grouping. The default is all-pairs with empty
-stacks. Explicit stack flags and prefix flags are listed by `--help`.
+post*, pre*, or automatic batch grouping. A scope is required so large graphs
+cannot accidentally start an all-pairs run. Explicit stack flags and prefix
+flags are listed by `--help`.
+
+The shared serial corpus runner and manifest are documented in the SPDS README.
+Select this engine with `--engine affine`; phase counters include affine
+saturation and weighted readout.
 
 The Core DOT parser currently reads edge statements, not isolated vertex
 statements. Use `--vertex V` or `Graph::addVertex(V)` to retain isolated vertices.
@@ -384,12 +353,9 @@ a whole-analysis wall-clock or memory-budget controller.
 The CLI buffers result output until the complete requested operation succeeds.
 Exit codes are 0 (complete), 2 (invalid input/I/O), and 3 (resource failure).
 
-The shared C++ tests cover exhaustive affine separation, semiring laws, concrete
-DAG executions, exact finite-image CFL closure on cyclic graphs, exact acyclic
-PDS execution, forward/backward order, 200-symbol recursive stack queries,
-regular-seed normalization, incremental promotions, observer round trips,
-insertion order, width beyond 64 bits, and precision inclusion. The package's
-`VALIDATION.md` gives exact test counts and toolchain logs.
+Tests cover algebraic laws, exact small oracles, cyclic/recursive cases,
+post*/pre*, incremental updates, observer round trips, wide matrices, and the
+precision hierarchy.
 
 ## References / attribution
 

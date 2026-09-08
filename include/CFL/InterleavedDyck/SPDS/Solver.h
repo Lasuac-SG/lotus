@@ -4,6 +4,7 @@
 #include "CFL/InterleavedDyck/SPDS/Pushdown.h"
 
 #include <memory>
+#include <optional>
 
 namespace lotus::cfl::interleaved_dyck::spds {
 
@@ -55,6 +56,7 @@ private:
   Options options_;
   std::shared_ptr<const std::map<Vertex, State>> controls_;
   Automaton<BooleanSemiring> calls_, fields_;
+  std::uint64_t projection_microseconds_ = 0;
 };
 
 // Graph specialization of Definition 4 (POPL 2019, Spath/Ali/Bodden).
@@ -64,6 +66,8 @@ class PreparedAnalysis {
 public:
   QueryResult queryFrom(Vertex source) const;
   QueryResult queryTo(Vertex target) const;
+  Result analyzeFrom(Vertex source) const;
+  Result analyzeTo(Vertex target) const;
   Result analyzeAll() const;
   Result
   analyzeDemands(const std::vector<Pair> &demands,
@@ -71,13 +75,20 @@ public:
 
 private:
   friend class Solver;
-  PreparedAnalysis(Options options, std::map<Vertex, State> controls,
+  PreparedAnalysis(Options options, const Graph &graph,
+                   std::map<Vertex, State> controls,
                    PushdownSystem<BooleanSemiring> calls,
                    PushdownSystem<BooleanSemiring> fields);
-  QueryResult query(Vertex anchor, Direction direction) const;
+  QueryResult query(Vertex anchor, Direction direction,
+                    bool slice_graph = true) const;
+  std::optional<Graph> relevantGraph(Vertex anchor, Direction direction) const;
   Options options_;
   std::shared_ptr<const std::map<Vertex, State>> controls_;
   PushdownSystem<BooleanSemiring> calls_, fields_;
+  std::vector<Vertex> vertices_;
+  std::vector<Edge> edges_;
+  std::vector<std::vector<State>> successors_, predecessors_;
+  std::uint64_t projection_microseconds_ = 0;
 };
 
 class Solver {

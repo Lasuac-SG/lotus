@@ -70,7 +70,7 @@ public:
   const spds::Automaton<AffineSemiring> &fieldAutomaton() const {
     return fields_;
   }
-  const Statistics &statistics() const { return statistics_; }
+  Statistics statistics() const;
   // Lazy cache: const query methods are not safe for concurrent use of ONE
   // QueryResult. Distinct results/solvers share no mutable global state.
   const HistoryComparison &compare(Vertex vertex) const;
@@ -136,6 +136,10 @@ class PreparedAnalysis {
 public:
   QueryResult queryFrom(Vertex source) const;
   QueryResult queryTo(Vertex target) const;
+  Result analyzeFrom(Vertex source,
+                     ComparisonMode mode = ComparisonMode::Joint) const;
+  Result analyzeTo(Vertex target,
+                   ComparisonMode mode = ComparisonMode::Joint) const;
   Result analyzeAll(ComparisonMode mode = ComparisonMode::Joint) const;
   Result analyzeDemands(
       const std::vector<Pair> &demands,
@@ -145,17 +149,25 @@ public:
 
 private:
   friend class Solver;
-  PreparedAnalysis(Options options, std::map<Vertex, spds::State> controls,
+  PreparedAnalysis(Options options, const Graph &graph,
+                   std::map<Vertex, spds::State> controls,
                    std::shared_ptr<const HistoryObserver> observer,
                    spds::PushdownSystem<AffineSemiring> calls,
                    spds::PushdownSystem<AffineSemiring> fields,
                    std::optional<spds::PreparedAnalysis> boolean);
-  QueryResult query(Vertex anchor, spds::Direction direction) const;
+  QueryResult query(Vertex anchor, spds::Direction direction,
+                    bool slice_graph = true) const;
+  std::optional<Graph> relevantGraph(Vertex anchor,
+                                     spds::Direction direction) const;
   Options options_;
   std::shared_ptr<const std::map<Vertex, spds::State>> controls_;
   std::shared_ptr<const HistoryObserver> observer_;
   spds::PushdownSystem<AffineSemiring> calls_, fields_;
   std::optional<spds::PreparedAnalysis> boolean_;
+  std::vector<Vertex> vertices_;
+  std::vector<Edge> edges_;
+  std::vector<std::vector<spds::State>> successors_, predecessors_;
+  std::uint64_t projection_microseconds_ = 0;
 };
 
 } // namespace lotus::cfl::interleaved_dyck::affine

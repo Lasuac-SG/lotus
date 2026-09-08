@@ -84,6 +84,10 @@ inline void matrixArithmetic() {
   }
   BitVector a(130),b(130); a.set(0);a.set(64);a.set(129); b.set(129);
   AFF_CHECK(a.dot(b)); AFF_CHECK((a^b).firstSet()==0);
+  auto copied=a;copied.set(0,false);
+  AFF_CHECK(a.test(0));AFF_CHECK(!copied.test(0));
+  BitVector assigned(1);assigned=a;assigned.set(64,false);
+  AFF_CHECK(a.test(64));
   throws<std::out_of_range>([&]{a.set(130);});
   throws<std::invalid_argument>([]{(void)Matrix(0);});
   throws<std::invalid_argument>([]{(void)Matrix(std::numeric_limits<std::size_t>::max());});
@@ -104,6 +108,8 @@ inline void canonicalAffine() {
     for(const auto &m:points) AFF_CHECK(a.contains(m));
   }
   auto z=AffineSpace::singleton(Matrix(2)); AFF_CHECK(!z.empty()); AFF_CHECK(z.rank()==0);
+  auto changed=z;changed.addPoint(Matrix::identity(2));
+  AFF_CHECK(z.rank()==0);AFF_CHECK(changed.rank()==1);AFF_CHECK(z!=changed);
   AFF_CHECK(z!=AffineSpace(2)); AFF_CHECK(AffineSpace::top(2).rank()==4);
 }
 inline void exhaustiveSeparation() {
@@ -142,6 +148,11 @@ inline void semiringLaws() {
     AFF_CHECK(d.extend(d.combine(a,b),c)==d.combine(d.extend(a,c),d.extend(b,c)));
     AFF_CHECK(d.extend(a,d.one())==a); AFF_CHECK(d.extend(d.one(),a)==a);
     AFF_CHECK(d.extend(a,d.zero())==d.zero());
+    auto fused=c;const auto fused_expected=d.combine(c,d.extend(a,b));
+    AFF_CHECK(d.extendAndCombine(fused,a,b)==(fused_expected!=c));
+    AFF_CHECK(fused==fused_expected);
+    auto aliased=a;const auto aliased_expected=d.combine(a,d.extend(a,b));
+    d.extendAndCombine(aliased,aliased,b);AFF_CHECK(aliased==aliased_expected);
     AffineSpace exact(n);
     for(const auto &x:enumerate(a)) for(const auto &y:enumerate(b)) exact.addPoint(x*y);
     AFF_CHECK(exact==a.product(b));
@@ -195,6 +206,8 @@ inline void jointCorrelation() {
   AFF_CHECK(spds::Solver().prepare(g).queryFrom(0).mayReach(14));
   auto analysis=Solver().prepare(g,observer);
   auto result=analysis.queryFrom(0);const auto &c=result.compare(14);
+  AFF_CHECK(!analysis.analyzeFrom(0).mayReach(0,14));
+  AFF_CHECK(!analysis.analyzeTo(14).mayReach(0,14));
   AFF_CHECK(c.spdsMayReach());AFF_CHECK(c.independentMayReach(observer));AFF_CHECK(!c.mayReach());
   AFF_CHECK(c.verdict()==Verdict::AffineSeparated);AFF_CHECK(c.certificate()->verify(c.callHistory(),c.fieldHistory()));
   auto reverse=analysis.queryTo(14);AFF_CHECK(!reverse.mayReach(0));
@@ -399,8 +412,8 @@ inline void recursiveStacks() {
 inline bool sameTransitions(const spds::Automaton<AffineSemiring> &a, const spds::Automaton<AffineSemiring> &b) {
   if(a.transitions().size()!=b.transitions().size())return false;
   for(const auto &entry:a.transitions()) {
-    auto found=b.transitions().find(entry.first);
-    if(found==b.transitions().end() || found->second!=entry.second)return false;
+    auto found=b.findTransition(entry.edge);
+    if(!found || found->weight!=entry.weight)return false;
   }
   return true;
 }

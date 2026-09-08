@@ -6,7 +6,7 @@ Johannes Spath, Karim Ali, and Eric Bodden. **Context-, Flow-, and
 Field-Sensitive Data-Flow Analysis using Synchronized Pushdown Systems**.
 POPL 2019, PACMPL 3, Article 48. DOI: 10.1145/3290361.
 
-Primary specification: the user-supplied `spds.pdf`, particularly Sections 2-4
+Primary specification: the paper above, particularly Sections 2-4
 and 5.1-5.3. The paper describes the call/field encodings and synchronization,
 but delegates `post*` and `pre*` to established PDS algorithms. This module
 supplies an independently written saturation implementation; it does not import
@@ -81,62 +81,32 @@ specified `caller` statement: the actual next statement is revealed by the
 saved call stack. The field-PDS follows the explicitly supplied possible
 caller edge. Synchronization requires agreement on the queried statement.
 
-Do not interpret `addStore` as a whole statement transfer: the identity flow
-retaining the source variable, for instance, must be supplied separately if it
-belongs to the client analysis. Likewise, no implicit assignment identity can
-resurrect a fact that the client intended to kill.
-
-For a raw Lotus `Graph`, nodes already represent data-flow locations and do not
-carry separate variable/statement metadata. The graph adapter therefore uses
-nodes as controls in each projection. Parentheses push/pop only in the call
-projection, brackets only in the field projection, and other edges preserve
-the respective stack. It does not invent variable or statement metadata.
+Transfers are explicit: clients supply identity flows, kills, caller edges, and
+variable/statement metadata. The raw `Graph` adapter instead uses vertices as
+controls; each label changes only its corresponding stack.
 
 ## Saturation and implementation decisions
 
-A primitive PDS rule replaces exactly one top symbol by zero, one, or two
-symbols. Stacks and words are top-first. Epsilon is an automaton label, never
-an allowed PDS stack symbol. Primitive PDSs support genuinely empty stacks.
+A PDS rule replaces one top symbol by zero, one, or two symbols. Stacks are
+top-first; epsilon is an automaton label, never a stack symbol. Forward and
+backward saturation index rules and two-symbol dependencies, intern generated
+push states, and maintain epsilon prefix/suffix closure. Weighted push
+continuations retain prior history and the rule weight in execution order.
 
-Given an automaton transition `p -a-> q`, a forward rule
-`<p,a> -> <p',w>` adds:
-
-- `p' -epsilon-> q` for an empty replacement;
-- `p' -b-> q` for replacement `b`;
-- `p' -b-> generated(p',b) -c-> q` for replacement `b c`.
-
-Generated states are interned by `(target control, first replacement symbol)`.
-The first edge of a weighted push has weight ONE; the continuation carries
-prior history extended with the push-rule weight. This placement preserves
-correlation between continuation stacks and weights.
-
-Backward saturation uses:
-
-```
-<p,a> -> <p',epsilon>                    => p -a-> p'
-<p,a> -> <p',b>,    p' -b-> q            => p -a-> q
-<p,a> -> <p',b c>,  p' -b-> m -c-> q    => p -a-> q
-```
-
-The backward two-symbol join is indexed from both operands. A first-operand
-arrival registers a dependency on its second operand, and second-operand
-arrivals revisit registered dependencies. This avoids dependence on insertion
-order. Both directions also maintain epsilon closure and symbol edges composed
-with epsilon prefixes/suffixes.
-
-Rules are indexed by the control/top they inspect. All changed edge weights,
-including promotions of existing transitions, are re-enqueued. Adjacency lists
-are copied before a propagation step that can reallocate them; cyclic and
-self-loop cases do not retain invalid iterators.
+Graph-derived preserve/push rules are parameterized by the current top instead
+of expanded across the alphabet. Transitions use a flat record arena, hash
+key-to-ID indexes, integer-ID adjacency, and separate epsilon lists. Every
+strict weight promotion is re-enqueued.
 
 ### Regular seed normalization
 
 A client-supplied `RegularSet` can contain incoming edges to PDS controls,
-accepting controls, and epsilon cycles. Before saturation, all seed states are
-cloned and each original control is connected to its clone by epsilon. This
-ensures no edge enters an original PDS control in the initial automaton. Without
-this standard separation, post* rules can incorrectly rewrite a seed stack's
-continuation. A regression explicitly exercises that failure mode.
+accepting controls, and epsilon cycles. Before saturation, seed states that can
+reach a final are cloned and each corresponding original control is connected
+to its clone by epsilon; dead seed states are discarded. This ensures no edge
+enters an original PDS control in the initial automaton. Without this standard
+separation, post* rules can incorrectly rewrite a seed stack's continuation. A
+regression explicitly exercises that failure mode.
 
 The primitive regular-set API permits unioned seeds within a single PDS.
 **Do not independently union different allocation-site seeds in the two PDSs
@@ -155,6 +125,9 @@ Weight one() const;
 Weight combine(Weight, Weight) const;
 bool combineWith(Weight &left, const Weight &right) const;
 Weight extend(Weight, Weight) const;
+// Optional fused update used when the destination transition already exists:
+bool extendAndCombine(Weight &target, const Weight &left,
+                      const Weight &right) const;
 // Weight also supports equality/inequality.
 ```
 
@@ -162,7 +135,8 @@ Weight extend(Weight, Weight) const;
 associative, commutative and idempotent; extend associative and distributive;
 `combineWith` must update its left operand to the same value as `combine` and
 return whether that value changed. It lets saturation avoid copying a weight
-only to test equality.
+only to test equality. If supplied, `extendAndCombine` must update `target` to
+`combine(target, extend(left, right))`; domains without it use the two-step path.
 zero must annihilate extend; the ascending order induced by combine must have
 finite height. Domain objects can hold state (e.g. the number of typestates).
 Algebraic laws are a client contract, not automatically checked properties.
@@ -213,6 +187,7 @@ spds::Solver solver;
 auto analysis = solver.prepare(graph);
 auto all = analysis.analyzeAll();
 bool candidate = all.mayReach(0, 4);
+auto successors = analysis.analyzeFrom(0); // Bulk empty-stack readout.
 auto forward = analysis.queryFrom(0);
 auto backward = analysis.queryTo(4);
 // Both true for this graph:
@@ -231,8 +206,10 @@ different question from accepting a forward prefix. The CLI only exposes
 prefix flags for forward queries to avoid that ambiguity.
 
 `prepare` compiles the two projections once. `analyzeAll` performs two
-saturations per source; `queryFrom` and `queryTo` perform two saturations for one
-anchor. `analyzeDemands` accepts a vector of source/target pairs and groups it by
+saturations per source; `analyzeFrom` and `analyzeTo` use one anchor and bulk
+read out every opposite endpoint. `queryFrom` and `queryTo` retain the two
+automata for detailed stack queries. `analyzeDemands` accepts a vector of
+source/target pairs and groups it by
 the smaller number of distinct sources or targets unless a post/pre direction is
 forced. Source/target anchors must exist; queries about an unknown candidate
 vertex return false. `Result` also exposes both independent projection relations
@@ -289,7 +266,8 @@ Controls are fixed for a session; new rules may refer to any predeclared
 control. An existing transition's new weight is propagated as well. Call
 `run()` after insertions. `result()` throws while work is incomplete. Returned
 references belong to the session and must not outlive it. A session references
-the base PDS instead of copying it, so the PDS must outlive the session. The
+the base PDS and its precompiled post/pre rule indexes instead of copying them,
+so the PDS must outlive the session. The
 higher-level
 `SynchronizedSystem` can also accept new transfers between queries, but its
 next `postStar`/`preStar` rebuilds the pair; it does not automatically maintain
@@ -307,11 +285,8 @@ There is no stack-height, path-length, or iteration cutoff. Cycles in the
 finite automata represent unbounded stacks. Exact single-PDS saturation
 terminates over the stated finite-height semiring contract.
 
-This implementation favors explicit inspectable automata over specialized
-compression. It materializes epsilon-composed edges and uses hash-indexed
-transitions with direct weight references in adjacency lists.
-Do not ascribe the paper's experimental speedups or its optimized implementation
-complexity to this code without measurement.
+The implementation materializes epsilon-composed edges and uses a flat
+transition arena with hash-indexed integer IDs.
 
 A conservative implementation bound uses `N` automaton states, `A` distinct
 stack symbols, `T <= N*N*(A+1)` possible transitions, `R` PDS rules, and `H`
@@ -350,33 +325,28 @@ build/bin/lotus-cfl-interleaved-dyck-spds --queries demands.txt --pairs \
   tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
 ```
 
-The CLI has explicit `--all-pairs`, `--source`, `--target`, `--query`, and
-`--queries FILE` scopes; omitting a scope defaults to all-pairs. Batch files
+The CLI requires one explicit `--all-pairs`, `--source`, `--target`, `--query`,
+or `--queries FILE` scope. Batch files
 contain one `SOURCE TARGET` pair per line and may be read from stdin with
 `--queries -`. `--direction auto|post|pre` controls pair and batch evaluation.
 Run `--help` for prefix, output, and resource options. Exit 0 means a completed computation
 (including an unreachable answer), 2 means invalid input, and 3 means a resource
 limit. Failure cases print no result relation.
 
+The serial corpus runner uses an explicit checked-in manifest; it never infers
+all-pairs from graph size:
+
+```sh
+scripts/benchmark_interleaved_dyck_spds.py --engine spds --timeout 60
+scripts/benchmark_interleaved_dyck_spds.py --engine affine \
+  --filter backflash --timeout 60
+```
+
+Use a Release or RelWithDebInfo build for performance comparisons; Debug leaves
+the template-heavy saturation and affine operations unoptimized.
+Its TSV/optional JSON output records wall time, facts, promotions, rules, and
+the instrumented projection, session-setup, saturation, and readout times.
+
 The existing shared DOT parser reads labeled edge lines, not standalone node
 declarations. Use `--vertex ID` for an isolated vertex or `Graph::addVertex` in
 C++. No Core parser changes are included in this patch.
-
-## Validation
-
-The shared test runner contains 25 suites and is wrapped by GoogleTest for
-Lotus integration. The CTest integration adds 21 independent CLI cases.
-Tests cover 7,381 exhaustive words, exact one-stack CFL closure on 250 random
-cyclic graphs, concrete two-stack paths on 200 DAGs, weighted post*/pre* on 60
-acyclic PDSs with complete concrete execution oracles, noncommutative weights,
-recursive stacks, late promotions, regular-seed normalization, aliases,
-resource limits, and Figures 3-8 / Table 4 examples. The Figure 7 tests use its
-actual drawn edge labels; the paragraph following the figure has inconsistent
-h/f spellings and is not silently treated as a different graph.
-
-Complete concrete enumeration is used only where acyclicity proves finiteness.
-The cyclic projection oracle is an independent exact CFL-closure algorithm,
-not bounded two-stack exploration. Tests do not constitute a proof of exact
-same-path reachability: deliberate false-positive regressions document that
-the latter is not the engine's guarantee. See the package's VALIDATION.md for
-commands, logs, and the full-checkout validation boundary.

@@ -44,7 +44,31 @@ void compatible(std::size_t a, std::size_t b) {
 BitVector::BitVector(std::size_t size)
     : size_(size), word_count_(size / 64 + (size % 64 != 0)) {
   if (wordCount() > INLINE_WORDS)
-    heap_words_.resize(wordCount(), 0);
+    heap_words_ = std::make_unique<std::uint64_t[]>(wordCount());
+}
+BitVector::BitVector(const BitVector &other)
+    : size_(other.size_), word_count_(other.word_count_),
+      inline_words_(other.inline_words_) {
+  if (wordCount() > INLINE_WORDS) {
+    heap_words_ = std::make_unique<std::uint64_t[]>(wordCount());
+    std::copy_n(other.data(), wordCount(), data());
+  }
+}
+BitVector &BitVector::operator=(const BitVector &other) {
+  if (this == &other)
+    return *this;
+  const std::size_t old_word_count = word_count_;
+  size_ = other.size_;
+  word_count_ = other.word_count_;
+  inline_words_ = other.inline_words_;
+  if (wordCount() <= INLINE_WORDS) {
+    heap_words_.reset();
+  } else {
+    if (old_word_count != wordCount() || !heap_words_)
+      heap_words_ = std::make_unique<std::uint64_t[]>(wordCount());
+    std::copy_n(other.data(), wordCount(), data());
+  }
+  return *this;
 }
 bool BitVector::test(std::size_t bit) const {
   if (bit >= size_)
@@ -61,21 +85,43 @@ void BitVector::set(std::size_t bit, bool value) {
     word(bit / 64) &= ~mask;
 }
 bool BitVector::empty() const {
+  const auto *words = data();
   for (std::size_t i = 0; i < wordCount(); ++i)
-    if (word(i) != 0)
+    if (words[i] != 0)
       return false;
   return true;
 }
 std::size_t BitVector::firstSet() const {
+  const auto *words = data();
   for (std::size_t i = 0; i < wordCount(); ++i)
-    if (word(i))
-      return i * 64 + trailing(word(i));
+    if (words[i])
+      return i * 64 + trailing(words[i]);
   return size_;
 }
 BitVector &BitVector::operator^=(const BitVector &other) {
   compatible(size_, other.size_);
+  auto *left = data();
+  const auto *right = other.data();
+  if (wordCount() <= INLINE_WORDS) {
+    switch (wordCount()) {
+    case 4:
+      left[3] ^= right[3];
+      [[fallthrough]];
+    case 3:
+      left[2] ^= right[2];
+      [[fallthrough]];
+    case 2:
+      left[1] ^= right[1];
+      [[fallthrough]];
+    case 1:
+      left[0] ^= right[0];
+      [[fallthrough]];
+    case 0:
+      return *this;
+    }
+  }
   for (std::size_t i = 0; i < wordCount(); ++i)
-    word(i) ^= other.word(i);
+    left[i] ^= right[i];
   return *this;
 }
 BitVector BitVector::operator^(const BitVector &other) const {
@@ -85,16 +131,20 @@ BitVector BitVector::operator^(const BitVector &other) const {
 }
 bool BitVector::dot(const BitVector &other) const {
   compatible(size_, other.size_);
-  bool result = false;
+  const auto *left = data();
+  const auto *right = other.data();
+  std::uint64_t products = 0;
   for (std::size_t i = 0; i < wordCount(); ++i)
-    result ^= parity(word(i) & other.word(i));
-  return result;
+    products ^= left[i] & right[i];
+  return parity(products);
 }
 bool BitVector::operator==(const BitVector &other) const {
   if (size_ != other.size_)
     return false;
+  const auto *left = data();
+  const auto *right = other.data();
   for (std::size_t i = 0; i < wordCount(); ++i)
-    if (word(i) != other.word(i))
+    if (left[i] != right[i])
       return false;
   return true;
 }
@@ -103,36 +153,39 @@ bool BitVector::isIdentityMatrix(std::size_t dimension) const {
       dimension > std::numeric_limits<std::size_t>::max() / dimension ||
       size_ != dimension * dimension)
     return false;
+  const auto *words = data();
+  std::size_t diagonal = 0;
   for (std::size_t w = 0; w < wordCount(); ++w) {
     std::uint64_t expected = 0;
     const std::size_t first = w * 64;
     const std::size_t last = std::min(size_, first + 64);
-    for (std::size_t i = 0; i < dimension; ++i) {
-      const std::size_t diagonal = i * (dimension + 1);
-      if (diagonal >= first && diagonal < last)
-        expected |= std::uint64_t{1} << (diagonal - first);
+    while (diagonal < last) {
+      expected |= std::uint64_t{1} << (diagonal - first);
+      diagonal += dimension + 1;
     }
-    if (word(w) != expected)
+    if (words[w] != expected)
       return false;
   }
   return true;
 }
 std::uint64_t BitVector::extract(std::size_t offset, std::size_t count) const {
   // Internal callers guarantee 1 <= count <= 64 and offset+count <= size_.
+  const auto *words = data();
   const auto shift = offset % 64;
-  std::uint64_t value = word(offset / 64) >> shift;
+  std::uint64_t value = words[offset / 64] >> shift;
   if (shift && count > 64 - shift)
-    value |= word(offset / 64 + 1) << (64 - shift);
+    value |= words[offset / 64 + 1] << (64 - shift);
   if (count < 64)
     value &= (std::uint64_t{1} << count) - 1;
   return value;
 }
 void BitVector::xorChunk(std::size_t offset, std::size_t count,
                          std::uint64_t value) {
+  auto *words = data();
   const auto shift = offset % 64;
-  word(offset / 64) ^= value << shift;
+  words[offset / 64] ^= value << shift;
   if (shift && count > 64 - shift)
-    word(offset / 64 + 1) ^= value >> (64 - shift);
+    words[offset / 64 + 1] ^= value >> (64 - shift);
 }
 Matrix::Matrix(std::size_t dimension)
     : dimension_(dimension), entries_(square(dimension)) {}
@@ -161,17 +214,71 @@ bool Matrix::isIdentity() const {
 }
 Matrix Matrix::operator*(const Matrix &right) const {
   compatible(dimension_, right.dimension_);
+  if (dimension_ <= 64)
+    return RightMatrixMultiplier(right).multiply(*this);
   Matrix result(dimension_);
-  // XOR packed row slices instead of multiplying individual scalar entries.
+  // For wider matrices, scan packed selector chunks and visit only set bits.
   for (std::size_t i = 0; i < dimension_; ++i)
-    for (std::size_t k = 0; k < dimension_; ++k)
-      if (get(i, k))
+    for (std::size_t block = 0; block < dimension_; block += 64) {
+      const auto selector_count = std::min<std::size_t>(64, dimension_ - block);
+      std::uint64_t selectors =
+          entries_.extract(i * dimension_ + block, selector_count);
+      while (selectors) {
+        const std::size_t k = block + trailing(selectors);
+        selectors &= selectors - 1;
         for (std::size_t j = 0; j < dimension_; j += 64) {
           const auto count = std::min<std::size_t>(64, dimension_ - j);
           result.entries_.xorChunk(
               i * dimension_ + j, count,
               right.entries_.extract(k * dimension_ + j, count));
         }
+      }
+    }
+  return result;
+}
+RightMatrixMultiplier::RightMatrixMultiplier(const Matrix &right)
+    : dimension_(right.dimension_), right_(&right) {
+  if (dimension_ > 64)
+    return;
+  const auto *words = right_->entries_.data();
+  const std::uint64_t row_mask = dimension_ == 64
+                                     ? std::numeric_limits<std::uint64_t>::max()
+                                     : (std::uint64_t{1} << dimension_) - 1;
+  for (std::size_t row = 0; row < dimension_; ++row) {
+    const std::size_t offset = row * dimension_;
+    const std::size_t shift = offset % 64;
+    std::uint64_t value = words[offset / 64] >> shift;
+    if (shift && dimension_ > 64 - shift)
+      value |= words[offset / 64 + 1] << (64 - shift);
+    rows_[row] = value & row_mask;
+  }
+}
+Matrix RightMatrixMultiplier::multiply(const Matrix &left) const {
+  compatible(left.dimension_, dimension_);
+  if (dimension_ > 64)
+    return left * *right_;
+  Matrix result(dimension_);
+  const auto *left_words = left.entries_.data();
+  auto *result_words = result.entries_.data();
+  const std::uint64_t row_mask = dimension_ == 64
+                                     ? std::numeric_limits<std::uint64_t>::max()
+                                     : (std::uint64_t{1} << dimension_) - 1;
+  for (std::size_t row = 0; row < dimension_; ++row) {
+    const std::size_t offset = row * dimension_;
+    const std::size_t shift = offset % 64;
+    std::uint64_t selectors = left_words[offset / 64] >> shift;
+    if (shift && dimension_ > 64 - shift)
+      selectors |= left_words[offset / 64 + 1] << (64 - shift);
+    selectors &= row_mask;
+    std::uint64_t product = 0;
+    while (selectors) {
+      product ^= rows_[trailing(selectors)];
+      selectors &= selectors - 1;
+    }
+    result_words[offset / 64] ^= product << shift;
+    if (shift && dimension_ > 64 - shift)
+      result_words[offset / 64 + 1] ^= product >> (64 - shift);
+  }
   return result;
 }
 Matrix Matrix::operator^(const Matrix &right) const {

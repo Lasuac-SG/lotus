@@ -4,12 +4,44 @@
 #include <stdexcept>
 
 namespace lotus::cfl::interleaved_dyck::affine {
+const llvm::SmallVectorImpl<BitVector> &LinearBasis::rows() const {
+  static const llvm::SmallVector<BitVector, 0> empty;
+  if (storage_)
+    return storage_->rows;
+  return empty;
+}
+const llvm::SmallVectorImpl<std::size_t> &LinearBasis::pivots() const {
+  static const llvm::SmallVector<std::size_t, 0> empty;
+  if (storage_)
+    return storage_->pivots;
+  return empty;
+}
+std::size_t LinearBasis::rank() const {
+  return storage_ ? storage_->rows.size() : 0;
+}
+bool LinearBasis::operator==(const LinearBasis &other) const {
+  return coordinates_ == other.coordinates_ &&
+         (storage_ == other.storage_ ||
+          (rows() == other.rows() && pivots() == other.pivots()));
+}
+LinearBasis::Storage &LinearBasis::write() {
+  if (!storage_)
+    storage_ = std::make_shared<Storage>();
+  else if (storage_.use_count() != 1)
+    storage_ = std::make_shared<Storage>(*storage_);
+  return *storage_;
+}
 BitVector LinearBasis::reduce(BitVector vector) const {
   if (vector.size() != coordinates_)
     throw std::invalid_argument("basis dimension mismatch");
-  for (const auto &row : rows_)
-    if (vector.test(row.firstSet()))
-      vector ^= row;
+  const auto &basis_rows = rows();
+  const auto &basis_pivots = pivots();
+  for (std::size_t i = 0; i < basis_rows.size(); ++i) {
+    const std::size_t pivot = basis_pivots[i];
+    const std::uint64_t bits = vector.data()[pivot / 64];
+    if ((bits >> (pivot % 64)) & 1U)
+      vector ^= basis_rows[i];
+  }
   return vector;
 }
 bool LinearBasis::insert(BitVector vector) {
@@ -17,14 +49,51 @@ bool LinearBasis::insert(BitVector vector) {
   const auto pivot = vector.firstSet();
   if (pivot == coordinates_)
     return false;
-  for (auto &row : rows_)
-    if (row.test(pivot))
+  auto &basis = write();
+  for (auto &row : basis.rows) {
+    const std::uint64_t bits = row.data()[pivot / 64];
+    if ((bits >> (pivot % 64)) & 1U)
       row ^= vector;
-  auto *where = std::lower_bound(
-      rows_.begin(), rows_.end(), pivot,
-      [](const BitVector &row, std::size_t p) { return row.firstSet() < p; });
-  rows_.insert(where, std::move(vector));
+  }
+  const auto where =
+      std::lower_bound(basis.pivots.begin(), basis.pivots.end(), pivot);
+  const auto index = static_cast<std::size_t>(where - basis.pivots.begin());
+  basis.pivots.insert(where, pivot);
+  basis.rows.insert(basis.rows.begin() + index, std::move(vector));
   return true;
+}
+bool LinearBasis::insertBatch(llvm::SmallVectorImpl<BitVector> &vectors) {
+  bool changed = false;
+  for (auto &input : vectors)
+    changed = insertEchelon(std::move(input)) || changed;
+  if (!changed)
+    return false;
+  canonicalize();
+  return true;
+}
+bool LinearBasis::insertEchelon(BitVector vector) {
+  vector = reduce(std::move(vector));
+  const auto pivot = vector.firstSet();
+  if (pivot == coordinates_)
+    return false;
+  auto &basis = write();
+  const auto where =
+      std::lower_bound(basis.pivots.begin(), basis.pivots.end(), pivot);
+  const auto index = static_cast<std::size_t>(where - basis.pivots.begin());
+  basis.pivots.insert(where, pivot);
+  basis.rows.insert(basis.rows.begin() + index, std::move(vector));
+  return true;
+}
+void LinearBasis::canonicalize() {
+  auto &basis = write();
+  for (std::size_t i = basis.rows.size(); i-- > 0;) {
+    const std::size_t pivot = basis.pivots[i];
+    for (std::size_t j = 0; j < i; ++j) {
+      const std::uint64_t bits = basis.rows[j].data()[pivot / 64];
+      if ((bits >> (pivot % 64)) & 1U)
+        basis.rows[j] ^= basis.rows[i];
+    }
+  }
 }
 AffineSpace::AffineSpace(std::size_t dimension)
     : dimension_(dimension), offset_(Matrix(dimension).coordinates()),
@@ -79,9 +148,17 @@ bool AffineSpace::joinWith(const AffineSpace &other) {
     *this = other;
     return true;
   }
-  bool changed = addDirection(other.offset_ ^ offset_);
-  for (const auto &row : other.directions())
-    changed = addDirection(row) || changed;
+  if (rank() == 0 && other.rank() == 0 && offset_ == other.offset_)
+    return false;
+  // Saturation joins are incremental and generally low-rank. Insert directly
+  // and canonicalize the representative once, without a temporary batch.
+  bool changed = basis_.insert(other.offset_ ^ offset_);
+  for (const auto &row : other.basis_.rows())
+    changed = basis_.insert(row) || changed;
+  if (changed) {
+    is_identity_ = false;
+    offset_ = basis_.reduce(std::move(offset_));
+  }
   return changed;
 }
 bool AffineSpace::contains(const Matrix &point) const {
@@ -94,7 +171,7 @@ bool AffineSpace::contains(const AffineSpace &other) const {
     return true;
   if (empty_ || !contains(other.representative()))
     return false;
-  for (const auto &row : other.directions())
+  for (const auto &row : other.basis_.rows())
     if (!basis_.reduce(row).empty())
       return false;
   return true;
@@ -104,32 +181,81 @@ bool AffineSpace::intersects(const AffineSpace &other) const {
   if (empty_ || other.empty_)
     return false;
   LinearBasis combined = basis_;
-  for (const auto &row : other.directions())
+  for (const auto &row : other.basis_.rows())
     combined.insert(row);
   return combined.reduce(offset_ ^ other.offset_).empty();
 }
 bool AffineSpace::isIdentity() const { return is_identity_; }
 AffineSpace AffineSpace::product(const AffineSpace &right) const {
+  AffineSpace result(dimension_);
+  result.joinProduct(*this, right);
+  return result;
+}
+bool AffineSpace::joinProduct(const AffineSpace &left,
+                              const AffineSpace &right) {
+  check(left.dimension_);
   check(right.dimension_);
-  if (empty_ || right.empty_)
-    return AffineSpace(dimension_);
-  if (isIdentity())
-    return right;
+  if (left.empty_ || right.empty_)
+    return false;
+  if (this == &left || this == &right) {
+    const auto extended = left.product(right);
+    return joinWith(extended);
+  }
+  if (rank() == offset_.size())
+    return false;
+  if (left.isIdentity())
+    return joinWith(right);
   if (right.isIdentity())
-    return *this;
-  const auto a = representative(), b = right.representative();
-  AffineSpace result = singleton(a * b);
+    return joinWith(left);
+  bool changed = false, basis_changed = false;
+  auto full = [&] { return rank() == offset_.size(); };
+  auto add = [&](BitVector direction) {
+    const bool inserted = basis_.insertEchelon(std::move(direction));
+    basis_changed = inserted || basis_changed;
+    changed = inserted || changed;
+  };
+  auto add_point = [&](BitVector point, bool identity) {
+    if (empty_) {
+      offset_ = std::move(point);
+      empty_ = false;
+      is_identity_ = identity;
+      changed = true;
+    } else {
+      add(point ^ offset_);
+    }
+  };
   // (a+U)(b+V) has affine hull ab + span(Ub, aV, UV).
   // The UV terms are essential, including when a=b=0.
-  for (const auto &u : directions())
-    result.addDirection((Matrix(dimension_, u) * b).entries());
-  for (const auto &v : right.directions())
-    result.addDirection((a * Matrix(dimension_, v)).entries());
-  for (const auto &u : directions())
-    for (const auto &v : right.directions())
-      result.addDirection(
-          (Matrix(dimension_, u) * Matrix(dimension_, v)).entries());
-  return result;
+  const auto a = left.representative(), b = right.representative();
+  const RightMatrixMultiplier multiply_by_b(b);
+  const Matrix point = multiply_by_b.multiply(a);
+  add_point(point.entries(), point.isIdentity());
+  llvm::SmallVector<Matrix, 2> left_directions;
+  for (const auto &u : left.basis_.rows())
+    left_directions.emplace_back(dimension_, u);
+  for (const auto &u : left_directions) {
+    if (full())
+      break;
+    add(multiply_by_b.multiply(u).entries());
+  }
+  for (const auto &direction : right.basis_.rows()) {
+    if (full())
+      break;
+    const Matrix v(dimension_, direction);
+    const RightMatrixMultiplier multiply_by_v(v);
+    add(multiply_by_v.multiply(a).entries());
+    for (const auto &u : left_directions) {
+      if (full())
+        break;
+      add(multiply_by_v.multiply(u).entries());
+    }
+  }
+  if (basis_changed) {
+    basis_.canonicalize();
+    is_identity_ = false;
+    offset_ = basis_.reduce(std::move(offset_));
+  }
+  return changed;
 }
 AffineSpace AffineSpace::block(std::size_t offset,
                                std::size_t dimension) const {
@@ -138,15 +264,17 @@ AffineSpace AffineSpace::block(std::size_t offset,
   AffineSpace result(dimension);
   if (!empty_) {
     result.addPoint(representative().block(offset, dimension));
-    for (const auto &u : directions())
+    for (const auto &u : basis_.rows())
       result.addDirection(
           Matrix(dimension_, u).block(offset, dimension).entries());
   }
   return result;
 }
 bool AffineSpace::operator==(const AffineSpace &other) const {
-  return dimension_ == other.dimension_ && empty_ == other.empty_ &&
-         offset_ == other.offset_ && directions() == other.directions();
+  if (dimension_ != other.dimension_ || empty_ != other.empty_)
+    return false;
+  return empty_ ||
+         (offset_ == other.offset_ && basis_ == other.basis_);
 }
 bool SeparationCertificate::verify(const AffineSpace &left,
                                    const AffineSpace &right) const {
@@ -185,8 +313,8 @@ std::optional<SeparationCertificate> separate(const AffineSpace &left,
   functional.set(free);
   // RREF makes all other pivot columns zero. Choose one free coordinate and
   // solve the orthogonality equations directly, without a second elimination.
-  for (const auto &row : combined.rows())
-    functional.set(row.firstSet(), row.test(free));
+  for (std::size_t i = 0; i < combined.rows().size(); ++i)
+    functional.set(combined.pivots()[i], combined.rows()[i].test(free));
   const bool l = functional.dot(left.offset()),
              r = functional.dot(right.offset());
   return SeparationCertificate{Matrix(left.dimension(), std::move(functional)),
@@ -222,5 +350,12 @@ AffineSemiring::Weight AffineSemiring::extend(const Weight &left,
   check(left);
   check(right);
   return left.product(right);
+}
+bool AffineSemiring::extendAndCombine(Weight &target, const Weight &left,
+                                     const Weight &right) const {
+  check(target);
+  check(left);
+  check(right);
+  return target.joinProduct(left, right);
 }
 } // namespace lotus::cfl::interleaved_dyck::affine

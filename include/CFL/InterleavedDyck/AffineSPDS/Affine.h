@@ -2,6 +2,7 @@
 
 #include "CFL/InterleavedDyck/AffineSPDS/Matrix.h"
 
+#include <memory>
 #include <optional>
 
 #include <llvm/ADT/SmallVector.h>
@@ -13,13 +14,24 @@ class LinearBasis {
 public:
   explicit LinearBasis(std::size_t coordinates) : coordinates_(coordinates) {}
   bool insert(BitVector vector);
+  bool insertBatch(llvm::SmallVectorImpl<BitVector> &vectors);
   BitVector reduce(BitVector vector) const;
-  const llvm::SmallVectorImpl<BitVector> &rows() const { return rows_; }
-  std::size_t rank() const { return rows_.size(); }
+  const llvm::SmallVectorImpl<BitVector> &rows() const;
+  const llvm::SmallVectorImpl<std::size_t> &pivots() const;
+  std::size_t rank() const;
+  bool operator==(const LinearBasis &other) const;
 
 private:
+  struct Storage {
+    llvm::SmallVector<BitVector, 2> rows;
+    llvm::SmallVector<std::size_t, 2> pivots;
+  };
+  friend class AffineSpace;
+  bool insertEchelon(BitVector vector);
+  void canonicalize();
+  Storage &write();
   std::size_t coordinates_;
-  llvm::SmallVector<BitVector, 2> rows_;
+  std::shared_ptr<Storage> storage_;
 };
 
 // Empty or a + span(B). The representative a is reduced by B, hence equality
@@ -45,6 +57,7 @@ public:
   bool intersects(const AffineSpace &other) const;
   bool isIdentity() const;
   AffineSpace product(const AffineSpace &right) const;
+  bool joinProduct(const AffineSpace &left, const AffineSpace &right);
   AffineSpace block(std::size_t offset, std::size_t dimension) const;
   bool operator==(const AffineSpace &other) const;
   bool operator!=(const AffineSpace &other) const { return !(*this == other); }
@@ -84,6 +97,8 @@ public:
   Weight combine(const Weight &left, const Weight &right) const;
   bool combineWith(Weight &left, const Weight &right) const;
   Weight extend(const Weight &left, const Weight &right) const;
+  bool extendAndCombine(Weight &target, const Weight &left,
+                        const Weight &right) const;
 
 private:
   void check(const Weight &weight) const;
