@@ -8,6 +8,12 @@ add_lotus_targeted_test(ClassicalCFLTest ClassicalCFLTest.cpp
     LINK_LIBS
         CanaryClassicalCFL)
 
+add_lotus_targeted_test(interleaved_dyck_spds_test
+    InterleavedDyckSPDSTest.cpp
+    LINK_LIBS
+        CanaryInterleavedDyckSPDS)
+include(${CMAKE_SOURCE_DIR}/tests/regress/CFL/InterleavedDyck/SPDS/Tests.cmake)
+
 add_lotus_targeted_test(ClassicalArchitectureTest
     ClassicalArchitectureTest.cpp
     LINK_LIBS

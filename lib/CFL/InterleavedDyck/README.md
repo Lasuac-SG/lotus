@@ -43,3 +43,12 @@ input. `Unary` rejects non-bidirected input by default; explicit
 symmetrization changes its interpretation to an overapproximation of the
 original directed graph. `GraphReduction` uses private synthetic orientations
 inside its reduction and does not expose them as original input arcs.
+
+## Synchronized pushdown systems (POPL 2019)
+
+[`SPDS`](SPDS/README.md) provides `interleaved_dyck::spds::Solver`, a directed,
+typed upper-bound engine based on independent call/field pushdown closures.
+It also exposes regular-language post*/pre*, incremental weighted saturation,
+and a variable-at-statement data-flow builder. Its namespace is `spds` and its
+library target is `CanaryInterleavedDyckSPDS`. Positive pairs are candidates,
+not same-path witnesses. This engine neither changes Core nor depends on LCL.

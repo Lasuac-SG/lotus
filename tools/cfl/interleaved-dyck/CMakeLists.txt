@@ -1,3 +1,4 @@
+add_subdirectory(spds)
 add_subdirectory(unary)
 add_subdirectory(staged-bounds)
 add_subdirectory(mcfl)
