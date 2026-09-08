@@ -1,3 +1,9 @@
+add_lotus_targeted_test(interleaved_dyck_lcl_test
+    InterleavedDyckLCLTest.cpp
+    LINK_LIBS
+        CanaryInterleavedDyckLCL)
+include(${CMAKE_SOURCE_DIR}/tests/regress/CFL/InterleavedDyck/LCL/Tests.cmake)
+
 add_lotus_targeted_test(ClassicalCFLTest ClassicalCFLTest.cpp
     LINK_LIBS
         CanaryClassicalCFL)
