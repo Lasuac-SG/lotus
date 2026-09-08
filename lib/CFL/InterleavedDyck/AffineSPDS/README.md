@@ -88,8 +88,9 @@ int main() {
   graph.addEdge(3, 4, dyck::Label::closeBracket(2));
 
   affine::Solver solver;
-  auto forward = solver.analyzeFrom(graph, 0);
-  auto backward = solver.analyzeTo(graph, 4);
+  auto analysis = solver.prepare(graph);
+  auto forward = analysis.queryFrom(0);
+  auto backward = analysis.queryTo(4);
   const auto &comparison = forward.compare(4);
 
   // The positive answer in a general graph is only a candidate.
@@ -105,10 +106,12 @@ at the target and ask about predecessor stacks. `Options::parentheses` and
 `Options::brackets` select `spds::StackAcceptance::Any` for an existential stack
 at the queried vertex instead of the default empty stack.
 
-`analyze(graph)` returns three pair sets: `upper_bound`, `spds_upper_bound`, and
-`independent_upper_bound`, as well as saturation statistics. The graph-to-PDS
-conversion is reused across sources, but this version performs separate
-saturations per source; it does not claim cross-query summary sharing.
+`analyzeAll(mode)` returns the pair set selected by `ComparisonMode::Joint`,
+`Independent`, or `Projection`, plus saturation statistics. It computes only
+the selected comparison. `analyzeDemands` groups requested pairs by source or
+target and likewise computes only the selected mode. The graph-to-PDS conversion
+is reused across queries, but saturation is still performed separately per
+selected anchor.
 
 Query results cache default-stack readouts. A single `QueryResult` is therefore
 not safe for concurrent readout from several threads without synchronization.
@@ -119,6 +122,12 @@ Distinct solvers/results share no mutable global analysis state.
 The matrix dimension is dynamic. Packed bit vectors and row-slice XOR implement
 GF(2) arithmetic without a 32/64-bit dimension cap or an external algebra library.
 There are tests crossing word boundaries at dimensions 9, 63, 64, and 65.
+Bit vectors of up to four machine words are stored inline, covering the default
+automatic observer without per-vector heap allocation. Identity observers use
+the Boolean prepared analysis for all-pairs and batch scopes; this is exact
+because every reachable affine history is the singleton identity matrix.
+Affine bases keep their first two directions inline as well; transition weights
+on the benchmark corpus are usually below that rank.
 
 An affine space is either empty or `a + span(B)`. `B` is a canonical reduced
 row-echelon basis; `a` is reduced by that basis. Equality is semantic, so redundant
@@ -289,10 +298,11 @@ edges, duplicate edge assignments, invalid dimensions/rows/IDs, and incomplete
 block partitions are rejected. `--dump-observer` preserves the matrix map and
 block metadata, enabling reproducible experiments.
 
-`--json` emits numeric statistics, the selected result, the joint/SPDS/independent
-answers for single queries, optional sorted pairs, and optional certificates.
-`--backward`, `--source`, `--target`, explicit stack flags, and prefix flags are
-listed by `--help`. The default query is all-pairs with empty stacks.
+`--json` emits numeric statistics, the selected result, optional sorted pairs,
+and optional joint certificates. Query scope is selected with `--all-pairs`,
+`--source`, `--target`, `--query`, or `--queries FILE`; `--direction` selects
+post*, pre*, or automatic batch grouping. The default is all-pairs with empty
+stacks. Explicit stack flags and prefix flags are listed by `--help`.
 
 The Core DOT parser currently reads edge statements, not isolated vertex
 statements. Use `--vertex V` or `Graph::addVertex(V)` to retain isolated vertices.

@@ -47,24 +47,27 @@ inline const std::vector<d::Label> &alphabet() {
 inline void basics() {
   s::Solver solver;
   d::Graph empty;
-  require(solver.analyze(empty).upper_bound.empty(), "empty graph");
+  require(solver.prepare(empty).analyzeAll().upper_bound.empty(), "empty graph");
   empty.addVertex(-13); empty.addVertex(91);
-  auto r = solver.analyze(empty);
+  auto empty_analysis = solver.prepare(empty);
+  auto r = empty_analysis.analyzeAll();
   require(r.upper_bound.size() == 2 && r.mayReach(-13,-13) && !r.mayReach(-13,91), "isolated vertices");
-  auto q = solver.analyzeFrom(empty, -13);
+  auto q = empty_analysis.queryFrom(-13);
   require(!q.mayReach(99), "unknown query endpoint");
-  throws<std::invalid_argument>([&] { solver.analyzeFrom(empty, 99); });
+  throws<std::invalid_argument>([&] { empty_analysis.queryFrom(99); });
   auto cross = chain({d::Label::openParenthesis(3), d::Label::openBracket(9),
                       d::Label::closeParenthesis(3), d::Label::closeBracket(9)});
-  auto forward = solver.analyzeFrom(cross, 0);
+  auto cross_analysis = solver.prepare(cross);
+  auto forward = cross_analysis.queryFrom(0);
   require(forward.mayReach(4) && !forward.mayReach(3), "crossing balanced word");
-  require(!solver.analyzeFrom(cross, 4).mayReach(0), "directed arcs preserved");
+  require(!cross_analysis.queryFrom(4).mayReach(0), "directed arcs preserved");
   require(forward.mayAccept(2, {3}, {9}), "nonempty stack membership");
   require(!forward.mayAccept(2, {9}, {3}), "typed stack membership");
-  auto backward = solver.analyzeTo(cross, 4);
+  auto backward = cross_analysis.queryTo(4);
   require(backward.mayReach(0), "backward crossing");
   require(backward.mayAccept(2, {3}, {9}), "pre* nonempty predecessor stacks");
-  require(!solver.analyzeFrom(chain({d::Label::closeBracket(2)}),0).mayReach(1), "no underflow");
+  auto underflow = solver.prepare(chain({d::Label::closeBracket(2)}));
+  require(!underflow.queryFrom(0).mayReach(1), "no underflow");
 }
 inline void extremesAndNeutral() {
   d::Graph graph;
@@ -73,21 +76,21 @@ inline void extremesAndNeutral() {
   const unsigned max_id = std::numeric_limits<unsigned>::max();
   graph.addEdge(lo,-1,d::Label::neutral()); graph.addEdge(-1,0,d::Label::openParenthesis(max_id));
   graph.addEdge(0,1,d::Label::neutral()); graph.addEdge(1,hi,d::Label::closeParenthesis(max_id));
-  require(s::Solver().analyzeFrom(graph, lo).mayReach(hi), "signed vertices/maximum label id");
+  require(s::Solver().prepare(graph).queryFrom(lo).mayReach(hi), "signed vertices/maximum label id");
   graph.addEdge(1,0,d::Label::neutral()); graph.addEdge(hi,hi,d::Label::neutral());
-  require(s::Solver().analyzeTo(graph, hi).mayReach(lo), "epsilon cycles");
+  require(s::Solver().prepare(graph).queryTo(hi).mayReach(lo), "epsilon cycles");
   graph.addEdge(1,hi,d::Label::closeParenthesis(0));
-  require(s::Solver().analyzeFrom(graph,lo).mayReach(hi), "parallel label alternatives");
+  require(s::Solver().prepare(graph).queryFrom(lo).mayReach(hi), "parallel label alternatives");
   d::Graph malformed;
   malformed.addEdge(0,1,{static_cast<d::LabelKind>(999),0});
-  throws<std::invalid_argument>([&]{s::Solver().analyze(malformed);});
+  throws<std::invalid_argument>([&]{(void)s::Solver().prepare(malformed);});
 }
 inline void exhaustiveWords() {
   std::size_t cases = 0;
   std::vector<d::Label> word;
   std::function<void(unsigned)> enumerate = [&](unsigned remaining) {
     auto g = chain(word);
-    auto r = s::Solver().analyzeFrom(g,0);
+    auto r = s::Solver().prepare(g).queryFrom(0);
     std::vector<unsigned> calls, fields;
     bool feasible = true;
     for (const auto &l : word) if (feasible) feasible = step(l,calls,fields);
@@ -97,7 +100,8 @@ inline void exhaustiveWords() {
     if (feasible) require(r.mayAccept(end,calls,fields), "word oracle/concrete endpoint stacks");
     s::Options prefix;
     prefix.parentheses = s::StackAcceptance::Any; prefix.brackets = s::StackAcceptance::Any;
-    require(s::Solver(prefix).analyzeFrom(g,0).mayReach(end) == feasible, "word oracle/prefix");
+    require(s::Solver(prefix).prepare(g).queryFrom(0).mayReach(end) == feasible,
+            "word oracle/prefix");
     ++cases;
     if (remaining) for (auto l : alphabet()) {
       word.push_back(l); enumerate(remaining - 1); word.pop_back();
@@ -138,11 +142,12 @@ inline void projectionOracle() {
       for (unsigned k = 0; k < 2; ++k) if (random()%5 == 0)
         g.addEdge(a,b,alphabet()[random()%alphabet().size()]);
     const auto calls = referenceProjection(g,true), fields = referenceProjection(g,false);
-    auto result = s::Solver().analyze(g);
+    auto analysis = s::Solver().prepare(g);
+    auto result = analysis.analyzeAll();
     require(result.parenthesis_pairs == calls, "exact call-CFL oracle");
     require(result.bracket_pairs == fields, "exact field-CFL oracle");
     for (int target = 0; target < n; ++target) {
-      auto back = s::Solver().analyzeTo(g,target);
+      auto back = analysis.queryTo(target);
       for (int source = 0; source < n; ++source) {
         bool expected = calls.count({source,target}) && fields.count({source,target});
         require(result.mayReach(source,target) == expected, "SPDS conjunction oracle");
@@ -175,7 +180,7 @@ inline void soundnessDag() {
     for(int a=0;a<7;++a) for(int b=a+1;b<7;++b)
       for(int k=0;k<2;++k) if(random()%3==0)
         g.addEdge(a,b,alphabet()[random()%alphabet().size()]);
-    auto exact=concreteDag(g), upper=s::Solver().analyze(g).upper_bound;
+    auto exact=concreteDag(g), upper=s::Solver().prepare(g).analyzeAll().upper_bound;
     for(const auto &pair:exact) require(upper.count(pair), "two-stack DAG soundness");
   }
 }
@@ -193,7 +198,8 @@ inline void differentPathFalsePositive() {
     }
   }
   require(!concreteDag(g).count({0,8}), "false-positive fixture has no concrete path");
-  require(s::Solver().analyzeFrom(g,0).mayReach(8), "SPDS must retain different-path approximation");
+  require(s::Solver().prepare(g).queryFrom(0).mayReach(8),
+          "SPDS must retain different-path approximation");
 }
 inline void paperFigure7() {
   // Follow the DRAWN labels of Figure 7 (p.15); the following paragraph has
@@ -210,9 +216,10 @@ inline void paperFigure7() {
   g.addEdge(7,8,d::Label::closeBracket(3));
   g.addEdge(8,9,d::Label::closeBracket(2));
   s::Options options; options.parentheses=s::StackAcceptance::Any;
-  auto r=s::Solver(options).analyzeFrom(g,0);
+  auto r=s::Solver(options).prepare(g).queryFrom(0);
   require(r.mayReach(9), "Figure 7 approximation with pending outer call");
-  require(!s::Solver().analyzeFrom(g,0).mayReach(9), "Figure 7 not an empty-call-stack query");
+  require(!s::Solver().prepare(g).queryFrom(0).mayReach(9),
+          "Figure 7 not an empty-call-stack query");
   // The same phenomenon with the paper's V / (V x S) control encodings.
   s::SynchronizedSystem<> flows;
   flows.addCall({0,61},{1,51},62); flows.addStore({1,51},{2,52},1);
@@ -233,7 +240,7 @@ inline void recursion() {
   g.addEdge(0,1,d::Label::neutral());
   g.addEdge(1,1,d::Label::closeParenthesis(3));
   g.addEdge(1,1,d::Label::closeBracket(4));
-  auto q=s::Solver().analyzeFrom(g,0);
+  auto q=s::Solver().prepare(g).queryFrom(0);
   require(q.mayReach(1), "recursive balanced reachability");
   require(q.mayAccept(0,std::vector<unsigned>(250,3),std::vector<unsigned>(250,4)), "unbounded regular stacks");
   require(q.callAutomaton().states()<20 && q.fieldAutomaton().states()<20, "finite automata for infinite stacks");
@@ -242,14 +249,46 @@ inline void orderIndependence() {
   std::mt19937 rng(743); d::Graph g;
   for(int i=0;i<7;++i) g.addVertex(i);
   for(int i=0;i<28;++i) g.addEdge(rng()%7,rng()%7,alphabet()[rng()%9]);
-  auto expected=s::Solver().analyze(g).upper_bound;
+  auto expected=s::Solver().prepare(g).analyzeAll().upper_bound;
   auto edges=g.edges();
   for(int trial=0;trial<20;++trial) {
     std::shuffle(edges.begin(),edges.end(),rng); d::Graph other;
     for(int i=6;i>=0;--i) other.addVertex(i);
     for(const auto&e:edges) {other.addEdge(e.source,e.target,e.label);other.addEdge(e.source,e.target,e.label);}
-    require(s::Solver().analyze(other).upper_bound==expected,"edge order/duplicate independence");
+    require(s::Solver().prepare(other).analyzeAll().upper_bound==expected,
+            "edge order/duplicate independence");
   }
+}
+inline void preparedDemands() {
+  auto g=chain({d::Label::openParenthesis(1),d::Label::openBracket(2),
+                d::Label::closeParenthesis(1),d::Label::closeBracket(2)});
+  for(d::Vertex v=10;v<17;++v)g.addVertex(v);
+  auto analysis=s::Solver().prepare(g);
+  std::vector<d::Pair> demands{{0,4},{1,4},{0,4}};
+  for(d::Vertex v=10;v<17;++v)demands.push_back({v,4});
+  auto automatic=analysis.analyzeDemands(demands);
+  require(automatic.upper_bound==d::PairSet{{0,4}},"automatic demand result");
+  require(automatic.statistics.rules==8,"batch groups by the single target");
+  auto post=analysis.analyzeDemands(demands,s::DemandDirection::Post);
+  require(post.upper_bound==automatic.upper_bound,"post demand result");
+  require(post.statistics.rules==72,"forced post groups by nine sources");
+  throws<std::invalid_argument>([&]{
+    (void)analysis.analyzeDemands({{0,99}});
+  });
+}
+inline void wildcardRules() {
+  s::PushdownSystem<> p;
+  const auto a=p.addControl(),b=p.addControl(),c=p.addControl();
+  p.addPreserveRule(a,b);
+  p.addPushRule(b,c,9);
+  auto seed=s::RegularSet::singleton(p.controls(),{a,{2,0}});
+  auto post=s::postStar(p,seed);
+  require(post.accepts(b,{2,0}) && post.accepts(c,{9,2,0}),
+          "wildcard post preserve/push");
+  auto target=s::RegularSet::singleton(p.controls(),{c,{9,2,0}});
+  auto pre=s::preStar(p,target);
+  require(pre.accepts(b,{2,0}) && pre.accepts(a,{2,0}),
+          "wildcard pre preserve/push");
 }
 inline void regularSets() {
   s::PushdownSystem<> p; p.addControl(); p.addControl();
@@ -287,6 +326,9 @@ inline void semiringLaws() {
   require(d.combine(a,a)==a && d.extend(d.one(),a)==a && d.extend(a,d.one())==a,"semiring units/idempotence");
   require(d.extend(a,d.combine(b,d.one()))==d.combine(d.extend(a,b),a),"semiring distributivity");
   require(d.extend(d.zero(),a)==d.zero(),"annihilating zero");
+  auto joined=a;
+  require(d.combineWith(joined,b)&&joined==d.combine(a,b),"mutating combine changes");
+  require(!d.combineWith(joined,a),"mutating combine reports no change");
   throws<std::invalid_argument>([&]{d.combine(a,s::RelationSemiring(2).one());});
 }
 using CConfig=std::pair<s::State,std::vector<s::Symbol>>;
@@ -508,7 +550,8 @@ inline void limitsAndValidation() {
 inline void parseDot() {
   std::istringstream input("digraph {\n -3 -> 1 [label=\"op--19\"];\n 1 -> 8 [label=\"eps\"];\n 8 -> 12 [label=\"cp--19\"];\n}\n");
   auto g=d::Graph::parseDot(input);
-  require(s::Solver().analyzeFrom(g,-3).mayReach(12),"shared Lotus DOT parser");
+  require(s::Solver().prepare(g).queryFrom(-3).mayReach(12),
+          "shared Lotus DOT parser");
 }
 using Test=std::pair<const char *,void(*)()>;
 inline std::vector<Test> tests() {
@@ -516,7 +559,8 @@ inline std::vector<Test> tests() {
     {"exhaustive_7381_words",exhaustiveWords},{"exact_250_projection_oracles",projectionOracle},
     {"concrete_200_dags",soundnessDag},{"different_path_false_positive",differentPathFalsePositive},
     {"paper_figure7",paperFigure7},{"unbounded_recursion",recursion},
-    {"insertion_order",orderIndependence},{"regular_seed_normalization",regularSets},
+    {"insertion_order",orderIndependence},{"prepared_demands",preparedDemands},
+    {"wildcard_rules",wildcardRules},{"regular_seed_normalization",regularSets},
     {"empty_pds_stacks",emptyStacks},{"relation_semiring",semiringLaws},
     {"weighted_60_dag_oracles",weightedDagOracle},{"weighted_shared_push",weightedSharedPush},
     {"weighted_cycles",weightedCycles},{"incremental_rules_and_weights",incremental},

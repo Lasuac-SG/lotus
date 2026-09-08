@@ -1,6 +1,6 @@
 if(TARGET lotus-cfl-interleaved-dyck-spds)
   foreach(case crossing_forward crossing_backward mismatch spurious call_prefix
-          both_prefix pending_rejected neutral all_pairs source target isolated
+          both_prefix pending_rejected neutral all_pairs batch source target isolated
           missing_vertex invalid_label bad_number invalid_option resource_limit
           help missing_file invalid_backwards_prefix)
     add_test(NAME interleaved_dyck_spds_cli_${case}

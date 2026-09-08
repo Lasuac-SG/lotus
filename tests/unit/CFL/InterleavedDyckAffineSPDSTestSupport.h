@@ -134,6 +134,8 @@ inline void semiringLaws() {
     const std::size_t n=1+rng()%3; AffineSemiring d(n);
     auto a=randomSpace(n,rng),b=randomSpace(n,rng),c=randomSpace(n,rng);
     AFF_CHECK(d.combine(a,b)==d.combine(b,a)); AFF_CHECK(d.combine(a,a)==a);
+    auto inplace=a;const auto combined=d.combine(a,b);
+    AFF_CHECK(d.combineWith(inplace,b)==(combined!=a));AFF_CHECK(inplace==combined);
     AFF_CHECK(d.combine(d.combine(a,b),c)==d.combine(a,d.combine(b,c)));
     AFF_CHECK(d.extend(d.extend(a,b),c)==d.extend(a,d.extend(b,c)));
     AFF_CHECK(d.extend(a,d.combine(b,c))==d.combine(d.extend(a,b),d.extend(a,c)));
@@ -190,18 +192,29 @@ inline CorrelationGraph correlationGraph() {
 inline void jointCorrelation() {
   auto fixture=correlationGraph();const auto &g=fixture.graph;
   auto observer=HistoryObserver::directSum({HistoryObserver::parity({fixture.x}),HistoryObserver::parity({fixture.y})});
-  AFF_CHECK(spds::Solver().analyzeFrom(g,0).mayReach(14));
-  auto result=Solver().analyzeFrom(g,0,observer);const auto &c=result.compare(14);
+  AFF_CHECK(spds::Solver().prepare(g).queryFrom(0).mayReach(14));
+  auto analysis=Solver().prepare(g,observer);
+  auto result=analysis.queryFrom(0);const auto &c=result.compare(14);
   AFF_CHECK(c.spdsMayReach());AFF_CHECK(c.independentMayReach(observer));AFF_CHECK(!c.mayReach());
   AFF_CHECK(c.verdict()==Verdict::AffineSeparated);AFF_CHECK(c.certificate()->verify(c.callHistory(),c.fieldHistory()));
-  auto reverse=Solver().analyzeTo(g,14,observer);AFF_CHECK(!reverse.mayReach(0));
+  auto reverse=analysis.queryTo(14);AFF_CHECK(!reverse.mayReach(0));
   AFF_CHECK(reverse.compare(0).callHistory()==c.callHistory());
   AFF_CHECK(reverse.compare(0).fieldHistory()==c.fieldHistory());
-  AFF_CHECK(!Solver().analyzeFrom(g,0).mayReach(14));
-  auto identity=Solver().analyzeFrom(g,0,HistoryObserver());AFF_CHECK(identity.mayReach(14));
-  auto all=Solver().analyze(g,observer);
-  AFF_CHECK(all.spds_upper_bound.count({0,14}));AFF_CHECK(all.independent_upper_bound.count({0,14}));
-  AFF_CHECK(!all.mayReach(0,14));
+  AFF_CHECK(!Solver().prepare(g).queryFrom(0).mayReach(14));
+  auto identity=Solver().prepare(g,HistoryObserver()).queryFrom(0);
+  AFF_CHECK(identity.mayReach(14));
+  AFF_CHECK(analysis.analyzeAll(ComparisonMode::Projection).mayReach(0,14));
+  AFF_CHECK(analysis.analyzeAll(ComparisonMode::Independent).mayReach(0,14));
+  AFF_CHECK(!analysis.analyzeAll(ComparisonMode::Joint).mayReach(0,14));
+  const std::vector<Pair> demand{{0,14}};
+  AFF_CHECK(analysis.analyzeDemands(demand,ComparisonMode::Projection).mayReach(0,14));
+  AFF_CHECK(analysis.analyzeDemands(demand,ComparisonMode::Independent).mayReach(0,14));
+  AFF_CHECK(!analysis.analyzeDemands(demand,ComparisonMode::Joint).mayReach(0,14));
+  std::vector<Pair> all_targets;
+  for(Vertex target:g.vertices())all_targets.push_back({0,target});
+  auto batch=analysis.analyzeDemands(all_targets,ComparisonMode::Joint);
+  for(Vertex target:g.vertices())
+    AFF_CHECK(batch.mayReach(0,target)==result.mayReach(target));
 }
 inline void orderSensitivity() {
   Graph g;
@@ -209,9 +222,10 @@ inline void orderSensitivity() {
   g.addEdge(0,5,label(1));g.addEdge(5,6,label(6));g.addEdge(6,7,label(3));g.addEdge(7,4,label(4));
   std::vector<Edge> a{{0,1,label(1)},{5,6,label(6)}},b{{1,2,label(2)},{0,5,label(1)}};
   auto counts=HistoryObserver::directSum({HistoryObserver::parity(a),HistoryObserver::parity(b)});
-  AFF_CHECK(Solver().analyzeFrom(g,0,counts).mayReach(4));
+  AFF_CHECK(Solver().prepare(g,counts).queryFrom(0).mayReach(4));
   auto order=HistoryObserver::orderedPair(a,b);
-  auto forward=Solver().analyzeFrom(g,0,order),backward=Solver().analyzeTo(g,4,order);
+  auto analysis=Solver().prepare(g,order);
+  auto forward=analysis.queryFrom(0),backward=analysis.queryTo(4);
   AFF_CHECK(!forward.mayReach(4));AFF_CHECK(!backward.mayReach(0));
   AFF_CHECK(forward.compare(4).callHistory()==backward.compare(0).callHistory());
   AFF_CHECK(forward.compare(4).fieldHistory()==backward.compare(0).fieldHistory());
@@ -222,13 +236,13 @@ inline void crossingAndNeutral() {
   g.addEdge(30,40,label(4));g.addEdge(40,50,label(0));g.addVertex(-99);
   HistoryObserver o(3);std::mt19937 rng(914);
   for(const auto &e:g.edges())o.set(e,randomMatrix(3,rng));
-  auto q=Solver().analyzeFrom(g,-4,o);
+  auto q=Solver().prepare(g,o).queryFrom(-4);
   AFF_CHECK(q.mayReach(50));AFF_CHECK(q.compare(50).callHistory()==AffineSpace::singleton(o.trace(g.edges())));
   AFF_CHECK(q.mayAccept(20,{std::numeric_limits<unsigned>::max()},{0}));
   AFF_CHECK(!q.mayAccept(20,{0},{0}));AFF_CHECK(!q.mayReach(999));AFF_CHECK(!q.mayReach(-99));
-  AFF_CHECK(Solver().analyzeFrom(g,-99,o).mayReach(-99));
+  AFF_CHECK(Solver().prepare(g,o).queryFrom(-99).mayReach(-99));
   // A zero event matrix is a valid concrete history, not an unreachable weight.
-  o.set(g.edges()[0],Matrix(3));auto zero=Solver().analyzeFrom(g,-4,o);
+  o.set(g.edges()[0],Matrix(3));auto zero=Solver().prepare(g,o).queryFrom(-4);
   AFF_CHECK(zero.mayReach(50));AFF_CHECK(zero.compare(50).callHistory()==AffineSpace::singleton(Matrix(3)));
 }
 inline void exhaustiveWords() {
@@ -244,12 +258,13 @@ inline void exhaustiveWords() {
         if(call)call=step(cs,l,true);
         if(field)field=step(fs,l,false);
       }
-      auto q=Solver().analyzeFrom(g,0,o);const auto &c=q.compare(length);
+      auto analysis=Solver().prepare(g,o);
+      auto q=analysis.queryFrom(0);const auto &c=q.compare(length);
       AFF_CHECK(!c.callHistory().empty()==(call&&cs.empty()));
       AFF_CHECK(!c.fieldHistory().empty()==(field&&fs.empty()));
       AFF_CHECK(c.mayReach()==(call&&field&&cs.empty()&&fs.empty()));
       if(call&&field)AFF_CHECK(q.compareStacks(length,cs,fs).mayReach());
-      auto b=Solver().analyzeTo(g,length,o);
+      auto b=analysis.queryTo(length);
       AFF_CHECK(b.compare(0).callHistory()==c.callHistory());
       AFF_CHECK(b.compare(0).fieldHistory()==c.fieldHistory());++checked;
     }
@@ -288,11 +303,13 @@ inline void randomDAGs() {
       g.addEdge(a,b,label(rng()%9));if(rng()%4==0)g.addEdge(a,b,label(rng()%9));
     }
     HistoryObserver o(2+trial%2);for(const auto &e:g.edges())o.set(e,randomMatrix(o.dimension(),rng));
-    std::vector<QueryResult> backwards;for(unsigned t=0;t<5;++t)backwards.push_back(Solver().analyzeTo(g,t,o));
+    auto analysis=Solver().prepare(g,o);
+    std::vector<QueryResult> backwards;
+    for(unsigned t=0;t<5;++t)backwards.push_back(analysis.queryTo(t));
     for(unsigned s=0;s<5;++s) {
-      auto oracle=dagOracle(g,s,o);auto q=Solver().analyzeFrom(g,s,o);
+      auto oracle=dagOracle(g,s,o);auto q=analysis.queryFrom(s);
       Options any;any.parentheses=any.brackets=spds::StackAcceptance::Any;
-      auto prefix=Solver(any).analyzeFrom(g,s,o);
+      auto prefix=Solver(any).prepare(g,o).queryFrom(s);
       for(unsigned t=0;t<5;++t) {
         const auto &r=q.compare(t);auto c=lookup(oracle.calls[t],{},o.dimension()),f=lookup(oracle.fields[t],{},o.dimension());
         AFF_CHECK(r.callHistory()==c);AFF_CHECK(r.fieldHistory()==f);
@@ -354,7 +371,8 @@ inline void randomCyclicGraphs() {
     for(const auto &e:g.edges()){unsigned value=rng()%16;weights.emplace(e,value);o.set(e,numbered(2,value));}
     auto cs=cyclicOracle(g,weights,true),fs=cyclicOracle(g,weights,false);
     for(unsigned s=0;s<4;++s){
-      auto forward=Solver().analyzeFrom(g,s,o);auto backward=Solver().analyzeTo(g,s,o);
+      auto analysis=Solver().prepare(g,o);
+      auto forward=analysis.queryFrom(s);auto backward=analysis.queryTo(s);
       for(unsigned t=0;t<4;++t){
         AffineSpace c(2),f(2),rc(2),rf(2);
         for(auto v:cs[s][t])c.addPoint(numbered(2,v));
@@ -437,15 +455,16 @@ inline void builderCorrelation() {
 inline void limitsAndErrors() {
   Graph g;g.addEdge(0,1,label(0));HistoryObserver o(2);
   Options options;options.max_matrix_dimension=1;
-  throws<spds::ResourceLimit>([&]{(void)Solver(options).analyzeFrom(g,0,o);});
+  throws<spds::ResourceLimit>([&]{(void)Solver(options).prepare(g,o);});
   options.max_matrix_dimension=0;options.limits.max_states=1;
-  throws<spds::ResourceLimit>([&]{(void)Solver(options).analyzeFrom(g,0,o);});
+  throws<spds::ResourceLimit>([&]{(void)Solver(options).prepare(g,o).queryFrom(0);});
   options.limits={};options.limits.max_updates=1;
-  throws<spds::ResourceLimit>([&]{(void)Solver(options).analyzeFrom(g,0,o);});
-  throws<std::invalid_argument>([&]{(void)Solver().analyzeFrom(g,7,o);});
+  throws<spds::ResourceLimit>([&]{(void)Solver(options).prepare(g,o).queryFrom(0);});
+  auto analysis=Solver().prepare(g,o);
+  throws<std::invalid_argument>([&]{(void)analysis.queryFrom(7);});
   Graph invalid;invalid.addEdge(0,1,{static_cast<LabelKind>(222),0});
-  throws<std::invalid_argument>([&]{(void)Solver().analyzeFrom(invalid,0,o);});
-  AFF_CHECK(Solver().analyze(Graph{}).upper_bound.empty());
+  throws<std::invalid_argument>([&]{(void)Solver().prepare(invalid,o);});
+  AFF_CHECK(Solver().prepare(Graph{}).analyzeAll().pairs.empty());
   AffineSemiring d(2);spds::PushdownSystem<AffineSemiring> p(d);p.addControl();p.addControl();
   auto seed=spds::RegularSet::singleton(2,{0,{0}});spds::SaturationSession<AffineSemiring> session(p,seed);
   session.run();throws<std::invalid_argument>([&]{session.addRule(0,0,1,{0},AffineSpace(3));});
@@ -457,7 +476,8 @@ inline void insertionOrder() {
   reverse.addEdge(edges[0].source,edges[0].target,edges[0].label);
   auto a=HistoryObserver::automatic(fixture.graph),b=HistoryObserver::automatic(reverse);
   std::stringstream sa,sb;a.write(sa);b.write(sb);AFF_CHECK(sa.str()==sb.str());
-  auto qa=Solver().analyzeFrom(fixture.graph,0,a),qb=Solver().analyzeFrom(reverse,0,b);
+  auto qa=Solver().prepare(fixture.graph,a).queryFrom(0);
+  auto qb=Solver().prepare(reverse,b).queryFrom(0);
   for(auto v:reverse.vertices()) {
     AFF_CHECK(qa.compare(v).callHistory()==qb.compare(v).callHistory());
     AFF_CHECK(qa.compare(v).fieldHistory()==qb.compare(v).fieldHistory());
@@ -475,17 +495,22 @@ inline void precisionHierarchy() {
     HistoryObserver a(2),b(2);
     for(const auto &e:g.edges()){a.set(e,randomMatrix(2,rng));b.set(e,randomMatrix(2,rng));}
     auto joint=HistoryObserver::directSum({a,b});
-    auto all=Solver().analyze(g,joint);auto baseline=spds::Solver().analyze(g);
-    AFF_CHECK(all.spds_upper_bound==baseline.upper_bound);
-    auto small=Solver().analyze(g,a);
+    auto analysis=Solver().prepare(g,joint);
+    auto all=analysis.analyzeAll(ComparisonMode::Joint);
+    auto independent=analysis.analyzeAll(ComparisonMode::Independent);
+    auto projection=analysis.analyzeAll(ComparisonMode::Projection);
+    auto baseline=spds::Solver().prepare(g).analyzeAll();
+    AFF_CHECK(projection.pairs==baseline.upper_bound);
+    auto small=Solver().prepare(g,a).analyzeAll();
     Options o1,o2;o1.observer={2,1};o2.observer={4,3};
-    auto autoSmall=Solver(o1).analyze(g),autoLarge=Solver(o2).analyze(g);
-    for(const auto &pair:all.upper_bound) {
-      AFF_CHECK(all.independent_upper_bound.count(pair));AFF_CHECK(small.upper_bound.count(pair));
+    auto autoSmall=Solver(o1).prepare(g).analyzeAll();
+    auto autoLarge=Solver(o2).prepare(g).analyzeAll();
+    for(const auto &pair:all.pairs) {
+      AFF_CHECK(independent.pairs.count(pair));AFF_CHECK(small.pairs.count(pair));
     }
-    for(const auto &pair:all.independent_upper_bound)AFF_CHECK(baseline.upper_bound.count(pair));
-    for(const auto &pair:autoLarge.upper_bound)AFF_CHECK(autoSmall.upper_bound.count(pair));
-    for(unsigned s=0;s<4;++s){auto q=Solver().analyzeFrom(g,s,joint);
+    for(const auto &pair:independent.pairs)AFF_CHECK(baseline.upper_bound.count(pair));
+    for(const auto &pair:autoLarge.pairs)AFF_CHECK(autoSmall.pairs.count(pair));
+    for(unsigned s=0;s<4;++s){auto q=analysis.queryFrom(s);
       for(unsigned t=0;t<4;++t)AFF_CHECK(q.mayReach(t)==all.mayReach(s,t));
     }
   }

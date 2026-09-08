@@ -153,12 +153,16 @@ using Weight = ...;
 Weight zero() const;
 Weight one() const;
 Weight combine(Weight, Weight) const;
+bool combineWith(Weight &left, const Weight &right) const;
 Weight extend(Weight, Weight) const;
 // Weight also supports equality/inequality.
 ```
 
 `extend(a,b)` always means executing `a` and then `b`. Combine must be
 associative, commutative and idempotent; extend associative and distributive;
+`combineWith` must update its left operand to the same value as `combine` and
+return whether that value changed. It lets saturation avoid copying a weight
+only to test equality.
 zero must annihilate extend; the ascending order induced by combine must have
 finite height. Domain objects can hold state (e.g. the number of typestates).
 Algebraic laws are a client contract, not automatically checked properties.
@@ -182,8 +186,8 @@ The graph adapter and field-PDS builder encode an empty stack by a protected
 bottom symbol `0`. It is distinct from automaton epsilon and is never popped.
 External label/field IDs are mapped to positive symbols, including external
 ID `0`. Graph labels use a 64-bit symbol for `unsigned(id)+1`, so `UINT_MAX`
-does not overflow. Seed-only field IDs are included when expanding normal
-and store-rule wildcards.
+does not overflow. Normal and store edges use parameterized rules rather than
+being expanded once per stack symbol.
 
 The call-PDS builder follows the paper literally: its top is a statement, and
 it does not add a bottom statement. A synchronized configuration always has a
@@ -206,10 +210,11 @@ graph.addEdge(2, 3, dyck::Label::closeParenthesis(1));
 graph.addEdge(3, 4, dyck::Label::closeBracket(2));
 
 spds::Solver solver;
-auto all = solver.analyze(graph);
+auto analysis = solver.prepare(graph);
+auto all = analysis.analyzeAll();
 bool candidate = all.mayReach(0, 4);
-auto forward = solver.analyzeFrom(graph, 0);
-auto backward = solver.analyzeTo(graph, 4);
+auto forward = analysis.queryFrom(0);
+auto backward = analysis.queryTo(4);
 // Both true for this graph:
 (void)forward.mayReach(4);
 (void)backward.mayReach(0);
@@ -225,11 +230,14 @@ over predecessor stacks that can reach the empty-stack anchor, which is a
 different question from accepting a forward prefix. The CLI only exposes
 prefix flags for forward queries to avoid that ambiguity.
 
-`analyze` compiles the two projections once and performs two saturations per
-source. `analyzeFrom` / `analyzeTo` only perform two saturations. Source/target
-anchors must exist; queries about an unknown candidate vertex return false.
-`Result` also exposes both independent projection relations and total statistics.
-No graph edges are symmetrized; duplicate arcs are handled by the shared Graph.
+`prepare` compiles the two projections once. `analyzeAll` performs two
+saturations per source; `queryFrom` and `queryTo` perform two saturations for one
+anchor. `analyzeDemands` accepts a vector of source/target pairs and groups it by
+the smaller number of distinct sources or targets unless a post/pre direction is
+forced. Source/target anchors must exist; queries about an unknown candidate
+vertex return false. `Result` also exposes both independent projection relations
+and total statistics. No graph edges are symmetrized; duplicate arcs are handled
+by the shared Graph.
 
 ### Synchronized data-flow and typestate
 
@@ -280,7 +288,9 @@ const auto &updated = session.run();
 Controls are fixed for a session; new rules may refer to any predeclared
 control. An existing transition's new weight is propagated as well. Call
 `run()` after insertions. `result()` throws while work is incomplete. Returned
-references belong to the session and must not outlive it. The higher-level
+references belong to the session and must not outlive it. A session references
+the base PDS instead of copying it, so the PDS must outlive the session. The
+higher-level
 `SynchronizedSystem` can also accept new transfers between queries, but its
 next `postStar`/`preStar` rebuilds the pair; it does not automatically maintain
 a coordinated pair of incremental sessions.
@@ -298,7 +308,8 @@ finite automata represent unbounded stacks. Exact single-PDS saturation
 terminates over the stated finite-height semiring contract.
 
 This implementation favors explicit inspectable automata over specialized
-compression. It materializes epsilon-composed edges and uses ordered maps.
+compression. It materializes epsilon-composed edges and uses hash-indexed
+transitions with direct weight references in adjacency lists.
 Do not ascribe the paper's experimental speedups or its optimized implementation
 complexity to this code without measurement.
 
@@ -333,13 +344,17 @@ ctest --test-dir build -R interleaved_dyck_spds --output-on-failure
 
 build/bin/lotus-cfl-interleaved-dyck-spds --query 0 4 \
   tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
-build/bin/lotus-cfl-interleaved-dyck-spds --query 0 4 --backward \
+build/bin/lotus-cfl-interleaved-dyck-spds --query 0 4 --direction pre \
+  tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
+build/bin/lotus-cfl-interleaved-dyck-spds --queries demands.txt --pairs \
   tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
 ```
 
-The CLI defaults to all pairs and accepts `--source`, `--target`, `--query`,
-`--backward`, `--call-prefix`, `--field-prefix`, `--pairs`, and resource limits.
-Run `--help` for the complete syntax. Exit 0 means a completed computation
+The CLI has explicit `--all-pairs`, `--source`, `--target`, `--query`, and
+`--queries FILE` scopes; omitting a scope defaults to all-pairs. Batch files
+contain one `SOURCE TARGET` pair per line and may be read from stdin with
+`--queries -`. `--direction auto|post|pre` controls pair and batch evaluation.
+Run `--help` for prefix, output, and resource options. Exit 0 means a completed computation
 (including an unreachable answer), 2 means invalid input, and 3 means a resource
 limit. Failure cases print no result relation.
 
@@ -349,8 +364,8 @@ C++. No Core parser changes are included in this patch.
 
 ## Validation
 
-The shared test runner contains 23 suites and is wrapped by GoogleTest for
-Lotus integration. The CTest integration adds 20 independent CLI cases.
+The shared test runner contains 25 suites and is wrapped by GoogleTest for
+Lotus integration. The CTest integration adds 21 independent CLI cases.
 Tests cover 7,381 exhaustive words, exact one-stack CFL closure on 250 random
 cyclic graphs, concrete two-stack paths on 200 DAGs, weighted post*/pre* on 60
 acyclic PDSs with complete concrete execution oracles, noncommutative weights,

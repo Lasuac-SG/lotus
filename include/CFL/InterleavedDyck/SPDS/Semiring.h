@@ -14,6 +14,11 @@ struct BooleanSemiring {
   Weight zero() const { return false; }
   Weight one() const { return true; }
   Weight combine(Weight a, Weight b) const { return a || b; }
+  bool combineWith(Weight &a, Weight b) const {
+    const bool changed = !a && b;
+    a = a || b;
+    return changed;
+  }
   Weight extend(Weight a, Weight b) const { return a && b; }
 };
 
@@ -40,7 +45,10 @@ public:
   bool operator==(const RelationWeight &other) const {
     return states_ == other.states_ && bits_ == other.bits_;
   }
-  bool operator!=(const RelationWeight &other) const { return !(*this == other); }
+  bool operator!=(const RelationWeight &other) const {
+    return !(*this == other);
+  }
+
 private:
   friend class RelationSemiring;
   void check(std::size_t from, std::size_t to) const {
@@ -52,19 +60,22 @@ private:
 };
 
 // combine = union; extend = relational composition in program execution order.
-// Finite height guarantees termination of weighted saturation, including cycles.
+// Finite height guarantees termination of weighted saturation, including
+// cycles.
 class RelationSemiring {
 public:
   using Weight = RelationWeight;
   explicit RelationSemiring(std::size_t states = 1) : states_(states) {
-    if (!states) throw std::invalid_argument("empty typestate domain");
+    if (!states)
+      throw std::invalid_argument("empty typestate domain");
     (void)zero(); // Check dimensional arithmetic immediately.
   }
   std::size_t states() const { return states_; }
   Weight zero() const { return Weight(states_); }
   Weight one() const {
     auto result = zero();
-    for (std::size_t i = 0; i < states_; ++i) result.insert(i, i);
+    for (std::size_t i = 0; i < states_; ++i)
+      result.insert(i, i);
     return result;
   }
   Weight transition(std::size_t from, std::size_t to) const {
@@ -73,14 +84,27 @@ public:
     return result;
   }
   Weight combine(const Weight &a, const Weight &b) const {
-    check(a); check(b);
+    check(a);
+    check(b);
     auto result = a;
     for (std::size_t i = 0; i < result.bits_.size(); ++i)
       result.bits_[i] |= b.bits_[i];
     return result;
   }
+  bool combineWith(Weight &a, const Weight &b) const {
+    check(a);
+    check(b);
+    bool changed = false;
+    for (std::size_t i = 0; i < a.bits_.size(); ++i) {
+      const auto joined = a.bits_[i] | b.bits_[i];
+      changed = changed || joined != a.bits_[i];
+      a.bits_[i] = joined;
+    }
+    return changed;
+  }
   Weight extend(const Weight &a, const Weight &b) const {
-    check(a); check(b);
+    check(a);
+    check(b);
     auto result = zero();
     for (std::size_t i = 0; i < states_; ++i)
       for (std::size_t j = 0; j < states_; ++j)
@@ -89,6 +113,7 @@ public:
             result.bits_[i * result.stride_ + k] |= b.bits_[j * b.stride_ + k];
     return result;
   }
+
 private:
   void check(const Weight &weight) const {
     if (weight.states() != states_)
