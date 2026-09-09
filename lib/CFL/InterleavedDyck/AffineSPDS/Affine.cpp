@@ -31,7 +31,7 @@ LinearBasis::Storage &LinearBasis::write() {
     storage_ = std::make_shared<Storage>(*storage_);
   return *storage_;
 }
-BitVector LinearBasis::reduce(BitVector vector) const {
+void LinearBasis::reduceInPlace(BitVector &vector) const {
   if (vector.size() != coordinates_)
     throw std::invalid_argument("basis dimension mismatch");
   const auto &basis_rows = rows();
@@ -42,10 +42,13 @@ BitVector LinearBasis::reduce(BitVector vector) const {
     if ((bits >> (pivot % 64)) & 1U)
       vector ^= basis_rows[i];
   }
+}
+BitVector LinearBasis::reduce(BitVector vector) const {
+  reduceInPlace(vector);
   return vector;
 }
 bool LinearBasis::insert(BitVector vector) {
-  vector = reduce(std::move(vector));
+  reduceInPlace(vector);
   const auto pivot = vector.firstSet();
   if (pivot == coordinates_)
     return false;
@@ -72,7 +75,7 @@ bool LinearBasis::insertBatch(llvm::SmallVectorImpl<BitVector> &vectors) {
   return true;
 }
 bool LinearBasis::insertEchelon(BitVector vector) {
-  vector = reduce(std::move(vector));
+  reduceInPlace(vector);
   const auto pivot = vector.firstSet();
   if (pivot == coordinates_)
     return false;
@@ -127,7 +130,7 @@ bool AffineSpace::addDirection(BitVector direction) {
   if (!basis_.insert(std::move(direction)))
     return false;
   is_identity_ = false;
-  offset_ = basis_.reduce(std::move(offset_));
+  basis_.reduceInPlace(offset_);
   return true;
 }
 bool AffineSpace::addPoint(const Matrix &point) {
@@ -157,7 +160,7 @@ bool AffineSpace::joinWith(const AffineSpace &other) {
     changed = basis_.insert(row) || changed;
   if (changed) {
     is_identity_ = false;
-    offset_ = basis_.reduce(std::move(offset_));
+    basis_.reduceInPlace(offset_);
   }
   return changed;
 }
@@ -193,6 +196,11 @@ AffineSpace AffineSpace::product(const AffineSpace &right) const {
 }
 bool AffineSpace::joinProduct(const AffineSpace &left,
                               const AffineSpace &right) {
+  return joinProduct(left, right, nullptr);
+}
+bool AffineSpace::joinProduct(
+    const AffineSpace &left, const AffineSpace &right,
+    const RightMatrixMultiplier *prepared_right) {
   check(left.dimension_);
   check(right.dimension_);
   if (left.empty_ || right.empty_)
@@ -224,38 +232,49 @@ bool AffineSpace::joinProduct(const AffineSpace &left,
       add(point ^ offset_);
     }
   };
+  auto finish = [&] {
+    if (basis_changed) {
+      basis_.canonicalize();
+      is_identity_ = false;
+      basis_.reduceInPlace(offset_);
+    }
+    return changed;
+  };
   // (a+U)(b+V) has affine hull ab + span(Ub, aV, UV).
   // The UV terms are essential, including when a=b=0.
-  const auto a = left.representative(), b = right.representative();
-  const RightMatrixMultiplier multiply_by_b(b);
-  const Matrix point = multiply_by_b.multiply(a);
-  add_point(point.entries(), point.isIdentity());
-  llvm::SmallVector<Matrix, 2> left_directions;
-  for (const auto &u : left.basis_.rows())
-    left_directions.emplace_back(dimension_, u);
-  for (const auto &u : left_directions) {
+  const BitVector &a = left.offset_;
+  std::optional<RightMatrixMultiplier> local_multiplier;
+  const RightMatrixMultiplier *multiply_by_b = prepared_right;
+  if (!multiply_by_b) {
+    local_multiplier.emplace(dimension_, right.offset_);
+    multiply_by_b = &*local_multiplier;
+  }
+  BitVector point = multiply_by_b->multiply(a);
+  const bool point_is_identity =
+      empty_ && point.isIdentityMatrix(dimension_);
+  add_point(std::move(point), point_is_identity);
+  const std::size_t left_rank = left.rank(), right_rank = right.rank();
+  if (full() || (left_rank == 0 && right_rank == 0))
+    return finish();
+  for (const auto &u : left.basis_.rows()) {
     if (full())
       break;
-    add(multiply_by_b.multiply(u).entries());
+    add(multiply_by_b->multiply(u));
   }
+  if (full() || right_rank == 0)
+    return finish();
   for (const auto &direction : right.basis_.rows()) {
     if (full())
       break;
-    const Matrix v(dimension_, direction);
-    const RightMatrixMultiplier multiply_by_v(v);
-    add(multiply_by_v.multiply(a).entries());
-    for (const auto &u : left_directions) {
+    const RightMatrixMultiplier multiply_by_v(dimension_, direction);
+    add(multiply_by_v.multiply(a));
+    for (const auto &u : left.basis_.rows()) {
       if (full())
         break;
-      add(multiply_by_v.multiply(u).entries());
+      add(multiply_by_v.multiply(u));
     }
   }
-  if (basis_changed) {
-    basis_.canonicalize();
-    is_identity_ = false;
-    offset_ = basis_.reduce(std::move(offset_));
-  }
-  return changed;
+  return finish();
 }
 AffineSpace AffineSpace::block(std::size_t offset,
                                std::size_t dimension) const {
@@ -357,5 +376,36 @@ bool AffineSemiring::extendAndCombine(Weight &target, const Weight &left,
   check(left);
   check(right);
   return target.joinProduct(left, right);
+}
+AffineSemiring::PreparedWeight
+AffineSemiring::prepareWeight(const Weight &weight) const {
+  check(weight);
+  if (weight.empty() || weight.rank() != 0 || weight.isIdentity() ||
+      dimension_ > 64)
+    return nullptr;
+  auto prepared =
+      std::make_shared<RightMatrixMultiplier>(dimension_, weight.offset());
+  return prepared;
+}
+AffineSemiring::Weight AffineSemiring::extendPrepared(
+    const Weight &left, const Weight &right,
+    const PreparedWeight &prepared_right) const {
+  check(left);
+  check(right);
+  if (!prepared_right)
+    return left.product(right);
+  Weight result(dimension_);
+  result.joinProduct(left, right, prepared_right.get());
+  return result;
+}
+bool AffineSemiring::extendAndCombinePrepared(
+    Weight &target, const Weight &left, const Weight &right,
+    const PreparedWeight &prepared_right) const {
+  check(target);
+  check(left);
+  check(right);
+  return prepared_right
+             ? target.joinProduct(left, right, prepared_right.get())
+             : target.joinProduct(left, right);
 }
 } // namespace lotus::cfl::interleaved_dyck::affine

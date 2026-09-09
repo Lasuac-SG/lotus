@@ -123,6 +123,8 @@ Distinct solvers/results share no mutable global analysis state.
 
 The matrix dimension is dynamic. Packed bit vectors and row-slice XOR implement
 GF(2) arithmetic without a 32/64-bit dimension cap or an external algebra library.
+Affine products consume and produce packed BitVector entries directly; Matrix
+objects are materialized only at public representation boundaries.
 There are tests crossing word boundaries at dimensions 9, 63, 64, and 65.
 Bit vectors of up to four machine words are stored inline, covering the default
 automatic observer without per-vector heap allocation. Identity observers use
@@ -132,7 +134,8 @@ Affine bases keep their first two directions inline and share immutable storage
 across weight snapshots; mutation detaches on demand. Product candidates are
 inserted as a stream and reduced in one batch, so a full-rank result stops early.
 Existing transition updates fuse affine product generation with basis insertion,
-avoiding a separately canonicalized temporary product.
+avoiding a separately canonicalized temporary product. Non-identity singleton
+rule weights also cache their packed right-multiplication rows during PDS setup.
 
 An affine space is either empty or `a + span(B)`. `B` is a canonical reduced
 row-echelon basis; `a` is reduced by that basis. Equality is semantic, so redundant

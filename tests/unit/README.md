@@ -75,25 +75,3 @@ Use the small set of helpers in `tests/unit/UnitTestHelpers.cmake`:
 
 Keep test target names stable unless you intentionally want to update external
 scripts or CI filters.
-
-`scripts/check_unit_test_registration.py` verifies that every `*.cpp` under
-this directory is named by a nearby CMake file. Configuration and CTest both
-run the check, preventing silently unbuilt test sources.
-
-## Coverage baseline
-
-Configure a dedicated Clang build with coverage instrumentation, build it, and
-generate the unit-layer report:
-
-```bash
-cmake -S . -B build-coverage \
-  -DLOTUS_BUILD_TESTS=ON \
-  -DLOTUS_ENABLE_COVERAGE=ON \
-  -DLOTUS_COVERAGE_MINIMUM=0
-cmake --build build-coverage
-cmake --build build-coverage --target coverage_report
-```
-
-The summary is written to `build-coverage/coverage/unit/summary.txt`. Raise
-`LOTUS_COVERAGE_MINIMUM` to the accepted total line-coverage percentage once a
-baseline has been recorded in CI.

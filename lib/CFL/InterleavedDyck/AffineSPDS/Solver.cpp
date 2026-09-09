@@ -416,10 +416,11 @@ Result PreparedAnalysis::analyzeDemands(const std::vector<Pair> &demands,
                         (direction == spds::DemandDirection::Auto &&
                          by_source.size() <= by_target.size());
   auto merge_stats = [&](const QueryResult &query) {
-    add(result.statistics.saturation, query.statistics().saturation);
+    const auto statistics = query.statistics();
+    add(result.statistics.saturation, statistics.saturation);
     result.statistics.maximum_affine_rank =
         std::max(result.statistics.maximum_affine_rank,
-                 query.statistics().maximum_affine_rank);
+                 statistics.maximum_affine_rank);
   };
   if (use_post) {
     for (const auto &entry : by_source) {

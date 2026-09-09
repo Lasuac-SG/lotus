@@ -14,6 +14,7 @@
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -60,13 +61,73 @@ struct Transition {
 };
 struct TransitionHash {
   std::size_t operator()(const Transition &edge) const {
-    std::size_t seed = std::hash<State>{}(edge.from);
-    seed ^= std::hash<Symbol>{}(edge.label) + 0x9e3779b9U + (seed << 6U) +
-            (seed >> 2U);
-    seed ^=
-        std::hash<State>{}(edge.to) + 0x9e3779b9U + (seed << 6U) + (seed >> 2U);
-    return seed;
+    std::uint64_t seed = static_cast<std::uint64_t>(edge.from);
+    seed ^= static_cast<std::uint64_t>(edge.label) +
+            0x9e3779b97f4a7c15ULL + (seed << 6U) + (seed >> 2U);
+    seed ^= static_cast<std::uint64_t>(edge.to) + 0x9e3779b97f4a7c15ULL +
+            (seed << 6U) + (seed >> 2U);
+    seed ^= seed >> 30U;
+    seed *= 0xbf58476d1ce4e5b9ULL;
+    seed ^= seed >> 27U;
+    seed *= 0x94d049bb133111ebULL;
+    seed ^= seed >> 31U;
+    return static_cast<std::size_t>(seed);
   }
+};
+class TransitionIndex {
+public:
+  static constexpr std::size_t Missing =
+      std::numeric_limits<std::size_t>::max();
+
+  template <class Records>
+  std::size_t find(const Transition &edge, const Records &records) const {
+    if (buckets_.empty())
+      return Missing;
+    const std::size_t mask = buckets_.size() - 1;
+    std::size_t bucket = TransitionHash{}(edge) & mask;
+    while (buckets_[bucket] != Missing) {
+      const std::size_t id = buckets_[bucket];
+      if (records[id].edge == edge)
+        return id;
+      bucket = (bucket + 1) & mask;
+    }
+    return Missing;
+  }
+
+  template <class Records>
+  void insert(const Transition &edge, std::size_t id,
+              const Records &records) {
+    if (buckets_.empty()) {
+      grow(2, records);
+    } else if (size_ >= buckets_.size() / 2) {
+      if (buckets_.size() >
+          std::numeric_limits<std::size_t>::max() / 2)
+        throw std::length_error("SPDS transition index overflow");
+      grow(buckets_.size() * 2, records);
+    }
+    place(buckets_, TransitionHash{}(edge), id);
+    ++size_;
+  }
+
+private:
+  static void place(std::vector<std::size_t> &buckets, std::size_t hash,
+                    std::size_t id) {
+    const std::size_t mask = buckets.size() - 1;
+    std::size_t bucket = hash & mask;
+    while (buckets[bucket] != Missing)
+      bucket = (bucket + 1) & mask;
+    buckets[bucket] = id;
+  }
+  template <class Records>
+  void grow(std::size_t capacity, const Records &records) {
+    std::vector<std::size_t> replacement(capacity, Missing);
+    for (std::size_t id : buckets_)
+      if (id != Missing)
+        place(replacement, TransitionHash{}(records[id].edge), id);
+    buckets_.swap(replacement);
+  }
+  std::vector<std::size_t> buckets_;
+  std::size_t size_ = 0;
 };
 using RuleKey = std::pair<State, Symbol>;
 struct RuleKeyHash {
@@ -75,6 +136,23 @@ struct RuleKeyHash {
     seed ^= std::hash<Symbol>{}(key.second) + 0x9e3779b9U + (seed << 6U) +
             (seed >> 2U);
     return seed;
+  }
+};
+template <class Domain, class = void> struct DomainPreparedWeight {
+  struct Type {};
+  static constexpr bool available = false;
+  static Type prepare(const Domain &, const typename Domain::Weight &) {
+    return {};
+  }
+};
+template <class Domain>
+struct DomainPreparedWeight<Domain,
+                            std::void_t<typename Domain::PreparedWeight>> {
+  using Type = typename Domain::PreparedWeight;
+  static constexpr bool available = true;
+  static Type prepare(const Domain &domain,
+                      const typename Domain::Weight &weight) {
+    return domain.prepareWeight(weight);
   }
 };
 
@@ -132,6 +210,11 @@ private:
 template <class Domain = BooleanSemiring> class PushdownSystem {
 public:
   using Weight = typename Domain::Weight;
+  using PreparedWeight = typename DomainPreparedWeight<Domain>::Type;
+  static constexpr bool HAS_PREPARED_WEIGHT =
+      DomainPreparedWeight<Domain>::available;
+  static constexpr std::size_t NO_GENERATED =
+      std::numeric_limits<std::size_t>::max();
   enum class RuleKind { Exact, PreserveAny, PushAny };
   struct Rule {
     RuleKind kind;
@@ -140,12 +223,13 @@ public:
     State to;
     std::vector<Symbol> replacement; // [], [a], or [a,b], top first
     Weight weight;
+    PreparedWeight prepared;
+    std::size_t generated_slot = NO_GENERATED;
   };
   struct RuleIndex {
     std::unordered_map<RuleKey, std::vector<std::size_t>, RuleKeyHash> exact;
     std::vector<std::vector<std::size_t>> wildcard;
     std::vector<std::size_t> initial;
-    std::vector<RuleKey> generated;
   };
   struct CompiledRuleIndexes {
     RuleIndex post, pre;
@@ -171,8 +255,8 @@ public:
           "PDS rule must replace one symbol by at most two");
     // Also catches incompatible weights in domains such as RelationSemiring.
     (void)domain_.combine(domain_.zero(), weight);
-    rules_.push_back(
-        {RuleKind::Exact, from, top, to, std::move(replacement), weight});
+    rules_.push_back({RuleKind::Exact, from, top, to,
+                      std::move(replacement), weight, prepareWeight(weight)});
     indexRule(rules_.size() - 1);
   }
   void addRule(State from, Symbol top, State to,
@@ -198,6 +282,9 @@ public:
   std::size_t controls() const { return controls_; }
   const std::vector<Rule> &rules() const { return rules_; }
   const Domain &domain() const { return domain_; }
+  PreparedWeight prepareWeight(const Weight &weight) const {
+    return DomainPreparedWeight<Domain>::prepare(domain_, weight);
+  }
   std::shared_ptr<const CompiledRuleIndexes> compiledRuleIndexes() const {
     return indexes_;
   }
@@ -208,20 +295,21 @@ private:
       indexes_ = std::make_shared<CompiledRuleIndexes>(*indexes_);
     return *indexes_;
   }
-  static void addGenerated(CompiledRuleIndexes &indexes, RuleKey key) {
+  static std::size_t addGenerated(CompiledRuleIndexes &indexes, RuleKey key) {
     const std::size_t slot = indexes.generated_slots.size();
-    if (indexes.generated_slots.emplace(key, slot).second)
-      indexes.post.generated.push_back(key);
+    auto inserted = indexes.generated_slots.emplace(key, slot);
+    return inserted.first->second;
   }
   void indexRule(std::size_t index) {
-    const auto &rule = rules_[index];
+    auto &rule = rules_[index];
     if (rule.weight == domain_.zero())
       return;
     auto &indexes = writeIndexes();
     if (rule.kind == RuleKind::Exact) {
       indexes.post.exact[{rule.from, rule.top}].push_back(index);
       if (rule.replacement.size() == 2)
-        addGenerated(indexes, {rule.to, rule.replacement[0]});
+        rule.generated_slot =
+            addGenerated(indexes, {rule.to, rule.replacement[0]});
       if (rule.replacement.empty())
         indexes.pre.initial.push_back(index);
       else
@@ -232,7 +320,8 @@ private:
     if (rule.kind == RuleKind::PreserveAny) {
       indexes.pre.wildcard[rule.to].push_back(index);
     } else {
-      addGenerated(indexes, {rule.to, rule.replacement[0]});
+      rule.generated_slot =
+          addGenerated(indexes, {rule.to, rule.replacement[0]});
       indexes.pre.exact[{rule.to, rule.replacement[0]}].push_back(index);
     }
   }
@@ -244,7 +333,8 @@ private:
     std::vector<Symbol> replacement;
     if (kind == RuleKind::PushAny)
       replacement.push_back(pushed);
-    rules_.push_back({kind, from, 0, to, std::move(replacement), weight});
+    rules_.push_back({kind, from, 0, to, std::move(replacement), weight,
+                      prepareWeight(weight)});
     indexRule(rules_.size() - 1);
   }
   Domain domain_;
@@ -280,8 +370,10 @@ public:
   Automaton &operator=(Automaton &&) = default;
   const std::vector<TransitionRecord> &transitions() const { return edges_; }
   const TransitionRecord *findTransition(const Transition &edge) const {
-    auto found = edge_ids_.find(edge);
-    return found == edge_ids_.end() ? nullptr : &edges_[found->second];
+    if (edge.from >= states() || edge.to >= states())
+      return nullptr;
+    const TransitionId id = edge_ids_.find(edge, edges_);
+    return id == TransitionIndex::Missing ? nullptr : &edges_[id];
   }
   const std::set<State> &finals() const { return finals_; }
   const Statistics &statistics() const { return stats_; }
@@ -503,7 +595,7 @@ private:
   std::size_t controls_;
   Direction direction_;
   std::vector<TransitionRecord> edges_;
-  std::unordered_map<Transition, TransitionId, TransitionHash> edge_ids_;
+  TransitionIndex edge_ids_;
   std::vector<std::vector<TransitionId>> out_, in_;
   std::vector<std::vector<TransitionId>> epsilon_out_, epsilon_in_;
   std::set<State> finals_;
@@ -519,6 +611,7 @@ template <class Domain = BooleanSemiring> class SaturationSession {
 public:
   using System = PushdownSystem<Domain>;
   using Weight = typename Domain::Weight;
+  using TransitionId = typename Automaton<Domain>::TransitionId;
   SaturationSession(const System &system, const RegularSet &seed,
                     Direction direction = Direction::Post, Limits limits = {})
       : system_(system), base_indexes_(system.compiledRuleIndexes()),
@@ -569,8 +662,9 @@ public:
     const auto &base_index =
         direction == Direction::Post ? base_indexes_->post
                                      : base_indexes_->pre;
-    for (const auto &key : base_index.generated)
-      generated_.emplace(key, addState());
+    if (direction == Direction::Post)
+      for (std::size_t i = 0; i < base_indexes_->generated_slots.size(); ++i)
+        base_generated_.push_back(addState());
     for (std::size_t i : base_index.initial) {
       const auto &r = rule(i);
       relax({r.from, r.top, r.to}, r.weight);
@@ -592,7 +686,8 @@ public:
             "PDS rule must replace one symbol by at most two");
       (void)domain().combine(domain().zero(), weight);
       added_rules_.push_back({System::RuleKind::Exact, from, top, to,
-                              std::move(replacement), weight});
+                              std::move(replacement), weight,
+                              system_.prepareWeight(weight)});
       installRule(base_rule_count_ + added_rules_.size() - 1);
     } catch (...) {
       poisoned_ = true;
@@ -621,7 +716,7 @@ public:
           if (result_.direction_ == Direction::Post)
             propagatePost(edge, value);
           else
-            propagatePre(edge, value);
+            propagatePre(pending, edge, value);
         }
       }
       result_.stats_.saturation_microseconds +=
@@ -658,11 +753,17 @@ private:
   using KeyHash = RuleKeyHash;
   struct Waiting {
     std::size_t rule;
-    Transition first;
-    bool operator<(const Waiting &other) const {
-      if (rule != other.rule)
-        return rule < other.rule;
-      return first < other.first;
+    TransitionId first;
+    bool operator==(const Waiting &other) const {
+      return rule == other.rule && first == other.first;
+    }
+  };
+  struct WaitingHash {
+    std::size_t operator()(const Waiting &waiting) const {
+      std::size_t seed = std::hash<std::size_t>{}(waiting.rule);
+      seed ^= std::hash<TransitionId>{}(waiting.first) + 0x9e3779b9U +
+              (seed << 6U) + (seed >> 2U);
+      return seed;
     }
   };
   const typename System::Rule &rule(std::size_t i) const {
@@ -689,7 +790,7 @@ private:
     result_.stats_.states = result_.states();
     return next;
   }
-  void schedule(typename Automaton<Domain>::TransitionId id) {
+  void schedule(TransitionId id) {
     auto &record = result_.edges_[id];
     if (!record.queued) {
       record.queued = true;
@@ -703,8 +804,7 @@ private:
     relaxImpl(edge, std::move(candidate));
   }
   template <class Update>
-  bool updateExisting(typename Automaton<Domain>::TransitionId id,
-                      Update &&update) {
+  bool updateExisting(TransitionId id, Update &&update) {
     auto &record = result_.edges_[id];
     if (limits_.max_updates) {
       Weight joined = record.weight;
@@ -730,7 +830,7 @@ private:
     const auto id = result_.edges_.size();
     result_.edges_.push_back({edge, std::forward<Candidate>(candidate)});
     try {
-      result_.edge_ids_.emplace(edge, id);
+      result_.edge_ids_.insert(edge, id, result_.edges_);
     } catch (...) {
       result_.edges_.pop_back();
       throw;
@@ -749,12 +849,11 @@ private:
   void relaxImpl(const Transition &edge, Candidate &&candidate) {
     if (candidate == domain().zero())
       return;
-    auto it = result_.edge_ids_.find(edge);
-    if (it == result_.edge_ids_.end()) {
+    const TransitionId id = result_.edge_ids_.find(edge, result_.edges_);
+    if (id == TransitionIndex::Missing) {
       insertNew(edge, std::forward<Candidate>(candidate));
       return;
     }
-    const auto id = it->second;
     if (!updateExisting(id, [&](Weight &weight) {
           return domain().combineWith(weight, candidate);
         }))
@@ -767,12 +866,11 @@ private:
                      const Weight &right) {
     if (left == domain().zero() || right == domain().zero())
       return;
-    auto found = result_.edge_ids_.find(edge);
-    if (found == result_.edge_ids_.end()) {
+    const TransitionId id = result_.edge_ids_.find(edge, result_.edges_);
+    if (id == TransitionIndex::Missing) {
       insertNew(edge, domain().extend(left, right));
       return;
     }
-    const auto id = found->second;
     bool changed;
     if constexpr (HasExtendAndCombine<Domain>::value) {
       changed = updateExisting(id, [&](Weight &weight) {
@@ -789,6 +887,30 @@ private:
     ++result_.stats_.updates;
     result_.stats_.transitions = result_.edges_.size();
     schedule(id);
+  }
+  void relaxRuleExtended(const Transition &edge, const Weight &left,
+                         const typename System::Rule &rule) {
+    if constexpr (!System::HAS_PREPARED_WEIGHT) {
+      relaxExtended(edge, left, rule.weight);
+      return;
+    } else {
+      if (left == domain().zero() || rule.weight == domain().zero())
+        return;
+      const TransitionId id = result_.edge_ids_.find(edge, result_.edges_);
+      if (id == TransitionIndex::Missing) {
+        insertNew(edge,
+                  domain().extendPrepared(left, rule.weight, rule.prepared));
+        return;
+      }
+      if (!updateExisting(id, [&](Weight &weight) {
+            return domain().extendAndCombinePrepared(
+                weight, left, rule.weight, rule.prepared);
+          }))
+        return;
+      ++result_.stats_.updates;
+      result_.stats_.transitions = result_.edges_.size();
+      schedule(id);
+    }
   }
   void relaxPath(const Transition &edge, const Weight &left,
                  const Weight &right) {
@@ -808,7 +930,8 @@ private:
         wildcard_indexed_[r.from].push_back(i);
         if (r.kind == System::RuleKind::PushAny) {
           Key generated{r.to, r.replacement[0]};
-          if (!generated_.count(generated))
+          if (!base_indexes_->generated_slots.count(generated) &&
+              !generated_.count(generated))
             generated_.emplace(generated, addState());
         }
         if (schedule_existing)
@@ -820,7 +943,8 @@ private:
       key = {r.from, r.top};
       if (r.replacement.size() == 2) {
         Key generated{r.to, r.replacement[0]};
-        if (!generated_.count(generated))
+        if (!base_indexes_->generated_slots.count(generated) &&
+            !generated_.count(generated))
           generated_.emplace(generated, addState());
       }
     } else {
@@ -868,6 +992,16 @@ private:
       for (std::size_t index : added->second)
         function(index);
   }
+  State generatedState(std::size_t rule_index,
+                       const typename System::Rule &rule) const {
+    if (rule_index < base_rule_count_)
+      return base_generated_.at(rule.generated_slot);
+    const Key key{rule.to, rule.replacement[0]};
+    auto base = base_indexes_->generated_slots.find(key);
+    return base != base_indexes_->generated_slots.end()
+               ? base_generated_.at(base->second)
+               : generated_.at(key);
+  }
   template <class Function>
   void forEachWildcardRule(State control, Function &&function) {
     const auto &base = (result_.direction_ == Direction::Post
@@ -880,6 +1014,10 @@ private:
     if (control < wildcard_indexed_.size())
       for (std::size_t index : wildcard_indexed_[control])
         function(index);
+  }
+  void registerWaiting(const Key &key, const Waiting &waiting) {
+    if (registered_waiting_.insert(waiting).second)
+      waiting_[key].push_back(waiting);
   }
   void propagateEpsilon(const Transition &e, const Weight &value) {
     // Capture the old size and reload by index: relax() may reallocate an
@@ -909,61 +1047,61 @@ private:
     forEachIndexedRule({e.from, e.label}, [&](std::size_t i) {
       const auto &r = rule(i);
       if (r.replacement.empty())
-        relaxExtended({r.to, Epsilon, e.to}, value, r.weight);
+        relaxRuleExtended({r.to, Epsilon, e.to}, value, r);
       else if (r.replacement.size() == 1)
-        relaxExtended({r.to, r.replacement[0], e.to}, value, r.weight);
+        relaxRuleExtended({r.to, r.replacement[0], e.to}, value, r);
       else {
-        State mid = generated_.at({r.to, r.replacement[0]});
+        State mid = generatedState(i, r);
         // The shared first edge carries ONE. Prior history and rule weight
         // belong on the continuation edge; mixing them loses correlations.
         relax({r.to, r.replacement[0], mid}, domain().one());
-        relaxExtended({mid, r.replacement[1], e.to}, value, r.weight);
+        relaxRuleExtended({mid, r.replacement[1], e.to}, value, r);
       }
     });
     forEachWildcardRule(e.from, [&](std::size_t i) {
       const auto &r = rule(i);
       if (r.kind == System::RuleKind::PreserveAny) {
-        relaxExtended({r.to, e.label, e.to}, value, r.weight);
+        relaxRuleExtended({r.to, e.label, e.to}, value, r);
       } else {
-        State mid = generated_.at({r.to, r.replacement[0]});
+        State mid = generatedState(i, r);
         relax({r.to, r.replacement[0], mid}, domain().one());
-        relaxExtended({mid, e.label, e.to}, value, r.weight);
+        relaxRuleExtended({mid, e.label, e.to}, value, r);
       }
     });
   }
-  void joinPush(const Waiting &waiting, const Transition &second) {
+  void joinPush(const Waiting &waiting, TransitionId second_id) {
     const auto &r = rule(waiting.rule);
+    const Transition second = result_.edges_[second_id].edge;
     const Symbol top =
         r.kind == System::RuleKind::PushAny ? second.label : r.top;
-    const auto first_id = result_.edge_ids_.at(waiting.first);
-    const auto second_id = result_.edge_ids_.at(second);
     Weight continuation =
-        domain().extend(result_.edges_[first_id].weight,
+        domain().extend(result_.edges_[waiting.first].weight,
                         result_.edges_[second_id].weight);
     relaxExtended({r.from, top, second.to}, r.weight, continuation);
   }
-  void propagatePre(const Transition &e, const Weight &value) {
+  void propagatePre(TransitionId edge_id, const Transition &e,
+                    const Weight &value) {
     forEachIndexedRule({e.from, e.label}, [&](std::size_t i) {
       const auto &r = rule(i);
       if (r.kind == System::RuleKind::PushAny) {
-        Waiting waiting{i, e};
-        wildcard_waiting_[e.to].insert(waiting);
+        Waiting waiting{i, edge_id};
+        registerWaiting({e.to, Epsilon}, waiting);
         const std::size_t count = result_.out_[e.to].size();
         for (std::size_t j = 0; j < count; ++j) {
-          const auto &second = result_.edges_[result_.out_[e.to][j]].edge;
-          if (second.label != Epsilon)
-            joinPush(waiting, second);
+          const TransitionId second_id = result_.out_[e.to][j];
+          if (result_.edges_[second_id].edge.label != Epsilon)
+            joinPush(waiting, second_id);
         }
       } else if (r.replacement.size() == 1) {
         relaxExtended({r.from, r.top, e.to}, r.weight, value);
       } else {
-        Waiting waiting{i, e};
-        waiting_[{e.to, r.replacement[1]}].insert(waiting);
+        Waiting waiting{i, edge_id};
+        registerWaiting({e.to, r.replacement[1]}, waiting);
         const std::size_t count = result_.out_[e.to].size();
         for (std::size_t j = 0; j < count; ++j) {
-          const auto &second = result_.edges_[result_.out_[e.to][j]].edge;
-          if (second.label == r.replacement[1])
-            joinPush(waiting, second);
+          const TransitionId second_id = result_.out_[e.to][j];
+          if (result_.edges_[second_id].edge.label == r.replacement[1])
+            joinPush(waiting, second_id);
         }
       }
     });
@@ -974,12 +1112,12 @@ private:
     auto right = waiting_.find({e.from, e.label});
     if (right != waiting_.end()) {
       for (const auto &waiting : right->second)
-        joinPush(waiting, e);
+        joinPush(waiting, edge_id);
     }
-    auto wildcard_right = wildcard_waiting_.find(e.from);
-    if (wildcard_right != wildcard_waiting_.end()) {
+    auto wildcard_right = waiting_.find({e.from, Epsilon});
+    if (wildcard_right != waiting_.end()) {
       for (const auto &waiting : wildcard_right->second)
-        joinPush(waiting, e);
+        joinPush(waiting, edge_id);
     }
   }
   const System &system_;
@@ -988,12 +1126,13 @@ private:
   Automaton<Domain> result_;
   const std::size_t base_rule_count_;
   Limits limits_;
-  std::deque<typename Automaton<Domain>::TransitionId> queue_;
+  std::deque<TransitionId> queue_;
   std::unordered_map<Key, std::vector<std::size_t>, KeyHash> indexed_;
   std::vector<std::vector<std::size_t>> wildcard_indexed_;
+  std::vector<State> base_generated_;
   std::unordered_map<Key, State, KeyHash> generated_;
-  std::unordered_map<Key, std::set<Waiting>, KeyHash> waiting_;
-  std::unordered_map<State, std::set<Waiting>> wildcard_waiting_;
+  std::unordered_map<Key, std::vector<Waiting>, KeyHash> waiting_;
+  std::unordered_set<Waiting, WaitingHash> registered_waiting_;
   bool complete_ = false, poisoned_ = false;
 };
 

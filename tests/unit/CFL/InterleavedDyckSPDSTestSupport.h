@@ -538,6 +538,20 @@ inline void aliasInjection() {
   require(value.postStar({{2,72},{},{}}).mayAlias({3,74}),"Figure 8 indirect store-to-alias flow");
   require(!aliases.mayAlias({3,74}),"allocation instances remain separate");
 }
+inline void compactTransitionIndex() {
+  struct Record { s::Transition edge; };
+  std::vector<Record> records;
+  s::TransitionIndex index;
+  for(std::size_t i=0;i<4096;++i) {
+    records.push_back({{i,(i*65537U)^17U,i+1}});
+    index.insert(records.back().edge,i,records);
+  }
+  for(std::size_t i=0;i<records.size();++i)
+    require(index.find(records[i].edge,records)==i,
+            "compact transition index survives growth and collisions");
+  require(index.find({7,9,11},records)==s::TransitionIndex::Missing,
+          "compact transition index reports a missing edge");
+}
 inline void limitsAndValidation() {
   s::PushdownSystem<> p;p.addControl();p.addControl();p.addRule(0,0,1,{1});
   auto seed=s::RegularSet::singleton(2,{0,{0}});
@@ -575,7 +589,9 @@ inline std::vector<Test> tests() {
     {"weighted_cycles",weightedCycles},{"incremental_rules_and_weights",incremental},
     {"paper_table4",fieldRules},{"paper_figure4",fieldLoop},
     {"paper_figure5_synchronization",synchronization},{"weighted_synchronization",weightedSynchronization},
-    {"paper_figure8_alias_injection",aliasInjection},{"limits_and_invalid_input",limitsAndValidation},
+    {"paper_figure8_alias_injection",aliasInjection},
+    {"compact_transition_index",compactTransitionIndex},
+    {"limits_and_invalid_input",limitsAndValidation},
     {"lotus_dot_parser",parseDot}};
 }
 } // namespace lotus_spds_test

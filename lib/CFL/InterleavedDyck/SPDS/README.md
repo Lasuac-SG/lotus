@@ -137,6 +137,8 @@ associative, commutative and idempotent; extend associative and distributive;
 return whether that value changed. It lets saturation avoid copying a weight
 only to test equality. If supplied, `extendAndCombine` must update `target` to
 `combine(target, extend(left, right))`; domains without it use the two-step path.
+Domains may additionally define a `PreparedWeight` and matching prepared-extend
+methods; the PDS stores that immutable rule metadata once and reuses it.
 zero must annihilate extend; the ascending order induced by combine must have
 finite height. Domain objects can hold state (e.g. the number of typestates).
 Algebraic laws are a client contract, not automatically checked properties.
@@ -286,7 +288,11 @@ finite automata represent unbounded stacks. Exact single-PDS saturation
 terminates over the stated finite-height semiring contract.
 
 The implementation materializes epsilon-composed edges and uses a flat
-transition arena with hash-indexed integer IDs.
+transition arena with an append-only open-addressing index whose buckets store
+only integer IDs; collision checks reuse keys in the arena. Pre* waiting records
+retain those IDs in flat vectors with ID-pair deduplication, avoiding tree nodes and
+repeated transition-key lookup during push joins. Fixed push rules address
+their generated automaton states through precompiled integer slots.
 
 A conservative implementation bound uses `N` automaton states, `A` distinct
 stack symbols, `T <= N*N*(A+1)` possible transitions, `R` PDS rules, and `H`

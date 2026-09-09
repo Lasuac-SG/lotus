@@ -161,6 +161,18 @@ inline void semiringLaws() {
   AffineSpace a=AffineSpace::singleton(Matrix(2)),b=a;
   a.addPoint(Matrix::parse("01/00")); b.addPoint(Matrix::parse("00/10"));
   AFF_CHECK(a.product(b).contains(Matrix::parse("10/00")));
+  AffineSemiring prepared_domain(2);
+  const auto singleton =
+      prepared_domain.lift(Matrix::parse("11/01"));
+  const auto prepared = prepared_domain.prepareWeight(singleton);
+  AFF_CHECK(static_cast<bool>(prepared));
+  AFF_CHECK(prepared_domain.extendPrepared(a,singleton,prepared)==
+            prepared_domain.extend(a,singleton));
+  auto fused=a;auto expected=prepared_domain.combine(
+      a,prepared_domain.extend(b,singleton));
+  prepared_domain.extendAndCombinePrepared(fused,b,singleton,prepared);
+  AFF_CHECK(fused==expected);
+  AFF_CHECK(!prepared_domain.prepareWeight(prepared_domain.one()));
   throws<std::invalid_argument>([]{AffineSemiring(2).combine(AffineSpace(2),AffineSpace(3));});
 }
 inline void observerConstruction() {

@@ -15,6 +15,7 @@ public:
   explicit LinearBasis(std::size_t coordinates) : coordinates_(coordinates) {}
   bool insert(BitVector vector);
   bool insertBatch(llvm::SmallVectorImpl<BitVector> &vectors);
+  void reduceInPlace(BitVector &vector) const;
   BitVector reduce(BitVector vector) const;
   const llvm::SmallVectorImpl<BitVector> &rows() const;
   const llvm::SmallVectorImpl<std::size_t> &pivots() const;
@@ -63,6 +64,9 @@ public:
   bool operator!=(const AffineSpace &other) const { return !(*this == other); }
 
 private:
+  friend class AffineSemiring;
+  bool joinProduct(const AffineSpace &left, const AffineSpace &right,
+                   const RightMatrixMultiplier *prepared_right);
   bool addDirection(BitVector direction);
   void check(std::size_t dimension) const;
   std::size_t dimension_;
@@ -89,6 +93,7 @@ std::optional<SeparationCertificate> separate(const AffineSpace &left,
 class AffineSemiring {
 public:
   using Weight = AffineSpace;
+  using PreparedWeight = std::shared_ptr<const RightMatrixMultiplier>;
   explicit AffineSemiring(std::size_t dimension = 1);
   std::size_t dimension() const { return dimension_; }
   const Weight &zero() const { return zero_; }
@@ -99,6 +104,12 @@ public:
   Weight extend(const Weight &left, const Weight &right) const;
   bool extendAndCombine(Weight &target, const Weight &left,
                         const Weight &right) const;
+  PreparedWeight prepareWeight(const Weight &weight) const;
+  Weight extendPrepared(const Weight &left, const Weight &right,
+                        const PreparedWeight &prepared_right) const;
+  bool extendAndCombinePrepared(Weight &target, const Weight &left,
+                                const Weight &right,
+                                const PreparedWeight &prepared_right) const;
 
 private:
   void check(const Weight &weight) const;

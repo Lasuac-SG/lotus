@@ -40,6 +40,16 @@ void compatible(std::size_t a, std::size_t b) {
   if (a != b)
     throw std::invalid_argument("incompatible GF(2) dimensions");
 }
+std::uint64_t extractWords(const std::uint64_t *words, std::size_t offset,
+                           std::size_t count) {
+  const auto shift = offset % 64;
+  std::uint64_t value = words[offset / 64] >> shift;
+  if (shift && count > 64 - shift)
+    value |= words[offset / 64 + 1] << (64 - shift);
+  if (count < 64)
+    value &= (std::uint64_t{1} << count) - 1;
+  return value;
+}
 } // namespace
 BitVector::BitVector(std::size_t size)
     : size_(size), word_count_(size / 64 + (size % 64 != 0)) {
@@ -214,52 +224,65 @@ bool Matrix::isIdentity() const {
 }
 Matrix Matrix::operator*(const Matrix &right) const {
   compatible(dimension_, right.dimension_);
-  if (dimension_ <= 64)
-    return RightMatrixMultiplier(right).multiply(*this);
-  Matrix result(dimension_);
-  // For wider matrices, scan packed selector chunks and visit only set bits.
-  for (std::size_t i = 0; i < dimension_; ++i)
-    for (std::size_t block = 0; block < dimension_; block += 64) {
-      const auto selector_count = std::min<std::size_t>(64, dimension_ - block);
-      std::uint64_t selectors =
-          entries_.extract(i * dimension_ + block, selector_count);
-      while (selectors) {
-        const std::size_t k = block + trailing(selectors);
-        selectors &= selectors - 1;
-        for (std::size_t j = 0; j < dimension_; j += 64) {
-          const auto count = std::min<std::size_t>(64, dimension_ - j);
-          result.entries_.xorChunk(
-              i * dimension_ + j, count,
-              right.entries_.extract(k * dimension_ + j, count));
-        }
-      }
-    }
-  return result;
+  return RightMatrixMultiplier(right).multiply(*this);
 }
 RightMatrixMultiplier::RightMatrixMultiplier(const Matrix &right)
-    : dimension_(right.dimension_), right_(&right) {
+    : RightMatrixMultiplier(right.dimension_, right.entries_) {}
+const std::uint64_t *
+RightMatrixMultiplier::checkedWords(std::size_t dimension,
+                                    const BitVector &vector) {
+  compatible(square(dimension), vector.size());
+  return vector.data();
+}
+RightMatrixMultiplier::RightMatrixMultiplier(std::size_t dimension,
+                                             const BitVector &right)
+    : RightMatrixMultiplier(dimension, checkedWords(dimension, right)) {}
+RightMatrixMultiplier::RightMatrixMultiplier(std::size_t dimension,
+                                             const std::uint64_t *right)
+    : dimension_(dimension), right_(dimension > 64 ? right : nullptr) {
   if (dimension_ > 64)
     return;
-  const auto *words = right_->entries_.data();
   const std::uint64_t row_mask = dimension_ == 64
                                      ? std::numeric_limits<std::uint64_t>::max()
                                      : (std::uint64_t{1} << dimension_) - 1;
   for (std::size_t row = 0; row < dimension_; ++row) {
     const std::size_t offset = row * dimension_;
     const std::size_t shift = offset % 64;
-    std::uint64_t value = words[offset / 64] >> shift;
+    std::uint64_t value = right[offset / 64] >> shift;
     if (shift && dimension_ > 64 - shift)
-      value |= words[offset / 64 + 1] << (64 - shift);
+      value |= right[offset / 64 + 1] << (64 - shift);
     rows_[row] = value & row_mask;
   }
 }
-Matrix RightMatrixMultiplier::multiply(const Matrix &left) const {
-  compatible(left.dimension_, dimension_);
-  if (dimension_ > 64)
-    return left * *right_;
-  Matrix result(dimension_);
-  const auto *left_words = left.entries_.data();
-  auto *result_words = result.entries_.data();
+BitVector RightMatrixMultiplier::multiply(const BitVector &left) const {
+  compatible(square(dimension_), left.size());
+  return multiply(left.data());
+}
+BitVector RightMatrixMultiplier::multiply(const std::uint64_t *left) const {
+  BitVector result(square(dimension_));
+  if (dimension_ > 64) {
+    for (std::size_t row = 0; row < dimension_; ++row)
+      for (std::size_t block = 0; block < dimension_; block += 64) {
+        const auto selector_count =
+            std::min<std::size_t>(64, dimension_ - block);
+        std::uint64_t selectors =
+            extractWords(left, row * dimension_ + block, selector_count);
+        while (selectors) {
+          const std::size_t selected = block + trailing(selectors);
+          selectors &= selectors - 1;
+          for (std::size_t column = 0; column < dimension_; column += 64) {
+            const auto count =
+                std::min<std::size_t>(64, dimension_ - column);
+            result.xorChunk(
+                row * dimension_ + column, count,
+                extractWords(right_, selected * dimension_ + column, count));
+          }
+        }
+      }
+    return result;
+  }
+  const auto *left_words = left;
+  auto *result_words = result.data();
   const std::uint64_t row_mask = dimension_ == 64
                                      ? std::numeric_limits<std::uint64_t>::max()
                                      : (std::uint64_t{1} << dimension_) - 1;
@@ -280,6 +303,10 @@ Matrix RightMatrixMultiplier::multiply(const Matrix &left) const {
       result_words[offset / 64 + 1] ^= product >> (64 - shift);
   }
   return result;
+}
+Matrix RightMatrixMultiplier::multiply(const Matrix &left) const {
+  compatible(left.dimension_, dimension_);
+  return Matrix(dimension_, multiply(left.entries_));
 }
 Matrix Matrix::operator^(const Matrix &right) const {
   compatible(dimension_, right.dimension_);

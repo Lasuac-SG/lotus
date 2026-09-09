@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace lotus::cfl::interleaved_dyck::affine {
@@ -71,7 +72,8 @@ public:
   static Matrix directSum(const std::vector<Matrix> &blocks);
   std::size_t dimension() const { return dimension_; }
   std::size_t coordinates() const { return entries_.size(); }
-  const BitVector &entries() const { return entries_; }
+  const BitVector &entries() const & { return entries_; }
+  BitVector entries() && { return std::move(entries_); }
   bool get(std::size_t row, std::size_t column) const;
   void set(std::size_t row, std::size_t column, bool value = true);
   bool isZero() const { return entries_.empty(); }
@@ -94,11 +96,19 @@ private:
 class RightMatrixMultiplier {
 public:
   explicit RightMatrixMultiplier(const Matrix &right);
+  RightMatrixMultiplier(std::size_t dimension, const BitVector &right);
+  BitVector multiply(const BitVector &left) const;
   Matrix multiply(const Matrix &left) const;
 
 private:
+  friend class AffineSpace;
+  static const std::uint64_t *checkedWords(std::size_t dimension,
+                                           const BitVector &vector);
+  RightMatrixMultiplier(std::size_t dimension,
+                        const std::uint64_t *right);
+  BitVector multiply(const std::uint64_t *left) const;
   std::size_t dimension_;
-  const Matrix *right_;
+  const std::uint64_t *right_;
   std::array<std::uint64_t, 64> rows_{};
 };
 

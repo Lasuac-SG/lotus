@@ -4,7 +4,7 @@ option(LOTUS_BUILD_TESTS "Build tests" OFF)
 option(LOTUS_ENABLE_COVERAGE
        "Instrument Lotus and its tests for LLVM source coverage" OFF)
 set(LOTUS_COVERAGE_MINIMUM 0 CACHE STRING
-    "Minimum total line coverage percentage required by coverage_report")
+    "Minimum total line coverage percentage required")
 
 # Optional analysis and verification integrations.
 option(LOTUS_ENABLE_CLAM "Enable CLAM abstract interpretation framework" OFF)
