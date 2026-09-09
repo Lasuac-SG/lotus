@@ -51,21 +51,6 @@ CLI target: `lotus-cfl-interleaved-dyck-affine-spds`.
 Lotus GoogleTest target: `interleaved_dyck_affine_spds_test`.
 Namespace: `lotus::cfl::interleaved_dyck::affine`.
 
-Register the engine after its dependency:
-
-```cmake
-# lib/CFL/InterleavedDyck/CMakeLists.txt
-add_subdirectory(Core)
-add_subdirectory(SPDS)
-add_subdirectory(AffineSPDS)
-```
-
-The engine registers after its dependency in `lib/CFL/InterleavedDyck/CMakeLists.txt`:
-`Core`, then `SPDS`, then `AffineSPDS`. It does not require the LCL patch.
-
-In an already configured Lotus build, reconfigure with its usual dependencies
-and options, then build:
-
 ```sh
 cmake -S . -B build -DLOTUS_BUILD_TESTS=ON
 cmake --build build --target CanaryInterleavedDyckAffineSPDS \
@@ -136,6 +121,10 @@ inserted as a stream and reduced in one batch, so a full-rank result stops early
 Existing transition updates fuse affine product generation with basis insertion,
 avoiding a separately canonicalized temporary product. Non-identity singleton
 rule weights also cache their packed right-multiplication rows during PDS setup.
+After a transition's first full visit, saturation propagates only newly added
+basis pivots through epsilon, rule, and pre* push joins. Pending pivots use a
+lazy paged arena, so transitions whose weight never grows pay no per-edge delta
+allocation. Full propagation remains a separate fast path.
 
 An affine space is either empty or `a + span(B)`. `B` is a canonical reduced
 row-echelon basis; `a` is reduced by that basis. Equality is semantic, so redundant
@@ -314,25 +303,11 @@ and observer synthesis are deliberately outside this implementation.
 
 ## Generic and incremental PDS access
 
-`AffineSemiring` satisfies the earlier SPDS domain interface. It can be used
-with arbitrary PDS rules and unweighted regular seeds, including incoming seed
-edges to controls and accepting controls, which SPDS normalizes internally.
-
-```cpp
-affine::AffineSemiring domain(2);
-spds::PushdownSystem<affine::AffineSemiring> system(domain);
-auto p = system.addControl();
-auto q = system.addControl();
-system.addRule(p, 0, q, {0}, domain.lift(affine::Matrix::parse("11/01")));
-auto seed = spds::RegularSet::singleton(system.controls(), {p, {0}});
-spds::SaturationSession<affine::AffineSemiring> session(system, seed);
-const auto &automaton = session.run();
-```
-
-New rules can be added with `session.addRule(...)`, followed by `run()`. Improved
-weights are re-enqueued even on existing transitions. Rule deletions, changing
-the observer after saturation, and automatically incremental graph conversion
-are not supported. Fix all controls before starting a session.
+`AffineSemiring` satisfies the SPDS weighted-domain interface and works with
+arbitrary PDS rules and regular seeds. `SaturationSession<AffineSemiring>` also
+supports monotone `addRule(...)` followed by `run()`; controls and the observer
+remain fixed, and rule deletion is unsupported. See the SPDS README for the
+generic session and regular-language APIs.
 
 `affine::synchronize` combines queries to two affine-weighted PDS automata. It
 checks dimensions and direction, but cannot verify that a client assigned the
@@ -368,6 +343,3 @@ precision hierarchy.
 - The affine-set-of-matrices representation is related to the established
   interprocedural affine-relation/MOS domain. This implementation does not claim
   to invent affine matrix domains or their semiring properties.
-- Lotus integration interfaces were inspected at
-  https://github.com/ZJU-PL/lotus/tree/main/include/CFL/InterleavedDyck and
-  https://github.com/ZJU-PL/lotus/tree/main/lib/CFL/InterleavedDyck.

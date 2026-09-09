@@ -156,6 +156,55 @@ inline void semiringLaws() {
     AffineSpace exact(n);
     for(const auto &x:enumerate(a)) for(const auto &y:enumerate(b)) exact.addPoint(x*y);
     AFF_CHECK(exact==a.product(b));
+
+    if (!a.empty() && !b.empty()) {
+      auto grown=a;AffineDelta input;
+      grown.joinWithDelta(c,&input);
+      auto incremental=a.product(b),expected=incremental;
+      AffineDelta output;
+      d.extendDeltaAndCombine(incremental,grown,b,input,true,&output);
+      d.extendAndCombine(expected,grown,b);
+      AFF_CHECK(incremental==expected);
+      if (!incremental.empty() && !c.empty()) {
+        auto downstream=a.product(b).product(c);
+        auto downstream_expected=incremental.product(c);
+        d.extendDeltaAndCombine(downstream,incremental,c,output,true,nullptr);
+        AFF_CHECK(downstream==downstream_expected);
+      }
+
+      grown=b;input.clear();grown.joinWithDelta(c,&input);
+      incremental=a.product(b);expected=incremental;
+      output.clear();
+      d.extendDeltaAndCombine(incremental,a,grown,input,false,&output);
+      d.extendAndCombine(expected,a,grown);
+      AFF_CHECK(incremental==expected);
+
+      const auto fixed=d.lift(randomMatrix(n,rng));
+      const auto prepared=d.prepareWeight(fixed);
+      grown=a;input.clear();grown.joinWithDelta(c,&input);
+      incremental=a.product(fixed);expected=incremental;
+      output.clear();
+      d.extendPreparedInputDeltaAndCombine(
+          incremental,grown,fixed,prepared,input,&output);
+      d.extendAndCombinePrepared(expected,grown,fixed,prepared);
+      AFF_CHECK(incremental==expected);
+
+      if (!c.empty()) {
+        grown=b;input.clear();grown.joinWithDelta(fixed,&input);
+        incremental=d.extend(a,d.extend(b,c));
+        expected=d.extend(a,d.extend(grown,c));output.clear();
+        d.extendPushDeltaAndCombine(
+            incremental,a,grown,c,input,true,&output);
+        AFF_CHECK(incremental==expected);
+
+        grown=c;input.clear();grown.joinWithDelta(fixed,&input);
+        incremental=d.extend(a,d.extend(b,c));
+        expected=d.extend(a,d.extend(b,grown));output.clear();
+        d.extendPushDeltaAndCombine(
+            incremental,a,b,grown,input,false,&output);
+        AFF_CHECK(incremental==expected);
+      }
+    }
   }
   // Explicit UV term: offsets are zero; only product of directions is nonzero.
   AffineSpace a=AffineSpace::singleton(Matrix(2)),b=a;

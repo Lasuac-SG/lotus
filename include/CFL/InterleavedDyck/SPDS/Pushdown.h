@@ -3,11 +3,14 @@
 #include "CFL/InterleavedDyck/SPDS/Semiring.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstdint>
 #include <deque>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -154,6 +157,15 @@ struct DomainPreparedWeight<Domain,
                       const typename Domain::Weight &weight) {
     return domain.prepareWeight(weight);
   }
+};
+template <class Domain, class = void> struct DomainDelta {
+  struct Type {};
+  static constexpr bool available = false;
+};
+template <class Domain>
+struct DomainDelta<Domain, std::void_t<typename Domain::Delta>> {
+  using Type = typename Domain::Delta;
+  static constexpr bool available = true;
 };
 
 // Unweighted regular seed/target set. States [0,controls) are PDS controls.
@@ -363,6 +375,8 @@ public:
     Transition edge;
     Weight weight;
     bool queued = false;
+    bool processed = false;
+    bool force_full = false;
   };
   Automaton(const Automaton &) = delete;
   Automaton &operator=(const Automaton &) = delete;
@@ -612,6 +626,8 @@ public:
   using System = PushdownSystem<Domain>;
   using Weight = typename Domain::Weight;
   using TransitionId = typename Automaton<Domain>::TransitionId;
+  using Delta = typename DomainDelta<Domain>::Type;
+  static constexpr bool HAS_DELTA = DomainDelta<Domain>::available;
   SaturationSession(const System &system, const RegularSet &seed,
                     Direction direction = Direction::Post, Limits limits = {})
       : system_(system), base_indexes_(system.compiledRuleIndexes()),
@@ -709,14 +725,46 @@ public:
         auto &record = result_.edges_[pending];
         const Transition edge = record.edge;
         record.queued = false;
-        ++result_.stats_.processed;
-        const Weight value = record.weight;
-        propagateEpsilon(edge, value);
-        if (edge.label != Epsilon) {
-          if (result_.direction_ == Direction::Post)
-            propagatePost(edge, value);
-          else
-            propagatePre(pending, edge, value);
+        if constexpr (HAS_DELTA) {
+          const bool first = !record.processed;
+          const bool forced = record.force_full;
+          const bool full = first || forced;
+          record.processed = true;
+          record.force_full = false;
+          std::optional<Delta> delta;
+          if (!full)
+            takePendingDelta(pending, delta);
+          else if (forced)
+            discardPendingDelta(pending);
+          ++result_.stats_.processed;
+          const Weight value = record.weight;
+          if (full || !delta) {
+            propagateEpsilon(edge, value);
+            if (edge.label != Epsilon) {
+              if (result_.direction_ == Direction::Post)
+                propagatePost(edge, value);
+              else
+                propagatePre(pending, edge, value);
+            }
+          } else {
+            propagateEpsilonDelta(pending, edge, value, &*delta);
+            if (edge.label != Epsilon) {
+              if (result_.direction_ == Direction::Post)
+                propagatePostDelta(edge, value, &*delta);
+              else
+                propagatePreDelta(pending, edge, value, &*delta);
+            }
+          }
+        } else {
+          ++result_.stats_.processed;
+          const Weight value = record.weight;
+          propagateEpsilon(edge, value);
+          if (edge.label != Epsilon) {
+            if (result_.direction_ == Direction::Post)
+              propagatePost(edge, value);
+            else
+              propagatePre(pending, edge, value);
+          }
         }
       }
       result_.stats_.saturation_microseconds +=
@@ -766,6 +814,14 @@ private:
       return seed;
     }
   };
+  using DeltaSlot = std::uint32_t;
+  static constexpr std::size_t DELTA_PAGE_SIZE = 4096;
+  static constexpr DeltaSlot NO_DELTA_SLOT =
+      std::numeric_limits<DeltaSlot>::max();
+  struct DeltaPage {
+    DeltaPage() { slots.fill(NO_DELTA_SLOT); }
+    std::array<DeltaSlot, DELTA_PAGE_SIZE> slots;
+  };
   const typename System::Rule &rule(std::size_t i) const {
     if (i < base_rule_count_)
       return system_.rules()[i];
@@ -790,12 +846,66 @@ private:
     result_.stats_.states = result_.states();
     return next;
   }
-  void schedule(TransitionId id) {
+  void schedule(TransitionId id, bool force_full = false) {
     auto &record = result_.edges_[id];
+    if constexpr (HAS_DELTA)
+      record.force_full = record.force_full || force_full;
     if (!record.queued) {
       record.queued = true;
       queue_.push_back(id);
     }
+  }
+  DeltaPage *deltaPage(TransitionId id, bool create) {
+    const std::size_t page_index = id / DELTA_PAGE_SIZE;
+    if (page_index >= pending_delta_pages_.size()) {
+      if (!create)
+        return nullptr;
+      pending_delta_pages_.resize(page_index + 1);
+    }
+    auto &page = pending_delta_pages_[page_index];
+    if (!page && create)
+      page = std::make_unique<DeltaPage>();
+    return page.get();
+  }
+  void mergePendingDelta(TransitionId id, Delta delta) {
+    DeltaPage *page = deltaPage(id, true);
+    DeltaSlot &slot = page->slots[id % DELTA_PAGE_SIZE];
+    if (slot == NO_DELTA_SLOT) {
+      if (!free_delta_slots_.empty()) {
+        slot = free_delta_slots_.back();
+        free_delta_slots_.pop_back();
+        delta_arena_[slot] = std::move(delta);
+      } else {
+        if (delta_arena_.size() >= NO_DELTA_SLOT)
+          throw ResourceLimit("SPDS pending-delta arena limit exceeded");
+        slot = static_cast<DeltaSlot>(delta_arena_.size());
+        delta_arena_.push_back(std::move(delta));
+      }
+      return;
+    }
+    domain().mergeDelta(delta_arena_[slot], std::move(delta));
+  }
+  void releasePendingDelta(DeltaSlot &slot) {
+    if (slot == NO_DELTA_SLOT)
+      return;
+    delta_arena_[slot] = Delta{};
+    free_delta_slots_.push_back(slot);
+    slot = NO_DELTA_SLOT;
+  }
+  void takePendingDelta(TransitionId id, std::optional<Delta> &output) {
+    DeltaPage *page = deltaPage(id, false);
+    if (!page)
+      return;
+    DeltaSlot &slot = page->slots[id % DELTA_PAGE_SIZE];
+    if (slot == NO_DELTA_SLOT)
+      return;
+    output.emplace(std::move(delta_arena_[slot]));
+    releasePendingDelta(slot);
+  }
+  void discardPendingDelta(TransitionId id) {
+    DeltaPage *page = deltaPage(id, false);
+    if (page)
+      releasePendingDelta(page->slots[id % DELTA_PAGE_SIZE]);
   }
   void relax(const Transition &edge, const Weight &candidate) {
     relaxImpl(edge, candidate);
@@ -804,7 +914,7 @@ private:
     relaxImpl(edge, std::move(candidate));
   }
   template <class Update>
-  bool updateExisting(TransitionId id, Update &&update) {
+  bool updateExistingFull(TransitionId id, Update &&update) {
     auto &record = result_.edges_[id];
     if (limits_.max_updates) {
       Weight joined = record.weight;
@@ -815,6 +925,38 @@ private:
       record.weight = std::move(joined);
     } else if (!update(record.weight)) {
       return false;
+    }
+    return true;
+  }
+  template <class Update>
+  bool updateExistingDelta(TransitionId id, Update &&update) {
+    auto &record = result_.edges_[id];
+    if (!record.processed) {
+      if (limits_.max_updates) {
+        Weight joined = record.weight;
+        if (!update(joined, nullptr))
+          return false;
+        if (result_.stats_.updates >= limits_.max_updates)
+          throw ResourceLimit("SPDS weight-update limit exceeded");
+        record.weight = std::move(joined);
+      } else if (!update(record.weight, nullptr)) {
+        return false;
+      }
+      return true;
+    }
+    Delta produced;
+    if (limits_.max_updates) {
+      Weight joined = record.weight;
+      if (!update(joined, &produced))
+        return false;
+      if (result_.stats_.updates >= limits_.max_updates)
+        throw ResourceLimit("SPDS weight-update limit exceeded");
+      record.weight = std::move(joined);
+    } else if (!update(record.weight, &produced)) {
+      return false;
+    }
+    if (!produced.empty()) {
+      mergePendingDelta(id, std::move(produced));
     }
     return true;
   }
@@ -854,9 +996,17 @@ private:
       insertNew(edge, std::forward<Candidate>(candidate));
       return;
     }
-    if (!updateExisting(id, [&](Weight &weight) {
-          return domain().combineWith(weight, candidate);
-        }))
+    bool changed;
+    if constexpr (HAS_DELTA)
+      changed = updateExistingDelta(id, [&](Weight &weight, Delta *delta) {
+        return delta ? domain().combineWithDelta(weight, candidate, delta)
+                     : domain().combineWith(weight, candidate);
+      });
+    else
+      changed = updateExistingFull(id, [&](Weight &weight) {
+        return domain().combineWith(weight, candidate);
+      });
+    if (!changed)
       return;
     ++result_.stats_.updates;
     result_.stats_.transitions = result_.edges_.size();
@@ -873,14 +1023,30 @@ private:
     }
     bool changed;
     if constexpr (HasExtendAndCombine<Domain>::value) {
-      changed = updateExisting(id, [&](Weight &weight) {
-        return domain().extendAndCombine(weight, left, right);
-      });
+      if constexpr (HAS_DELTA)
+        changed =
+            updateExistingDelta(id, [&](Weight &weight, Delta *delta) {
+              return delta ? domain().extendAndCombineDelta(
+                                 weight, left, right, delta)
+                           : domain().extendAndCombine(weight, left, right);
+            });
+      else
+        changed = updateExistingFull(id, [&](Weight &weight) {
+          return domain().extendAndCombine(weight, left, right);
+        });
     } else {
       Weight candidate = domain().extend(left, right);
-      changed = updateExisting(id, [&](Weight &weight) {
-        return domain().combineWith(weight, candidate);
-      });
+      if constexpr (HAS_DELTA)
+        changed =
+            updateExistingDelta(id, [&](Weight &weight, Delta *delta) {
+              return delta
+                         ? domain().combineWithDelta(weight, candidate, delta)
+                         : domain().combineWith(weight, candidate);
+            });
+      else
+        changed = updateExistingFull(id, [&](Weight &weight) {
+          return domain().combineWith(weight, candidate);
+        });
     }
     if (!changed)
       return;
@@ -902,10 +1068,22 @@ private:
                   domain().extendPrepared(left, rule.weight, rule.prepared));
         return;
       }
-      if (!updateExisting(id, [&](Weight &weight) {
-            return domain().extendAndCombinePrepared(
-                weight, left, rule.weight, rule.prepared);
-          }))
+      bool changed;
+      if constexpr (HAS_DELTA)
+        changed =
+            updateExistingDelta(id, [&](Weight &weight, Delta *delta) {
+              return delta ? domain().extendAndCombinePreparedDelta(
+                                 weight, left, rule.weight, rule.prepared,
+                                 delta)
+                           : domain().extendAndCombinePrepared(
+                                 weight, left, rule.weight, rule.prepared);
+            });
+      else
+        changed = updateExistingFull(id, [&](Weight &weight) {
+          return domain().extendAndCombinePrepared(
+              weight, left, rule.weight, rule.prepared);
+        });
+      if (!changed)
         return;
       ++result_.stats_.updates;
       result_.stats_.transitions = result_.edges_.size();
@@ -918,6 +1096,50 @@ private:
       relaxExtended(edge, right, left);
     else
       relaxExtended(edge, left, right);
+  }
+  void relaxDeltaExtended(const Transition &edge, const Weight &left,
+                          const Weight &right, const Delta &input,
+                          bool input_is_left) {
+    if constexpr (!HAS_DELTA) {
+      relaxExtended(edge, left, right);
+    } else {
+      if (input.empty())
+        return;
+      const TransitionId id = result_.edge_ids_.find(edge, result_.edges_);
+      if (id == TransitionIndex::Missing) {
+        relaxExtended(edge, left, right);
+        return;
+      }
+      if (!updateExistingDelta(id, [&](Weight &weight, Delta *output) {
+            return domain().extendDeltaAndCombine(
+                weight, left, right, input, input_is_left, output);
+          }))
+        return;
+      ++result_.stats_.updates;
+      schedule(id);
+    }
+  }
+  void relaxRuleDelta(const Transition &edge, const Weight &left,
+                      const typename System::Rule &rule,
+                      const Delta &input) {
+    if constexpr (!HAS_DELTA) {
+      relaxRuleExtended(edge, left, rule);
+    } else if constexpr (System::HAS_PREPARED_WEIGHT) {
+      const TransitionId id = result_.edge_ids_.find(edge, result_.edges_);
+      if (id == TransitionIndex::Missing) {
+        relaxRuleExtended(edge, left, rule);
+        return;
+      }
+      if (!updateExistingDelta(id, [&](Weight &weight, Delta *output) {
+            return domain().extendPreparedInputDeltaAndCombine(
+                weight, left, rule.weight, rule.prepared, input, output);
+          }))
+        return;
+      ++result_.stats_.updates;
+      schedule(id);
+    } else {
+      relaxDeltaExtended(edge, left, rule.weight, input, true);
+    }
   }
   void installRule(std::size_t i, bool schedule_existing = true) {
     const auto &r = rule(i);
@@ -937,7 +1159,7 @@ private:
         if (schedule_existing)
           for (const auto id : result_.out_[r.from])
             if (result_.edges_[id].edge.label != Epsilon)
-              schedule(id);
+              schedule(id, true);
         return;
       }
       key = {r.from, r.top};
@@ -953,7 +1175,7 @@ private:
         if (schedule_existing)
           for (const auto id : result_.out_[r.to])
             if (result_.edges_[id].edge.label != Epsilon)
-              schedule(id);
+              schedule(id, true);
         return;
       }
       if (r.kind == System::RuleKind::PushAny) {
@@ -962,7 +1184,7 @@ private:
         if (schedule_existing)
           for (const auto id : result_.out_[key.first])
             if (result_.edges_[id].edge.label == key.second)
-              schedule(id);
+              schedule(id, true);
         return;
       }
       if (r.replacement.empty()) {
@@ -975,7 +1197,7 @@ private:
     if (schedule_existing)
       for (const auto id : result_.out_[key.first])
         if (result_.edges_[id].edge.label == key.second)
-          schedule(id);
+          schedule(id, true);
   }
   template <class Function>
   void forEachIndexedRule(const Key &key, Function &&function) {
@@ -1020,8 +1242,6 @@ private:
       waiting_[key].push_back(waiting);
   }
   void propagateEpsilon(const Transition &e, const Weight &value) {
-    // Capture the old size and reload by index: relax() may reallocate an
-    // adjacency vector, but newly appended edges are scheduled separately.
     const auto &incoming =
         e.label == Epsilon ? result_.in_[e.from] : result_.epsilon_in_[e.from];
     const std::size_t incoming_size = incoming.size();
@@ -1052,8 +1272,6 @@ private:
         relaxRuleExtended({r.to, r.replacement[0], e.to}, value, r);
       else {
         State mid = generatedState(i, r);
-        // The shared first edge carries ONE. Prior history and rule weight
-        // belong on the continuation edge; mixing them loses correlations.
         relax({r.to, r.replacement[0], mid}, domain().one());
         relaxRuleExtended({mid, r.replacement[1], e.to}, value, r);
       }
@@ -1068,16 +1286,6 @@ private:
         relaxRuleExtended({mid, e.label, e.to}, value, r);
       }
     });
-  }
-  void joinPush(const Waiting &waiting, TransitionId second_id) {
-    const auto &r = rule(waiting.rule);
-    const Transition second = result_.edges_[second_id].edge;
-    const Symbol top =
-        r.kind == System::RuleKind::PushAny ? second.label : r.top;
-    Weight continuation =
-        domain().extend(result_.edges_[waiting.first].weight,
-                        result_.edges_[second_id].weight);
-    relaxExtended({r.from, top, second.to}, r.weight, continuation);
   }
   void propagatePre(TransitionId edge_id, const Transition &e,
                     const Weight &value) {
@@ -1110,14 +1318,216 @@ private:
       relaxExtended({r.from, e.label, e.to}, r.weight, value);
     });
     auto right = waiting_.find({e.from, e.label});
-    if (right != waiting_.end()) {
+    if (right != waiting_.end())
       for (const auto &waiting : right->second)
         joinPush(waiting, edge_id);
+    auto wildcard_right = waiting_.find({e.from, Epsilon});
+    if (wildcard_right != waiting_.end())
+      for (const auto &waiting : wildcard_right->second)
+        joinPush(waiting, edge_id);
+  }
+  bool useEpsilonDelta(TransitionId other, const Delta *delta) const {
+    // If both edges have been processed, the later first-processing step saw
+    // the earlier edge and propagated the full pair. An unprocessed neighbor
+    // is new, so use the full product once and let its own queued visit cover
+    // subsequent deltas. This avoids storing every epsilon-composition pair.
+    return HAS_DELTA && delta && result_.edges_[other].processed;
+  }
+  void propagateEpsilonDelta(TransitionId edge_id, const Transition &e,
+                             const Weight &value, const Delta *delta) {
+    // Capture the old size and reload by index: relax() may reallocate an
+    // adjacency vector, but newly appended edges are scheduled separately.
+    const auto &incoming =
+        e.label == Epsilon ? result_.in_[e.from] : result_.epsilon_in_[e.from];
+    const std::size_t incoming_size = incoming.size();
+    for (std::size_t i = 0; i < incoming_size; ++i) {
+      const TransitionId left_id = incoming[i];
+      const auto &record = result_.edges_[left_id];
+      const auto &left = record.edge;
+      const Transition composed{
+          left.from, left.label == Epsilon ? e.label : left.label, e.to};
+      if constexpr (HAS_DELTA) {
+        if (useEpsilonDelta(left_id, delta))
+          relaxDeltaExtended(composed,
+                             result_.direction_ == Direction::Post
+                                 ? value
+                                 : record.weight,
+                             result_.direction_ == Direction::Post
+                                 ? record.weight
+                                 : value,
+                             *delta,
+                             result_.direction_ == Direction::Post);
+        else
+          relaxPath(composed, record.weight, value);
+      } else {
+        relaxPath(composed, record.weight, value);
+      }
+    }
+    const auto &outgoing =
+        e.label == Epsilon ? result_.out_[e.to] : result_.epsilon_out_[e.to];
+    const std::size_t outgoing_size = outgoing.size();
+    for (std::size_t i = 0; i < outgoing_size; ++i) {
+      const TransitionId right_id = outgoing[i];
+      const auto &record = result_.edges_[right_id];
+      const auto &right = record.edge;
+      const Transition composed{
+          e.from, e.label == Epsilon ? right.label : e.label, right.to};
+      if constexpr (HAS_DELTA) {
+        if (useEpsilonDelta(right_id, delta))
+          relaxDeltaExtended(composed,
+                             result_.direction_ == Direction::Post
+                                 ? record.weight
+                                 : value,
+                             result_.direction_ == Direction::Post
+                                 ? value
+                                 : record.weight,
+                             *delta,
+                             result_.direction_ != Direction::Post);
+        else
+          relaxPath(composed, value, record.weight);
+      } else {
+        relaxPath(composed, value, record.weight);
+      }
+    }
+  }
+  void propagatePostDelta(const Transition &e, const Weight &value,
+                          const Delta *delta) {
+    forEachIndexedRule({e.from, e.label}, [&](std::size_t i) {
+      const auto &r = rule(i);
+      // Base rules predate every transition. Incremental rules force a full
+      // visit of all matching existing transitions, so a delta visit may
+      // safely propagate only its new directions.
+      const Delta *incremental = delta;
+      if (r.replacement.empty())
+        incremental ? relaxRuleDelta({r.to, Epsilon, e.to}, value, r,
+                                     *incremental)
+              : relaxRuleExtended({r.to, Epsilon, e.to}, value, r);
+      else if (r.replacement.size() == 1)
+        incremental ? relaxRuleDelta({r.to, r.replacement[0], e.to}, value, r,
+                                     *incremental)
+              : relaxRuleExtended({r.to, r.replacement[0], e.to}, value, r);
+      else {
+        State mid = generatedState(i, r);
+        // The shared first edge carries ONE. Prior history and rule weight
+        // belong on the continuation edge; mixing them loses correlations.
+        relax({r.to, r.replacement[0], mid}, domain().one());
+        if (incremental)
+          relaxRuleDelta({mid, r.replacement[1], e.to}, value, r,
+                         *incremental);
+        else
+          relaxRuleExtended({mid, r.replacement[1], e.to}, value, r);
+      }
+    });
+    forEachWildcardRule(e.from, [&](std::size_t i) {
+      const auto &r = rule(i);
+      const Delta *incremental = delta;
+      if (r.kind == System::RuleKind::PreserveAny) {
+        if (incremental)
+          relaxRuleDelta({r.to, e.label, e.to}, value, r, *incremental);
+        else
+          relaxRuleExtended({r.to, e.label, e.to}, value, r);
+      } else {
+        State mid = generatedState(i, r);
+        relax({r.to, r.replacement[0], mid}, domain().one());
+        if (incremental)
+          relaxRuleDelta({mid, e.label, e.to}, value, r, *incremental);
+        else
+          relaxRuleExtended({mid, e.label, e.to}, value, r);
+      }
+    });
+  }
+  void joinPush(const Waiting &waiting, TransitionId second_id) {
+    const auto &r = rule(waiting.rule);
+    const Transition second = result_.edges_[second_id].edge;
+    const Symbol top =
+        r.kind == System::RuleKind::PushAny ? second.label : r.top;
+    Weight continuation =
+        domain().extend(result_.edges_[waiting.first].weight,
+                        result_.edges_[second_id].weight);
+    relaxExtended({r.from, top, second.to}, r.weight, continuation);
+  }
+  void joinPushDelta(const Waiting &waiting, TransitionId second_id,
+                     const Delta &input, bool input_is_first) {
+    if (input.empty())
+      return;
+    const auto &r = rule(waiting.rule);
+    const Transition second = result_.edges_[second_id].edge;
+    const Symbol top =
+        r.kind == System::RuleKind::PushAny ? second.label : r.top;
+    const Transition output_edge{r.from, top, second.to};
+    const TransitionId output_id =
+        result_.edge_ids_.find(output_edge, result_.edges_);
+    if (output_id == TransitionIndex::Missing) {
+      joinPush(waiting, second_id);
+      return;
+    }
+    // The output transition may alias either operand in a cyclic automaton.
+    // Cheap COW copies keep the full operands stable while the target grows.
+    const Weight first = result_.edges_[waiting.first].weight;
+    const Weight second_weight = result_.edges_[second_id].weight;
+    if (!updateExistingDelta(
+            output_id, [&](Weight &weight, Delta *output) {
+              return domain().extendPushDeltaAndCombine(
+                  weight, r.weight, first, second_weight, input,
+                  input_is_first, output);
+            }))
+      return;
+    ++result_.stats_.updates;
+    schedule(output_id);
+  }
+  void propagatePreDelta(TransitionId edge_id, const Transition &e,
+                         const Weight &value, const Delta *delta) {
+    forEachIndexedRule({e.from, e.label}, [&](std::size_t i) {
+      const auto &r = rule(i);
+      if (r.kind == System::RuleKind::PushAny) {
+        Waiting waiting{i, edge_id};
+        registerWaiting({e.to, Epsilon}, waiting);
+        const std::size_t count = result_.out_[e.to].size();
+        for (std::size_t j = 0; j < count; ++j) {
+          const TransitionId second_id = result_.out_[e.to][j];
+          if (result_.edges_[second_id].edge.label != Epsilon)
+            result_.edges_[second_id].processed
+                ? joinPushDelta(waiting, second_id, *delta, true)
+                : joinPush(waiting, second_id);
+        }
+      } else if (r.replacement.size() == 1) {
+        const Delta *incremental = delta;
+        if (incremental)
+          relaxDeltaExtended({r.from, r.top, e.to}, r.weight, value,
+                             *incremental, false);
+        else
+          relaxExtended({r.from, r.top, e.to}, r.weight, value);
+      } else {
+        Waiting waiting{i, edge_id};
+        registerWaiting({e.to, r.replacement[1]}, waiting);
+        const std::size_t count = result_.out_[e.to].size();
+        for (std::size_t j = 0; j < count; ++j) {
+          const TransitionId second_id = result_.out_[e.to][j];
+          if (result_.edges_[second_id].edge.label == r.replacement[1])
+            result_.edges_[second_id].processed
+                ? joinPushDelta(waiting, second_id, *delta, true)
+                : joinPush(waiting, second_id);
+        }
+      }
+    });
+    forEachWildcardRule(e.from, [&](std::size_t i) {
+      const auto &r = rule(i);
+      const Delta *incremental = delta;
+      if (incremental)
+        relaxDeltaExtended({r.from, e.label, e.to}, r.weight, value,
+                           *incremental, false);
+      else
+        relaxExtended({r.from, e.label, e.to}, r.weight, value);
+    });
+    auto right = waiting_.find({e.from, e.label});
+    if (right != waiting_.end()) {
+      for (const auto &waiting : right->second)
+        joinPushDelta(waiting, edge_id, *delta, false);
     }
     auto wildcard_right = waiting_.find({e.from, Epsilon});
     if (wildcard_right != waiting_.end()) {
       for (const auto &waiting : wildcard_right->second)
-        joinPush(waiting, edge_id);
+        joinPushDelta(waiting, edge_id, *delta, false);
     }
   }
   const System &system_;
@@ -1127,6 +1537,9 @@ private:
   const std::size_t base_rule_count_;
   Limits limits_;
   std::deque<TransitionId> queue_;
+  std::vector<std::unique_ptr<DeltaPage>> pending_delta_pages_;
+  std::deque<Delta> delta_arena_;
+  std::vector<DeltaSlot> free_delta_slots_;
   std::unordered_map<Key, std::vector<std::size_t>, KeyHash> indexed_;
   std::vector<std::vector<std::size_t>> wildcard_indexed_;
   std::vector<State> base_generated_;

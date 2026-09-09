@@ -65,6 +65,25 @@ bool LinearBasis::insert(BitVector vector) {
   basis.rows.insert(basis.rows.begin() + index, std::move(vector));
   return true;
 }
+bool LinearBasis::insertWithPivot(BitVector vector, std::size_t &new_pivot) {
+  reduceInPlace(vector);
+  const auto pivot = vector.firstSet();
+  if (pivot == coordinates_)
+    return false;
+  new_pivot = pivot;
+  auto &basis = write();
+  for (auto &row : basis.rows) {
+    const std::uint64_t bits = row.data()[pivot / 64];
+    if ((bits >> (pivot % 64)) & 1U)
+      row ^= vector;
+  }
+  const auto where =
+      std::lower_bound(basis.pivots.begin(), basis.pivots.end(), pivot);
+  const auto index = static_cast<std::size_t>(where - basis.pivots.begin());
+  basis.pivots.insert(where, pivot);
+  basis.rows.insert(basis.rows.begin() + index, std::move(vector));
+  return true;
+}
 bool LinearBasis::insertBatch(llvm::SmallVectorImpl<BitVector> &vectors) {
   bool changed = false;
   for (auto &input : vectors)
@@ -79,6 +98,21 @@ bool LinearBasis::insertEchelon(BitVector vector) {
   const auto pivot = vector.firstSet();
   if (pivot == coordinates_)
     return false;
+  auto &basis = write();
+  const auto where =
+      std::lower_bound(basis.pivots.begin(), basis.pivots.end(), pivot);
+  const auto index = static_cast<std::size_t>(where - basis.pivots.begin());
+  basis.pivots.insert(where, pivot);
+  basis.rows.insert(basis.rows.begin() + index, std::move(vector));
+  return true;
+}
+bool LinearBasis::insertEchelonWithPivot(BitVector vector,
+                                         std::size_t &new_pivot) {
+  reduceInPlace(vector);
+  const auto pivot = vector.firstSet();
+  if (pivot == coordinates_)
+    return false;
+  new_pivot = pivot;
   auto &basis = write();
   const auto where =
       std::lower_bound(basis.pivots.begin(), basis.pivots.end(), pivot);
@@ -153,11 +187,42 @@ bool AffineSpace::joinWith(const AffineSpace &other) {
   }
   if (rank() == 0 && other.rank() == 0 && offset_ == other.offset_)
     return false;
-  // Saturation joins are incremental and generally low-rank. Insert directly
-  // and canonicalize the representative once, without a temporary batch.
   bool changed = basis_.insert(other.offset_ ^ offset_);
   for (const auto &row : other.basis_.rows())
     changed = basis_.insert(row) || changed;
+  if (changed) {
+    is_identity_ = false;
+    basis_.reduceInPlace(offset_);
+  }
+  return changed;
+}
+bool AffineSpace::joinWithDelta(const AffineSpace &other,
+                                AffineDelta *delta) {
+  if (!delta)
+    return joinWith(other);
+  check(other.dimension_);
+  if (this == &other || other.empty_)
+    return false;
+  if (empty_) {
+    *this = other;
+    delta->pivots.clear();
+    delta->full = true;
+    return true;
+  }
+  if (rank() == 0 && other.rank() == 0 && offset_ == other.offset_)
+    return false;
+  // Saturation joins are incremental and generally low-rank. Insert directly
+  // and canonicalize the representative once, without a temporary batch.
+  std::size_t pivot;
+  bool changed = basis_.insertWithPivot(other.offset_ ^ offset_, pivot);
+  if (changed)
+    delta->pivots.push_back(pivot);
+  for (const auto &row : other.basis_.rows()) {
+    const bool inserted = basis_.insertWithPivot(row, pivot);
+    if (inserted)
+      delta->pivots.push_back(pivot);
+    changed = inserted || changed;
+  }
   if (changed) {
     is_identity_ = false;
     basis_.reduceInPlace(offset_);
@@ -240,6 +305,91 @@ bool AffineSpace::joinProduct(
     }
     return changed;
   };
+  const BitVector &a = left.offset_;
+  std::optional<RightMatrixMultiplier> local_multiplier;
+  const RightMatrixMultiplier *multiply_by_b = prepared_right;
+  if (!multiply_by_b) {
+    local_multiplier.emplace(dimension_, right.offset_);
+    multiply_by_b = &*local_multiplier;
+  }
+  BitVector point = multiply_by_b->multiply(a);
+  const bool point_is_identity =
+      empty_ && point.isIdentityMatrix(dimension_);
+  add_point(std::move(point), point_is_identity);
+  const std::size_t left_rank = left.rank(), right_rank = right.rank();
+  if (full() || (left_rank == 0 && right_rank == 0))
+    return finish();
+  for (const auto &u : left.basis_.rows()) {
+    if (full())
+      break;
+    add(multiply_by_b->multiply(u));
+  }
+  if (full() || right_rank == 0)
+    return finish();
+  for (const auto &direction : right.basis_.rows()) {
+    if (full())
+      break;
+    const RightMatrixMultiplier multiply_by_v(dimension_, direction);
+    add(multiply_by_v.multiply(a));
+    for (const auto &u : left.basis_.rows()) {
+      if (full())
+        break;
+      add(multiply_by_v.multiply(u));
+    }
+  }
+  return finish();
+}
+bool AffineSpace::joinProductWithDelta(
+    const AffineSpace &left, const AffineSpace &right,
+    const RightMatrixMultiplier *prepared_right, AffineDelta *delta) {
+  check(left.dimension_);
+  check(right.dimension_);
+  if (left.empty_ || right.empty_)
+    return false;
+  if (this == &left || this == &right) {
+    const auto extended = left.product(right);
+    return joinWithDelta(extended, delta);
+  }
+  if (rank() == offset_.size())
+    return false;
+  if (left.isIdentity())
+    return joinWithDelta(right, delta);
+  if (right.isIdentity())
+    return joinWithDelta(left, delta);
+  const bool was_empty = empty_;
+  bool changed = false, basis_changed = false;
+  auto full = [&] { return rank() == offset_.size(); };
+  auto add = [&](BitVector direction) {
+    std::size_t pivot;
+    const bool inserted =
+        basis_.insertEchelonWithPivot(std::move(direction), pivot);
+    if (inserted)
+      delta->pivots.push_back(pivot);
+    basis_changed = inserted || basis_changed;
+    changed = inserted || changed;
+  };
+  auto add_point = [&](BitVector point, bool identity) {
+    if (empty_) {
+      offset_ = std::move(point);
+      empty_ = false;
+      is_identity_ = identity;
+      changed = true;
+    } else {
+      add(point ^ offset_);
+    }
+  };
+  auto finish = [&] {
+    if (basis_changed) {
+      basis_.canonicalize();
+      is_identity_ = false;
+      basis_.reduceInPlace(offset_);
+    }
+    if (changed && was_empty) {
+      delta->pivots.clear();
+      delta->full = true;
+    }
+    return changed;
+  };
   // (a+U)(b+V) has affine hull ab + span(Ub, aV, UV).
   // The UV terms are essential, including when a=b=0.
   const BitVector &a = left.offset_;
@@ -275,6 +425,151 @@ bool AffineSpace::joinProduct(
     }
   }
   return finish();
+}
+bool AffineSpace::joinProductDelta(
+    const AffineSpace &left, const AffineSpace &right,
+    const AffineDelta &input, bool input_is_left, AffineDelta *output,
+    const RightMatrixMultiplier *prepared_right) {
+  check(left.dimension_);
+  check(right.dimension_);
+  if (input.empty() || left.empty_ || right.empty_)
+    return false;
+  if (input.full)
+    return output ? joinProductWithDelta(left, right, prepared_right, output)
+                  : joinProduct(left, right, prepared_right);
+  if (empty_)
+    return output ? joinProductWithDelta(left, right, prepared_right, output)
+                  : joinProduct(left, right, prepared_right);
+  if (rank() == offset_.size())
+    return false;
+  bool changed = false;
+  auto add = [&](BitVector direction) {
+    std::size_t pivot;
+    const bool inserted = output
+                              ? basis_.insertWithPivot(std::move(direction),
+                                                       pivot)
+                              : basis_.insert(std::move(direction));
+    if (inserted && output)
+      output->pivots.push_back(pivot);
+    changed = inserted || changed;
+  };
+  auto forEachInputDirection = [&](const AffineSpace &space,
+                                   const auto &function) {
+    const auto &pivots = space.basis_.pivots();
+    const auto &rows = space.basis_.rows();
+    for (std::size_t pivot : input.pivots) {
+      const auto found = std::lower_bound(pivots.begin(), pivots.end(), pivot);
+      if (found == pivots.end() || *found != pivot)
+        throw std::logic_error("affine delta pivot is absent from input");
+      function(rows[static_cast<std::size_t>(found - pivots.begin())]);
+    }
+  };
+  if (input_is_left) {
+    std::optional<RightMatrixMultiplier> local_multiplier;
+    const RightMatrixMultiplier *multiply_by_offset = prepared_right;
+    if (!multiply_by_offset) {
+      local_multiplier.emplace(dimension_, right.offset_);
+      multiply_by_offset = &*local_multiplier;
+    }
+    forEachInputDirection(left, [&](const BitVector &direction) {
+      add(multiply_by_offset->multiply(direction));
+      for (const auto &right_direction : right.basis_.rows()) {
+        const RightMatrixMultiplier multiply_by_direction(
+            dimension_, right_direction);
+        add(multiply_by_direction.multiply(direction));
+      }
+    });
+  } else {
+    forEachInputDirection(right, [&](const BitVector &direction) {
+      const RightMatrixMultiplier multiply_by_direction(dimension_, direction);
+      add(multiply_by_direction.multiply(left.offset_));
+      for (const auto &left_direction : left.basis_.rows())
+        add(multiply_by_direction.multiply(left_direction));
+    });
+  }
+  if (changed) {
+    is_identity_ = false;
+    basis_.reduceInPlace(offset_);
+  }
+  return changed;
+}
+bool AffineSpace::joinTripleProductDelta(
+    const AffineSpace &left, const AffineSpace &middle,
+    const AffineSpace &right, const AffineDelta &input,
+    bool input_is_middle, AffineDelta *output) {
+  check(left.dimension_);
+  check(middle.dimension_);
+  check(right.dimension_);
+  if (input.empty() || left.empty_ || middle.empty_ || right.empty_)
+    return false;
+  if (input.full || empty_) {
+    const AffineSpace continuation = middle.product(right);
+    return output ? joinProductWithDelta(left, continuation, nullptr, output)
+                  : joinProduct(left, continuation, nullptr);
+  }
+  if (rank() == offset_.size())
+    return false;
+  bool changed = false;
+  auto full = [&] { return rank() == offset_.size(); };
+  auto add = [&](BitVector direction) {
+    if (full())
+      return;
+    std::size_t pivot;
+    const bool inserted = output
+                              ? basis_.insertWithPivot(std::move(direction),
+                                                       pivot)
+                              : basis_.insert(std::move(direction));
+    if (inserted && output)
+      output->pivots.push_back(pivot);
+    changed = inserted || changed;
+  };
+  auto forEachInputDirection = [&](const AffineSpace &space,
+                                   const auto &function) {
+    const auto &pivots = space.basis_.pivots();
+    const auto &rows = space.basis_.rows();
+    for (std::size_t pivot : input.pivots) {
+      const auto found = std::lower_bound(pivots.begin(), pivots.end(), pivot);
+      if (found == pivots.end() || *found != pivot)
+        throw std::logic_error("affine delta pivot is absent from input");
+      function(rows[static_cast<std::size_t>(found - pivots.begin())]);
+      if (full())
+        break;
+    }
+  };
+  if (input_is_middle) {
+    const RightMatrixMultiplier multiply_by_right_offset(
+        dimension_, right.offset_);
+    forEachInputDirection(middle, [&](const BitVector &direction) {
+      const RightMatrixMultiplier multiply_by_delta(dimension_, direction);
+      llvm::SmallVector<BitVector, 2> partials;
+      partials.push_back(multiply_by_delta.multiply(left.offset_));
+      for (const auto &left_direction : left.basis_.rows())
+        partials.push_back(multiply_by_delta.multiply(left_direction));
+      for (const auto &partial : partials)
+        add(multiply_by_right_offset.multiply(partial));
+      for (const auto &right_direction : right.basis_.rows()) {
+        if (full())
+          break;
+        const RightMatrixMultiplier multiply_by_right_direction(
+            dimension_, right_direction);
+        for (const auto &partial : partials)
+          add(multiply_by_right_direction.multiply(partial));
+      }
+    });
+  } else {
+    const AffineSpace prefix = left.product(middle);
+    forEachInputDirection(right, [&](const BitVector &direction) {
+      const RightMatrixMultiplier multiply_by_delta(dimension_, direction);
+      add(multiply_by_delta.multiply(prefix.offset_));
+      for (const auto &prefix_direction : prefix.basis_.rows())
+        add(multiply_by_delta.multiply(prefix_direction));
+    });
+  }
+  if (changed) {
+    is_identity_ = false;
+    basis_.reduceInPlace(offset_);
+  }
+  return changed;
 }
 AffineSpace AffineSpace::block(std::size_t offset,
                                std::size_t dimension) const {
@@ -364,6 +659,12 @@ bool AffineSemiring::combineWith(Weight &left, const Weight &right) const {
   check(right);
   return left.joinWith(right);
 }
+bool AffineSemiring::combineWithDelta(Weight &left, const Weight &right,
+                                     Delta *delta) const {
+  check(left);
+  check(right);
+  return left.joinWithDelta(right, delta);
+}
 AffineSemiring::Weight AffineSemiring::extend(const Weight &left,
                                               const Weight &right) const {
   check(left);
@@ -376,6 +677,23 @@ bool AffineSemiring::extendAndCombine(Weight &target, const Weight &left,
   check(left);
   check(right);
   return target.joinProduct(left, right);
+}
+bool AffineSemiring::extendAndCombineDelta(Weight &target,
+                                          const Weight &left,
+                                          const Weight &right,
+                                          Delta *delta) const {
+  check(target);
+  check(left);
+  check(right);
+  return target.joinProductWithDelta(left, right, nullptr, delta);
+}
+bool AffineSemiring::extendDeltaAndCombine(
+    Weight &target, const Weight &left, const Weight &right,
+    const Delta &input, bool input_is_left, Delta *output) const {
+  check(target);
+  check(left);
+  check(right);
+  return target.joinProductDelta(left, right, input, input_is_left, output);
 }
 AffineSemiring::PreparedWeight
 AffineSemiring::prepareWeight(const Weight &weight) const {
@@ -407,5 +725,48 @@ bool AffineSemiring::extendAndCombinePrepared(
   return prepared_right
              ? target.joinProduct(left, right, prepared_right.get())
              : target.joinProduct(left, right);
+}
+bool AffineSemiring::extendAndCombinePreparedDelta(
+    Weight &target, const Weight &left, const Weight &right,
+    const PreparedWeight &prepared_right, Delta *delta) const {
+  check(target);
+  check(left);
+  check(right);
+  return prepared_right
+             ? target.joinProductWithDelta(left, right, prepared_right.get(),
+                                           delta)
+             : target.joinProductWithDelta(left, right, nullptr, delta);
+}
+bool AffineSemiring::extendPreparedInputDeltaAndCombine(
+    Weight &target, const Weight &left, const Weight &right,
+    const PreparedWeight &prepared_right, const Delta &input,
+    Delta *output) const {
+  check(target);
+  check(left);
+  check(right);
+  return target.joinProductDelta(left, right, input, true, output,
+                                 prepared_right.get());
+}
+bool AffineSemiring::extendPushDeltaAndCombine(
+    Weight &target, const Weight &rule, const Weight &first,
+    const Weight &second, const Delta &input, bool input_is_first,
+    Delta *output) const {
+  check(target);
+  check(rule);
+  check(first);
+  check(second);
+  return target.joinTripleProductDelta(rule, first, second, input,
+                                       input_is_first, output);
+}
+void AffineSemiring::mergeDelta(Delta &target, Delta source) const {
+  if (target.full)
+    return;
+  if (source.full) {
+    target.pivots.clear();
+    target.full = true;
+    return;
+  }
+  target.pivots.reserve(target.pivots.size() + source.pivots.size());
+  target.pivots.append(source.pivots.begin(), source.pivots.end());
 }
 } // namespace lotus::cfl::interleaved_dyck::affine

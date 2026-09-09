@@ -270,10 +270,9 @@ control. An existing transition's new weight is propagated as well. Call
 references belong to the session and must not outlive it. A session references
 the base PDS and its precompiled post/pre rule indexes instead of copying them,
 so the PDS must outlive the session. The
-higher-level
-`SynchronizedSystem` can also accept new transfers between queries, but its
-next `postStar`/`preStar` rebuilds the pair; it does not automatically maintain
-a coordinated pair of incremental sessions.
+higher-level `SynchronizedSystem` can also accept new transfers between
+queries, but its next `postStar`/`preStar` rebuilds the pair; it does not
+automatically maintain a coordinated pair of incremental sessions.
 
 `RegularSet` has explicit state, transition and final-state construction for
 regular rather than singleton seeds. `postStar(pds, seed)` and
@@ -287,22 +286,12 @@ There is no stack-height, path-length, or iteration cutoff. Cycles in the
 finite automata represent unbounded stacks. Exact single-PDS saturation
 terminates over the stated finite-height semiring contract.
 
-The implementation materializes epsilon-composed edges and uses a flat
-transition arena with an append-only open-addressing index whose buckets store
-only integer IDs; collision checks reuse keys in the arena. Pre* waiting records
-retain those IDs in flat vectors with ID-pair deduplication, avoiding tree nodes and
-repeated transition-key lookup during push joins. Fixed push rules address
-their generated automaton states through precompiled integer slots.
-
-A conservative implementation bound uses `N` automaton states, `A` distinct
-stack symbols, `T <= N*N*(A+1)` possible transitions, `R` PDS rules, and `H`
-maximum strict promotions of one transition weight. Epsilon propagation costs
-at most `O(H*T*T)` edge-composition attempts; rule propagation contributes at
-most `O(H*R*N)` for post* or `O(H*R*N*N)` for pre*, before map and semiring
-operation costs. Storage is `O(T + R*N + N)` records (plus weights, seed input,
-and rule storage). This is deliberately conservative rather than an asserted
-tight bound. Boolean H is one. Graph all-pairs mode multiplies per-source work
-by the vertex count and additionally stores quadratic pair relations.
+The implementation materializes epsilon-composed edges. Transitions live in a
+flat arena with an append-only open-addressing ID index; pre* waiting records
+also retain integer IDs, and fixed push rules use precompiled generated-state
+slots. Complexity depends on the number of materialized transitions, strict
+weight promotions, and matching rules. Graph all-pairs mode repeats saturation
+per source and stores a quadratic pair relation.
 
 `Limits` can bound automaton states, stored transitions, or successful weight
 updates. Zero means unlimited. Counts include seed normalization and initial
@@ -324,10 +313,6 @@ cmake --build build --target CanaryInterleavedDyckSPDS \
 ctest --test-dir build -R interleaved_dyck_spds --output-on-failure
 
 build/bin/lotus-cfl-interleaved-dyck-spds --query 0 4 \
-  tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
-build/bin/lotus-cfl-interleaved-dyck-spds --query 0 4 --direction pre \
-  tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
-build/bin/lotus-cfl-interleaved-dyck-spds --queries demands.txt --pairs \
   tests/regress/CFL/InterleavedDyck/SPDS/crossing.dot
 ```
 
@@ -352,7 +337,3 @@ Use a Release or RelWithDebInfo build for performance comparisons; Debug leaves
 the template-heavy saturation and affine operations unoptimized.
 Its TSV/optional JSON output records wall time, facts, promotions, rules, and
 the instrumented projection, session-setup, saturation, and readout times.
-
-The existing shared DOT parser reads labeled edge lines, not standalone node
-declarations. Use `--vertex ID` for an isolated vertex or `Graph::addVertex` in
-C++. No Core parser changes are included in this patch.

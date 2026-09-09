@@ -9,11 +9,22 @@
 
 namespace lotus::cfl::interleaved_dyck::affine {
 
+struct AffineDelta {
+  llvm::SmallVector<std::size_t, 1> pivots;
+  bool full = false;
+  bool empty() const { return !full && pivots.empty(); }
+  void clear() {
+    pivots.clear();
+    full = false;
+  }
+};
+
 // Canonical reduced row-echelon basis over GF(2), with increasing pivots.
 class LinearBasis {
 public:
   explicit LinearBasis(std::size_t coordinates) : coordinates_(coordinates) {}
   bool insert(BitVector vector);
+  bool insertWithPivot(BitVector vector, std::size_t &new_pivot);
   bool insertBatch(llvm::SmallVectorImpl<BitVector> &vectors);
   void reduceInPlace(BitVector &vector) const;
   BitVector reduce(BitVector vector) const;
@@ -29,6 +40,7 @@ private:
   };
   friend class AffineSpace;
   bool insertEchelon(BitVector vector);
+  bool insertEchelonWithPivot(BitVector vector, std::size_t &new_pivot);
   void canonicalize();
   Storage &write();
   std::size_t coordinates_;
@@ -53,6 +65,7 @@ public:
   Matrix representative() const;
   bool addPoint(const Matrix &point);
   bool joinWith(const AffineSpace &other);
+  bool joinWithDelta(const AffineSpace &other, AffineDelta *delta);
   bool contains(const Matrix &point) const;
   bool contains(const AffineSpace &other) const;
   bool intersects(const AffineSpace &other) const;
@@ -67,6 +80,19 @@ private:
   friend class AffineSemiring;
   bool joinProduct(const AffineSpace &left, const AffineSpace &right,
                    const RightMatrixMultiplier *prepared_right);
+  bool joinProductWithDelta(const AffineSpace &left,
+                            const AffineSpace &right,
+                            const RightMatrixMultiplier *prepared_right,
+                            AffineDelta *delta);
+  bool joinProductDelta(const AffineSpace &left, const AffineSpace &right,
+                        const AffineDelta &input, bool input_is_left,
+                        AffineDelta *output,
+                        const RightMatrixMultiplier *prepared_right = nullptr);
+  bool joinTripleProductDelta(const AffineSpace &left,
+                              const AffineSpace &middle,
+                              const AffineSpace &right,
+                              const AffineDelta &input,
+                              bool input_is_middle, AffineDelta *output);
   bool addDirection(BitVector direction);
   void check(std::size_t dimension) const;
   std::size_t dimension_;
@@ -93,6 +119,7 @@ std::optional<SeparationCertificate> separate(const AffineSpace &left,
 class AffineSemiring {
 public:
   using Weight = AffineSpace;
+  using Delta = AffineDelta;
   using PreparedWeight = std::shared_ptr<const RightMatrixMultiplier>;
   explicit AffineSemiring(std::size_t dimension = 1);
   std::size_t dimension() const { return dimension_; }
@@ -101,15 +128,34 @@ public:
   Weight lift(const Matrix &matrix) const;
   Weight combine(const Weight &left, const Weight &right) const;
   bool combineWith(Weight &left, const Weight &right) const;
+  bool combineWithDelta(Weight &left, const Weight &right,
+                        Delta *delta) const;
   Weight extend(const Weight &left, const Weight &right) const;
   bool extendAndCombine(Weight &target, const Weight &left,
                         const Weight &right) const;
+  bool extendAndCombineDelta(Weight &target, const Weight &left,
+                             const Weight &right, Delta *delta) const;
+  bool extendDeltaAndCombine(Weight &target, const Weight &left,
+                             const Weight &right, const Delta &input,
+                             bool input_is_left, Delta *output) const;
   PreparedWeight prepareWeight(const Weight &weight) const;
   Weight extendPrepared(const Weight &left, const Weight &right,
                         const PreparedWeight &prepared_right) const;
   bool extendAndCombinePrepared(Weight &target, const Weight &left,
                                 const Weight &right,
                                 const PreparedWeight &prepared_right) const;
+  bool extendAndCombinePreparedDelta(
+      Weight &target, const Weight &left, const Weight &right,
+      const PreparedWeight &prepared_right, Delta *delta) const;
+  bool extendPreparedInputDeltaAndCombine(
+      Weight &target, const Weight &left, const Weight &right,
+      const PreparedWeight &prepared_right, const Delta &input,
+      Delta *output) const;
+  bool extendPushDeltaAndCombine(Weight &target, const Weight &rule,
+                                 const Weight &first, const Weight &second,
+                                 const Delta &input, bool input_is_first,
+                                 Delta *output) const;
+  void mergeDelta(Delta &target, Delta source) const;
 
 private:
   void check(const Weight &weight) const;
