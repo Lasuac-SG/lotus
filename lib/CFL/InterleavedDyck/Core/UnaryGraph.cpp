@@ -1,18 +1,16 @@
 #include "CFL/InterleavedDyck/Core/UnaryGraph.h"
 
 #include "CFL/InterleavedDyck/Core/BidirectedDyck.h"
+#include "CFL/InterleavedDyck/Core/DisjointSets.h"
 
-#include <array>
-#include <limits>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 namespace lotus::cfl::interleaved_dyck {
 namespace {
-
-constexpr std::size_t kNone = std::numeric_limits<std::size_t>::max();
 
 template <typename T> void hashCombine(std::size_t &seed, const T &value) {
   seed ^= std::hash<T>{}(value) + 0x9e3779b9U + (seed << 6U) + (seed >> 2U);
@@ -86,8 +84,9 @@ UnaryProjection projectToUnary(const Graph &input,
   }
   result.original_arc_count = unique.size();
 
-  const std::vector<UnaryEdge> original_edges(unique.begin(), unique.end());
-  for (const UnaryEdge &edge : original_edges) {
+  result.graph.edges.assign(unique.begin(), unique.end());
+  for (std::size_t i = 0; i < result.original_arc_count; ++i) {
+    const UnaryEdge edge = result.graph.edges[i];
     const UnaryEdge reverse{edge.target, edge.source, complement(edge.label)};
     if (unique.count(reverse) != 0U) {
       continue;
@@ -101,83 +100,79 @@ UnaryProjection projectToUnary(const Graph &input,
     }
     unique.insert(reverse);
     ++result.added_reverse_arcs;
+    result.graph.edges.push_back(reverse);
   }
-  result.graph.edges.assign(unique.begin(), unique.end());
   return result;
 }
 
 UnaryQuotient sparsifyUnaryGraph(const UnaryGraph &graph) {
-  std::vector<StatePair> epsilon_edges;
-  std::vector<LabeledStateEdge> closing_edges;
-  epsilon_edges.reserve(graph.edges.size());
-  closing_edges.reserve(graph.edges.size() / 2);
-  for (const UnaryEdge &edge : graph.edges) {
-    switch (edge.label) {
-    case UnaryLabel::Epsilon:
-      epsilon_edges.push_back({edge.source, edge.target});
-      break;
-    case UnaryLabel::CloseFirst:
-      closing_edges.push_back({edge.source, edge.target, 0});
-      break;
-    case UnaryLabel::CloseSecond:
-      closing_edges.push_back({edge.source, edge.target, 1});
-      break;
-    case UnaryLabel::OpenFirst:
-    case UnaryLabel::OpenSecond:
-      break;
-    }
-  }
-
-  const BidirectedDyckResult dyck = BidirectedDyckComponentSolver{}.solve(
-      graph.vertex_count, 2, epsilon_edges, closing_edges);
-  const std::vector<std::size_t> &components = dyck.component;
+  auto dyck = BidirectedDyckComponentSolver{}.solveGenerated(
+      graph.vertex_count, 2,
+      [&](const BidirectedDyckComponentSolver::EpsilonVisitor &visit) {
+        for (const auto &edge : graph.edges)
+          if (edge.label == UnaryLabel::Epsilon && edge.source < edge.target)
+            visit(edge.source, edge.target);
+      },
+      [&](const BidirectedDyckComponentSolver::ClosingVisitor &visit) {
+        for (const auto &edge : graph.edges) {
+          if (edge.label == UnaryLabel::CloseFirst)
+            visit(edge.source, edge.target, 0);
+          else if (edge.label == UnaryLabel::CloseSecond)
+            visit(edge.source, edge.target, 1);
+        }
+      },
+      graph.edges.size() / 2, true);
 
   UnaryQuotient result;
   result.dyck = dyck.stats;
-  result.original_to_quotient.resize(graph.vertex_count);
-  std::vector<std::size_t> quotient_indices(graph.vertex_count, kNone);
-  std::size_t quotient_count = 0;
-  for (std::size_t vertex = 0; vertex < graph.vertex_count; ++vertex) {
-    const std::size_t component = components[vertex];
-    if (quotient_indices[component] == kNone) {
-      quotient_indices[component] = quotient_count++;
-    }
-    result.original_to_quotient[vertex] = quotient_indices[component];
+  result.graph.vertex_count = dyck.stats.components;
+  result.original_to_quotient = std::move(dyck.component);
+  result.graph.edges.reserve(2 * dyck.quotient_closing_edges.size());
+  for (const auto &edge : dyck.quotient_closing_edges) {
+    const auto close =
+        edge.label == 0 ? UnaryLabel::CloseFirst : UnaryLabel::CloseSecond;
+    result.graph.edges.push_back({edge.source, edge.target, close});
+    result.graph.edges.push_back({edge.target, edge.source, complement(close)});
   }
-  result.graph.vertex_count = quotient_count;
+  return result;
+}
 
-  std::vector<std::array<std::size_t, 2>> close_targets(quotient_count);
-  for (auto &targets : close_targets) {
-    targets.fill(kNone);
+std::vector<UnaryWeakComponent> splitWeakComponents(const UnaryGraph &graph) {
+  std::size_t count = 0;
+  std::vector<std::size_t> groups;
+  {
+    detail::DisjointSets sets(graph.vertex_count);
+    for (const auto &edge : graph.edges)
+      sets.join(edge.source, edge.target);
+    groups = sets.takeComponents(count);
   }
-  for (const UnaryEdge &edge : graph.edges) {
-    std::size_t label = 0;
-    if (edge.label == UnaryLabel::CloseSecond) {
-      label = 1;
-    } else if (edge.label != UnaryLabel::CloseFirst) {
-      continue;
-    }
-    const std::size_t source = result.original_to_quotient[edge.source];
-    const std::size_t target = result.original_to_quotient[edge.target];
-    std::size_t &stored = close_targets[source][label];
-    if (stored == kNone) {
-      stored = target;
-    } else if (stored != target) {
-      throw std::logic_error(
-          "sparsified component has two closing targets for one label");
-    }
+  std::vector<UnaryWeakComponent> result(count);
+  std::vector<std::size_t> vertex_counts(count, 0), edge_counts(count, 0);
+  for (auto group : groups)
+    ++vertex_counts[group];
+  for (const auto &edge : graph.edges)
+    ++edge_counts[groups[edge.source]];
+  for (std::size_t c = 0; c < count; ++c) {
+    result[c].original_vertices.reserve(vertex_counts[c]);
+    result[c].graph.edges.reserve(edge_counts[c]);
+    result[c].graph.vertex_count = vertex_counts[c];
   }
-  for (std::size_t source = 0; source < quotient_count; ++source) {
-    for (std::size_t label = 0; label < 2; ++label) {
-      const std::size_t target = close_targets[source][label];
-      if (target == kNone) {
-        continue;
-      }
-      const UnaryLabel close =
-          label == 0 ? UnaryLabel::CloseFirst : UnaryLabel::CloseSecond;
-      result.graph.edges.push_back({source, target, close});
-      result.graph.edges.push_back({target, source, complement(close)});
-    }
+  std::vector<std::size_t> local(graph.vertex_count);
+  for (std::size_t v = 0; v < graph.vertex_count; ++v) {
+    auto &component = result[groups[v]];
+    local[v] = component.original_vertices.size();
+    component.original_vertices.push_back(v);
+  }
+  for (const auto &edge : graph.edges) {
+    auto &component = result[groups[edge.source]];
+    component.graph.edges.push_back(
+        {local[edge.source], local[edge.target], edge.label});
+    if (edge.label == UnaryLabel::OpenFirst ||
+        edge.label == UnaryLabel::CloseFirst)
+      component.counter_mask |= 1;
+    if (edge.label == UnaryLabel::OpenSecond ||
+        edge.label == UnaryLabel::CloseSecond)
+      component.counter_mask |= 2;
   }
   return result;
 }

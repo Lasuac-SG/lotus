@@ -123,5 +123,33 @@ TEST(InterleavedDyckUnaryFixedCounterTest,
   EXPECT_EQ(result.stats().added_reverse_arcs, 2U);
 }
 
+TEST(InterleavedDyckUnaryFixedCounterTest,
+     UsesLocalBoundsAndSingleCounterFastPaths) {
+  Graph graph;
+  const auto path = bidirectedLinearGraph({"+1", "+2", "-1", "-2"});
+  for (Vertex offset : {0, 100})
+    for (const auto &edge : path.edges())
+      graph.addEdge(edge.source + offset, edge.target + offset, edge.label);
+  graph.addVertex(999);
+  FixedCounterOptions options;
+  options.sparsify = false;
+  const auto result = FixedCounterSolver{}.solve(graph, options);
+  EXPECT_EQ(result.stats().execution.weak_components, 3u);
+  EXPECT_EQ(result.stats().execution.trivial_components, 1u);
+  EXPECT_EQ(result.stats().counter_bound, 480u);
+  EXPECT_EQ(result.stats().control_states, 4810u);
+  EXPECT_EQ(result.stats().translated_arcs, 7688u);
+  EXPECT_LT(result.stats().dyck.epsilon_components,
+            result.stats().control_states);
+  EXPECT_TRUE(result.connected(0, 4));
+  EXPECT_TRUE(result.connected(100, 104));
+  EXPECT_FALSE(result.connected(0, 100));
+  const auto single =
+      FixedCounterSolver{}.solve(bidirectedLinearGraph({"+2", "-2"}), options);
+  EXPECT_TRUE(single.connected(0, 2));
+  EXPECT_EQ(single.stats().execution.single_counter_components, 1u);
+  EXPECT_EQ(single.stats().control_states, 0u);
+}
+
 } // namespace
 } // namespace lotus::cfl::interleaved_dyck::unary

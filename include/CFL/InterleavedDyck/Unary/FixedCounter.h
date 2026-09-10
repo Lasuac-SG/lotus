@@ -13,11 +13,12 @@ using interleaved_dyck::Graph;
 using interleaved_dyck::Vertex;
 
 struct FixedCounterStats {
+  interleaved_dyck::UnaryExecutionStats execution;
   std::size_t input_vertices = 0;
   std::size_t input_arcs = 0;
   std::size_t quotient_vertices = 0;
   std::size_t quotient_arcs = 0;
-  std::size_t counter_bound = 0;
+  std::size_t counter_bound = 0; // Maximum local bound actually constructed.
   std::size_t control_states = 0;
   std::size_t translated_arcs = 0;
   std::size_t epsilon_edges = 0;
@@ -28,6 +29,7 @@ struct FixedCounterStats {
   bool sparsified = false;
   interleaved_dyck::BidirectedDyckStats quotient_dyck;
   interleaved_dyck::BidirectedDyckStats dyck;
+  interleaved_dyck::BidirectedDyckStats single_counter_dyck;
 };
 
 class FixedCounterResult {
@@ -57,7 +59,9 @@ struct FixedCounterOptions {
 /// Exact bounded-path algorithm of Kjelstrom and Pavlogiannis (POPL 2022).
 ///
 /// Counter 2 is stored in finite control up to 18*n^2+6*n; counter 1 remains
-/// the height of a bidirected one-counter graph.
+/// the height of a bidirected one-counter graph. Here n is the size of each
+/// weak component after optional sparsification. Trivial and single-counter
+/// components bypass lifting; construction counts sum the remaining components.
 class FixedCounterSolver {
 public:
   FixedCounterResult solve(const Graph &graph,

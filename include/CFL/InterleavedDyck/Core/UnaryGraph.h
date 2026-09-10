@@ -4,6 +4,7 @@
 #include "CFL/InterleavedDyck/Core/Graph.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace lotus::cfl::interleaved_dyck {
@@ -34,6 +35,32 @@ struct UnaryEdge {
 struct UnaryGraph {
   std::size_t vertex_count = 0;
   std::vector<UnaryEdge> edges;
+};
+
+struct UnaryWeakComponent {
+  UnaryGraph graph;
+  std::vector<std::size_t> original_vertices;
+  unsigned counter_mask = 0; // Bit 0: first counter; bit 1: second counter.
+};
+
+// Each local graph uses dense vertex IDs; components are independent and can
+// be solved sequentially. Bidirected graphs have no arcs between components.
+std::vector<UnaryWeakComponent> splitWeakComponents(const UnaryGraph &graph);
+
+struct UnaryExecutionStats {
+  std::size_t weak_components = 0;
+  std::size_t largest_component_vertices = 0;
+  std::size_t trivial_components = 0;
+  std::size_t single_counter_components = 0;
+  // Peak construction container payload, not process RSS. Excludes the input,
+  // projected/component graphs, final output map, and allocator overhead.
+  std::size_t peak_working_bytes = 0;
+  std::uint64_t projection_us = 0;
+  std::uint64_t preprocessing_us = 0;
+  std::uint64_t decomposition_us = 0;
+  std::uint64_t solving_us = 0;
+  std::uint64_t lifting_us = 0;
+  std::uint64_t total_us = 0;
 };
 
 struct UnaryProjection {

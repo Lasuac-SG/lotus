@@ -12,7 +12,13 @@ using interleaved_dyck::Graph;
 using interleaved_dyck::Vertex;
 
 /// Construction statistics for adaptive unary interleaved-Dyck reachability.
+/// Arm counts sum the mixed-counter weak components actually constructed.
+/// threshold is their maximum K (or the requested K for solveShallow).
 struct AdaptiveStats {
+  interleaved_dyck::UnaryExecutionStats execution;
+  std::uint64_t vertical_us = 0;
+  std::uint64_t horizontal_us = 0;
+  std::uint64_t merge_us = 0;
   std::size_t input_vertices = 0;
   std::size_t input_arcs = 0;
   std::size_t quotient_vertices = 0;
@@ -29,6 +35,7 @@ struct AdaptiveStats {
   interleaved_dyck::BidirectedDyckStats quotient_dyck;
   interleaved_dyck::BidirectedDyckStats vertical_dyck;
   interleaved_dyck::BidirectedDyckStats horizontal_dyck;
+  interleaved_dyck::BidirectedDyckStats single_counter_dyck;
 };
 
 /// A component partition of the input vertices.
@@ -65,8 +72,9 @@ struct AdaptiveOptions {
 /// unary projection.
 class AdaptiveSolver {
 public:
-  /// Compute the exact full component partition using K = 6n after optional
-  /// quotient sparsification.
+  /// Compute the exact full partition with K = 6n independently in each weak
+  /// component after optional sparsification. Construction counts are summed
+  /// across components; threshold is the largest threshold actually used.
   AdaptiveResult solve(const Graph &graph,
                        const AdaptiveOptions &options = {}) const;
 

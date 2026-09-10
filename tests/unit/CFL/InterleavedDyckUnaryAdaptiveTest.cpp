@@ -5,8 +5,11 @@
 #include <array>
 #include <deque>
 #include <exception>
+#include <limits>
 #include <random>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -347,6 +350,225 @@ TEST(InterleavedDyckUnaryAdaptiveTest,
                   sparsified.connected(source, target));
       }
     }
+  }
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     DecomposesFullButPreservesShallowThresholds) {
+  Graph graph;
+  const std::array<Label, 4> labels = {
+      Label::openParenthesis(0), Label::openBracket(0),
+      Label::closeParenthesis(0), Label::closeBracket(0)};
+  for (Vertex offset : {-50, 100})
+    for (Vertex i = 0; i < 4; ++i) {
+      graph.addEdge(offset + i, offset + i + 1, labels[i]);
+      graph.addEdge(offset + i + 1, offset + i, labels[i].complement());
+    }
+  graph.addVertex(999);
+  AdaptiveOptions options;
+  options.sparsify = false;
+  const auto full = AdaptiveSolver{}.solve(graph, options);
+  EXPECT_EQ(full.stats().execution.weak_components, 3u);
+  EXPECT_EQ(full.stats().execution.largest_component_vertices, 5u);
+  EXPECT_EQ(full.stats().threshold, 30u);
+  EXPECT_EQ(full.stats().vertical_control_states, 2u * 5u * 31u);
+  EXPECT_TRUE(full.connected(-50, -46));
+  EXPECT_TRUE(full.connected(100, 104));
+  EXPECT_FALSE(full.connected(-50, 100));
+  EXPECT_FALSE(full.connected(999, 100));
+  for (std::size_t threshold : {0u, 1u, 2u}) {
+    const auto shallow = AdaptiveSolver{}.solveShallow(graph, threshold);
+    EXPECT_EQ(shallow.stats().threshold, threshold);
+    EXPECT_EQ(shallow.stats().vertical_control_states, 10u * (threshold + 1));
+    EXPECT_EQ(shallow.connected(-50, -46), threshold != 0);
+    EXPECT_EQ(shallow.connected(100, 104), threshold != 0);
+    EXPECT_FALSE(shallow.connected(-50, 100));
+  }
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     SkipsTrivialAndSingleCounterStateSpaces) {
+  Graph graph;
+  for (Vertex v = 0; v < 4096; ++v) {
+    graph.addVertex(v);
+    if (v % 2 == 0) {
+      graph.addEdge(v, v, Label::openParenthesis(0));
+      graph.addEdge(v, v, Label::closeParenthesis(0));
+      graph.addEdge(v, v, Label::openBracket(0));
+      graph.addEdge(v, v, Label::closeBracket(0));
+    }
+  }
+  const auto isolated = AdaptiveSolver{}.solve(graph);
+  EXPECT_EQ(isolated.stats().execution.trivial_components, 4096u);
+  EXPECT_EQ(isolated.stats().vertical_control_states, 0u);
+  EXPECT_EQ(isolated.components().size(), 4096u);
+  EXPECT_FALSE(isolated.connected(0, 1));
+  EXPECT_LT(isolated.stats().execution.peak_working_bytes, 4096u * 256u);
+
+  const auto first = bidirectedLinearGraph({"+1", "-1"});
+  const auto second = bidirectedLinearGraph({"+2", "-2"});
+  for (const auto &input : {first, second}) {
+    const auto result = AdaptiveSolver{}.solveShallow(input, 0);
+    EXPECT_TRUE(result.connected(0, 2));
+    EXPECT_EQ(result.stats().execution.single_counter_components, 1u);
+    EXPECT_EQ(result.stats().vertical_control_states, 0u);
+    EXPECT_EQ(result.stats().horizontal_control_states, 0u);
+    EXPECT_EQ(result.stats().single_counter_dyck.states, 3u);
+  }
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     StreamsArmsAndCompactsEpsilonComponents) {
+  Graph graph;
+  constexpr Vertex n = 64;
+  for (Vertex v = 0; v < n; ++v) {
+    graph.addEdge(v, (v + 1) % n, Label::closeParenthesis(0));
+    graph.addEdge((v + 1) % n, v, Label::openParenthesis(0));
+    graph.addEdge(v, (v + 3) % n, Label::closeBracket(0));
+    graph.addEdge((v + 3) % n, v, Label::openBracket(0));
+  }
+  const auto result = AdaptiveSolver{}.solve(graph);
+  const auto &stats = result.stats();
+  const auto states = n * (6 * n + 1);
+  ASSERT_EQ(stats.quotient_vertices, static_cast<std::size_t>(n));
+  EXPECT_EQ(stats.vertical_control_states, static_cast<std::size_t>(states));
+  EXPECT_EQ(stats.vertical_dyck.epsilon_components,
+            static_cast<std::size_t>(n));
+  EXPECT_EQ(stats.horizontal_dyck.epsilon_components,
+            static_cast<std::size_t>(n));
+  EXPECT_EQ(stats.vertical_dyck.closing_edges,
+            static_cast<std::size_t>(states));
+  EXPECT_LE(stats.vertical_dyck.stored_closing_edges,
+            static_cast<std::size_t>(n));
+  EXPECT_EQ(stats.vertical_dyck.epsilon_edges,
+            static_cast<std::size_t>(6 * n * n));
+  EXPECT_LT(stats.execution.peak_working_bytes,
+            static_cast<std::size_t>(states * 64));
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     ChecksOverflowForMixedShallowConstruction) {
+  const auto graph = bidirectedLinearGraph({"+1", "+2"});
+  EXPECT_THROW(AdaptiveSolver{}.solveShallow(
+                   graph, std::numeric_limits<std::size_t>::max()),
+               std::overflow_error);
+  Graph empty;
+  EXPECT_TRUE(AdaptiveSolver{}.solve(empty).components().empty());
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     GeneratedDyckMatchesIndependentEquivalenceClosure) {
+  using interleaved_dyck::BidirectedDyckComponentSolver;
+  using interleaved_dyck::LabeledStateEdge;
+  using interleaved_dyck::StatePair;
+  std::mt19937 random(0x51a7);
+  for (unsigned trial = 0; trial < 100; ++trial) {
+    const std::size_t n = 1 + random() % 8;
+    std::vector<StatePair> epsilon;
+    std::vector<LabeledStateEdge> closing;
+    std::vector<std::vector<bool>> expected(n, std::vector<bool>(n, false));
+    for (std::size_t v = 0; v < n; ++v)
+      expected[v][v] = true;
+    for (unsigned e = 0; e < 4; ++e) {
+      const std::size_t a = random() % n, b = random() % n;
+      epsilon.push_back({a, b});
+      expected[a][b] = expected[b][a] = true;
+    }
+    for (unsigned e = 0; e < 16; ++e)
+      closing.push_back({random() % n, random() % n, random() % 2});
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (std::size_t a = 0; a < n; ++a)
+        for (std::size_t b = 0; b < n; ++b)
+          for (std::size_t c = 0; c < n; ++c)
+            if (expected[a][b] && expected[b][c] && !expected[a][c]) {
+              expected[a][c] = true;
+              changed = true;
+            }
+      for (const auto &a : closing)
+        for (const auto &b : closing)
+          if (a.label == b.label && expected[a.source][b.source] &&
+              !expected[a.target][b.target]) {
+            expected[a.target][b.target] = expected[b.target][a.target] = true;
+            changed = true;
+          }
+    }
+    unsigned epsilon_calls = 0, closing_calls = 0;
+    const auto generated = BidirectedDyckComponentSolver{}.solveGenerated(
+        n, 2,
+        [&](const auto &visit) {
+          ++epsilon_calls;
+          for (const auto &e : epsilon)
+            visit(e.source, e.target);
+        },
+        [&](const auto &visit) {
+          ++closing_calls;
+          for (const auto &e : closing)
+            visit(e.source, e.target, e.label);
+        },
+        closing.size(), true);
+    EXPECT_EQ(epsilon_calls, 1u);
+    EXPECT_EQ(closing_calls, 1u);
+    using Arc = std::tuple<std::size_t, std::size_t, std::size_t>;
+    std::set<Arc> projected, summary;
+    for (const auto &edge : closing)
+      projected.emplace(generated.component[edge.source],
+                        generated.component[edge.target], edge.label);
+    for (const auto &edge : generated.quotient_closing_edges)
+      EXPECT_TRUE(summary.emplace(edge.source, edge.target, edge.label).second);
+    EXPECT_EQ(summary, projected);
+    const auto explicit_edges =
+        BidirectedDyckComponentSolver{}.solve(n, 2, epsilon, closing);
+    for (std::size_t a = 0; a < n; ++a) {
+      EXPECT_LT(generated.component[a], generated.stats.components);
+      for (std::size_t b = 0; b < n; ++b) {
+        EXPECT_EQ(generated.component[a] == generated.component[b],
+                  expected[a][b]);
+        EXPECT_EQ(explicit_edges.component[a] == explicit_edges.component[b],
+                  expected[a][b]);
+      }
+    }
+  }
+  EXPECT_THROW(BidirectedDyckComponentSolver{}.solve(2, 1, {{0, 2}}, {}),
+               std::out_of_range);
+  EXPECT_THROW(BidirectedDyckComponentSolver{}.solve(2, 1, {}, {{0, 1, 1}}),
+               std::out_of_range);
+  EXPECT_THROW(BidirectedDyckComponentSolver{}.solve(2, 1, {}, {{0, 2, 0}}),
+               std::out_of_range);
+  EXPECT_THROW(BidirectedDyckComponentSolver{}.solve(2, 0, {}, {}),
+               std::invalid_argument);
+}
+
+TEST(InterleavedDyckUnaryAdaptiveTest,
+     SparsificationReturnsFunctionalDenseQuotient) {
+  Graph graph;
+  constexpr Vertex n = 32;
+  for (Vertex source = 0; source < n; ++source)
+    for (Vertex target = 0; target < n; ++target)
+      for (const auto label :
+           {Label::closeParenthesis(0), Label::closeBracket(0)}) {
+        graph.addEdge(source, target, label);
+        graph.addEdge(target, source, label.complement());
+      }
+  const auto projection = interleaved_dyck::projectToUnary(graph);
+  const auto quotient = interleaved_dyck::sparsifyUnaryGraph(projection.graph);
+  EXPECT_EQ(quotient.graph.vertex_count, 1u);
+  EXPECT_EQ(quotient.graph.edges.size(), 4u);
+  EXPECT_EQ(quotient.original_to_quotient.size(), static_cast<std::size_t>(n));
+  for (const auto component : quotient.original_to_quotient)
+    EXPECT_EQ(component, 0u);
+  EXPECT_EQ(quotient.dyck.closing_edges, static_cast<std::size_t>(2 * n * n));
+  EXPECT_LE(quotient.dyck.scanned_closing_edges,
+            2 * quotient.dyck.stored_closing_edges);
+  std::set<std::tuple<std::size_t, std::size_t, unsigned>> unique;
+  for (const auto &edge : quotient.graph.edges) {
+    EXPECT_TRUE(unique
+                    .emplace(edge.source, edge.target,
+                             static_cast<unsigned>(edge.label))
+                    .second);
+    EXPECT_EQ(edge.source, 0u);
+    EXPECT_EQ(edge.target, 0u);
   }
 }
 

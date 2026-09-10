@@ -48,13 +48,16 @@ height labels through a parent map, and merges both arm partitions at their
 boundary.
 
 `AdaptiveSolver::solve(graph)` first applies the fixed-alphabet quotient,
-chooses `K = 6 * |V(quotient)|`, computes the shallow partition, and lifts it
-to the input vertices. Set `AdaptiveOptions::sparsify` to `false` for the
-direct construction with `K = 6 * |V(input)|`.
+splits the quotient into weak components, chooses `K = 6 * n` separately for
+each component of size `n`, and lifts the resulting partition to the input
+vertices. Components are processed sequentially. Set `AdaptiveOptions::sparsify`
+to `false` to skip the quotient; decomposition and fast paths still apply.
+`solveShallow` also decomposes the graph but preserves the caller's K in every
+component and never applies the full-reachability quotient.
 
 ### Fixed counter (POPL 2022)
 
-For a processed graph with `n` vertices, `FixedCounterSolver` uses
+For each mixed-counter weak component with `n` vertices, `FixedCounterSolver` uses
 
 ```text
 C = 18*n^2 + 6*n.
@@ -66,10 +69,65 @@ labels remain the opening/closing labels of a bidirected one-counter graph.
 Vertices `u` and `v` are connected exactly when `(u,0)` and `(v,0)` are in the
 same zero-height component.
 
-The backend stores closing and epsilon edges explicitly and obtains matching
-opening edges from bidirectedness. This is a representation optimization of
-Algorithm 1, not a semantic change. Set `FixedCounterOptions::sparsify` to
-`false` for the literal construction on the supplied graph.
+Both solvers skip singleton components and solve single-counter components
+directly. The latter optimization is also exact for every shallow K because
+the unused counter stays zero.
+
+The shared backend consumes generated transitions without building expanded
+edge vectors. Epsilon connections are emitted once as undirected connections
+and contracted by union-find before allocating closing-edge tables. These
+tables use dense epsilon-component IDs; repeated adjacent targets in each
+source/label list share one pool entry. Final Dyck IDs are dense as well.
+This changes representation and scheduling, not reachability. Disabling
+sparsification retains the local fixed-counter construction for mixed components.
+
+Adaptive finishes vertical labeling and sorting before constructing the
+horizontal arm. Sort scratch is released before allocating the merge DSU,
+parent/representative tables use compact component counts, and only the queried
+zero-state roots receive final identifiers. FixedCounter likewise avoids a
+full lifted-state identifiers array. Result queries retain only the input
+vertex partition.
+
+### Complexity and measurements
+
+Sparsification is preprocessing. For a unary input with `N` vertices and `M`
+arcs, it takes `O((N+M) alpha(N))` amortized time and `O(N+M)` space for the
+fixed alphabet of two counters. Unary projection before it uses hash-based
+deduplication and has expected `O(N+M)` time. The quotient has `q <= N` vertices
+and at most `4q` arcs: at most one closing target per component per counter,
+plus each closing arc's opening reverse. Epsilon arcs are contracted away.
+
+The implementation consumes generated input edges, allocates closing tables
+after epsilon contraction, reuses the backend's dense component mapping, and
+exports its final functional closing lists directly. It does not renumber an
+already-dense map or rescan the original graph to construct quotient edges.
+Adaptive also reuses this exported summary for its vertical parent map.
+These changes reduce memory traffic and constants, not the inverse-Ackermann
+factor. Reading the input already requires `Omega(N+M)` work.
+
+With quotient component sizes `n_i`, the default Adaptive construction uses
+`O(sum_i n_i^2)` finite control and near-quadratic time with union-find factors,
+in addition to preprocessing and lifting. Its sequential construction workspace
+depends on the largest component. FixedCounter's mixed-component construction
+remains `O(sum_i n_i^3)` states; streaming does not remove that exponent.
+
+For an unquotiented graph with `n` vertices, `m` arcs and caller-supplied K,
+Adaptive's construction costs `O((n+m)(K+1))` up to union-find factors.
+`--direct` is therefore not a near-quadratic guarantee on dense graphs.
+
+`stats().execution` reports projection, preprocessing, decomposition, solving,
+lifting, and total microseconds, component sizes and fast-path counts.
+Adaptive additionally reports vertical, horizontal and merge microseconds.
+Dyck statistics distinguish generated closing edges, stored pool entries and
+scanned entries, and report epsilon contraction, ingestion and saturation time.
+Construction counts sum actual mixed-component work; threshold/bound fields
+report the maximum used (shallow queries report the requested K).
+
+`peak_working_bytes` estimates construction container payload, excluding input
+and component graphs, final output maps, allocator overhead and temporary
+reallocation peaks. With `--stats`, macOS/Linux also report process peak RSS,
+which includes parsing and allocator retention. This is a process high-water
+mark, not a per-phase memory measurement.
 
 ## C++ API
 
@@ -98,7 +156,8 @@ build/bin/lotus-cfl-interleaved-dyck-unary \
 ```
 
 `--direct` disables quotient sparsification. `--shallow K` is specific to the
-adaptive algorithm. `--print-pairs` materializes the component relation.
+adaptive algorithm. `--print-pairs` groups vertices by component and streams
+non-reflexive pairs in `O(|V| + output)` time without storing a pair set.
 `--bidirect` explicitly selects `AddMissingReverseEdges`; output always states
 the selected algorithm and exactness guarantee.
 

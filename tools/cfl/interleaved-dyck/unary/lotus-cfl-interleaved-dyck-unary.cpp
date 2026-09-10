@@ -13,7 +13,13 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
+
+#if defined(__APPLE__) || defined(__linux__)
+#include <sys/resource.h>
+#endif
 
 namespace interleaved_dyck = lotus::cfl::interleaved_dyck;
 namespace unary = lotus::cfl::interleaved_dyck::unary;
@@ -146,13 +152,52 @@ template <typename Result> std::size_t componentCount(const Result &result) {
 template <typename Result>
 void printPairs(std::ostream &output, const interleaved_dyck::Graph &graph,
                 const Result &result) {
-  for (interleaved_dyck::Vertex source : graph.vertices()) {
-    for (interleaved_dyck::Vertex target : graph.vertices()) {
-      if (source != target && result.connected(source, target)) {
-        output << source << ' ' << target << '\n';
-      }
-    }
+  std::unordered_map<std::size_t, std::vector<interleaved_dyck::Vertex>> groups;
+  for (auto vertex : graph.vertices())
+    groups[result.component(vertex)].push_back(vertex);
+  for (const auto &[_, vertices] : groups)
+    for (auto source : vertices)
+      for (auto target : vertices)
+        if (source != target)
+          output << source << ' ' << target << '\n';
+}
+
+void printExecution(std::ostream &output,
+                    const interleaved_dyck::UnaryExecutionStats &stats) {
+  output << "  weak components/largest: " << stats.weak_components << '/'
+         << stats.largest_component_vertices << '\n'
+         << "  trivial/single-counter components: " << stats.trivial_components
+         << '/' << stats.single_counter_components << '\n'
+         << "  projection/preprocessing/decomposition (us): "
+         << stats.projection_us << '/' << stats.preprocessing_us << '/'
+         << stats.decomposition_us << '\n'
+         << "  solving/lifting/total (us): " << stats.solving_us << '/'
+         << stats.lifting_us << '/' << stats.total_us << '\n'
+         << "  peak construction payload estimate (bytes): "
+         << stats.peak_working_bytes << '\n';
+#if defined(__APPLE__) || defined(__linux__)
+  struct rusage usage{};
+  if (getrusage(RUSAGE_SELF, &usage) == 0) {
+    std::uint64_t bytes = static_cast<std::uint64_t>(usage.ru_maxrss);
+#if defined(__linux__)
+    bytes *= 1024;
+#endif
+    output << "  process peak RSS (bytes): " << bytes << '\n';
   }
+#endif
+}
+
+void printDyck(std::ostream &output, std::string_view name,
+               const interleaved_dyck::BidirectedDyckStats &stats) {
+  output << "  " << name << " epsilon components: " << stats.epsilon_components
+         << '\n'
+         << "  " << name
+         << " generated/stored/scanned closing edges: " << stats.closing_edges
+         << '/' << stats.stored_closing_edges << '/'
+         << stats.scanned_closing_edges << '\n'
+         << "  " << name
+         << " epsilon/closing/saturation (us): " << stats.epsilon_us << '/'
+         << stats.closing_us << '/' << stats.saturation_us << '\n';
 }
 
 template <typename Result>
@@ -176,6 +221,13 @@ void printAdaptiveResult(std::ostream &output, const CommandLine &command_line,
       result);
   if (command_line.stats) {
     const unary::AdaptiveStats &stats = result.stats();
+    printExecution(output, stats.execution);
+    output << "  vertical/horizontal/merge (us): " << stats.vertical_us << '/'
+           << stats.horizontal_us << '/' << stats.merge_us << '\n';
+    printDyck(output, "vertical", stats.vertical_dyck);
+    printDyck(output, "horizontal", stats.horizontal_dyck);
+    printDyck(output, "single-counter", stats.single_counter_dyck);
+    printDyck(output, "quotient", stats.quotient_dyck);
     output << "  input vertices/arcs: " << stats.input_vertices << '/'
            << stats.input_arcs << '\n'
            << "  quotient vertices/arcs: " << stats.quotient_vertices << '/'
@@ -210,6 +262,10 @@ void printFixedCounterResult(std::ostream &output,
   printPreamble(output, "fixed-counter", result);
   if (command_line.stats) {
     const unary::FixedCounterStats &stats = result.stats();
+    printExecution(output, stats.execution);
+    printDyck(output, "fixed-counter", stats.dyck);
+    printDyck(output, "single-counter", stats.single_counter_dyck);
+    printDyck(output, "quotient", stats.quotient_dyck);
     output << "  input vertices/arcs: " << stats.input_vertices << '/'
            << stats.input_arcs << '\n'
            << "  quotient vertices/arcs: " << stats.quotient_vertices << '/'
