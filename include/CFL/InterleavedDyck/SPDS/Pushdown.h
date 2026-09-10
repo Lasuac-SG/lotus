@@ -162,6 +162,11 @@ template <class Domain, class = void> struct DomainDelta {
   struct Type {};
   static constexpr bool available = false;
 };
+template <class Domain, class = void> struct HasFusedProduct : std::false_type {};
+template <class Domain>
+struct HasFusedProduct<Domain, std::void_t<decltype(std::declval<const Domain &>().extendAndCombine(
+    std::declval<typename Domain::Weight &>(), std::declval<const typename Domain::Weight &>(),
+    std::declval<const typename Domain::Weight &>()))>> : std::true_type {};
 template <class Domain>
 struct DomainDelta<Domain, std::void_t<typename Domain::Delta>> {
   using Type = typename Domain::Delta;
@@ -293,6 +298,17 @@ public:
   }
   std::size_t controls() const { return controls_; }
   const std::vector<Rule> &rules() const { return rules_; }
+  // Reuse an already validated/prepared rule when compiling a control slice.
+  void addMappedRule(const Rule &rule, State from, State to) {
+    if (from >= controls_ || to >= controls_)
+      throw std::out_of_range("PDS mapped control");
+    Rule copy = rule;
+    copy.from = from;
+    copy.to = to;
+    copy.generated_slot = NO_GENERATED;
+    rules_.push_back(std::move(copy));
+    indexRule(rules_.size() - 1);
+  }
   const Domain &domain() const { return domain_; }
   PreparedWeight prepareWeight(const Weight &weight) const {
     return DomainPreparedWeight<Domain>::prepare(domain_, weight);
@@ -484,6 +500,24 @@ private:
     return direction_ == Direction::Post ? domain_.extend(suffix, edge)
                                          : domain_.extend(edge, suffix);
   }
+  bool productAt(Weight &target, const Weight &left, const Weight &right) const {
+    if constexpr (HasFusedProduct<Domain>::value)
+      return domain_.extendAndCombine(target, left, right);
+    else
+      return domain_.combineWith(target, domain_.extend(left, right));
+  }
+  bool prependAt(ValuationVector &values, State state,
+                 const Weight &edge, const Weight &suffix) const {
+    if constexpr (std::is_same_v<Weight, bool>) {
+      Weight value = values[state];
+      const bool changed = domain_.combineWith(value, prepend(edge, suffix));
+      values[state] = value;
+      return changed;
+    } else {
+      return direction_ == Direction::Post ? productAt(values[state], suffix, edge)
+                                           : productAt(values[state], edge, suffix);
+    }
+  }
   void recordReadout(std::chrono::steady_clock::time_point started) const {
     stats_.readout_microseconds += static_cast<std::uint64_t>(
         std::chrono::duration_cast<std::chrono::microseconds>(
@@ -491,6 +525,10 @@ private:
             .count());
   }
   void reverseClose(ValuationVector &values, bool epsilon_only) const {
+    if constexpr (DomainDelta<Domain>::available) {
+      reverseCloseDelta(values, epsilon_only);
+      return;
+    }
     std::deque<State> queue;
     std::vector<bool> pending(states(), false);
     for (State q = 0; q < states(); ++q)
@@ -507,14 +545,43 @@ private:
       for (TransitionId id : incoming) {
         const auto &entry = edges_[id];
         const auto &edge = entry.edge;
-        const Weight candidate = prepend(entry.weight, suffix);
-        if (candidate == domain_.zero())
-          continue;
-        if (combineAt(values, edge.from, candidate)) {
+        if (prependAt(values, edge.from, entry.weight, suffix)) {
           if (!pending[edge.from]) {
             pending[edge.from] = true;
             queue.push_back(edge.from);
           }
+        }
+      }
+    }
+  }
+  void reverseCloseDelta(ValuationVector &values, bool epsilon_only) const {
+    using Delta = typename DomainDelta<Domain>::Type;
+    std::deque<State> queue;
+    std::vector<bool> pending(states(), false), processed(states(), false);
+    std::vector<std::optional<Delta>> deltas(states());
+    for (State q = 0; q < states(); ++q)
+      if (values[q] != domain_.zero()) { queue.push_back(q); pending[q] = true; }
+    while (!queue.empty()) {
+      const State to = queue.front(); queue.pop_front(); pending[to] = false;
+      const Weight suffix = values[to];
+      auto delta = std::move(deltas[to]); deltas[to].reset();
+      const bool incremental = processed[to] && delta.has_value();
+      processed[to] = true;
+      const auto &incoming = epsilon_only ? epsilon_in_[to] : in_[to];
+      for (TransitionId id : incoming) {
+        const auto &entry = edges_[id];
+        Delta produced;
+        const bool post = direction_ == Direction::Post;
+        const auto &left = post ? suffix : entry.weight;
+        const auto &right = post ? entry.weight : suffix;
+        const auto from = entry.edge.from;
+        const bool changed = incremental
+            ? domain_.extendDeltaAndCombine(values[from], left, right, *delta, post, &produced)
+            : domain_.extendAndCombineDelta(values[from], left, right, &produced);
+        if (changed) {
+          if (!deltas[from]) deltas[from].emplace();
+          domain_.mergeDelta(*deltas[from], std::move(produced));
+          if (!pending[from]) { pending[from] = true; queue.push_back(from); }
         }
       }
     }
@@ -529,8 +596,7 @@ private:
         const auto &entry = edges_[id];
         const auto &edge = entry.edge;
         if (edge.label == label) {
-          const Weight candidate = prepend(entry.weight, suffix[to]);
-          combineAt(result, edge.from, candidate);
+          prependAt(result, edge.from, entry.weight, suffix[to]);
         }
       }
     }
@@ -552,16 +618,16 @@ private:
       for (TransitionId id : outgoing) {
         const auto &entry = edges_[id];
         const auto &edge = entry.edge;
-        Weight candidate = pathProduct(source, entry.weight);
-        if (candidate == domain_.zero())
-          continue;
-        auto it = active.find(edge.to);
-        const bool changed = it == active.end()
-                                 ? active.emplace(edge.to, candidate).second
-                                 : domain_.combineWith(it->second, candidate);
+        const auto inserted = active.try_emplace(edge.to, domain_.zero());
+        auto it = inserted.first;
+        const bool changed = direction_ == Direction::Post
+            ? productAt(it->second, entry.weight, source)
+            : productAt(it->second, source, entry.weight);
         if (changed) {
           if (pending.insert(edge.to).second)
             queue.push_back(edge.to);
+        } else if (inserted.second) {
+          active.erase(it);
         }
       }
     }
@@ -581,14 +647,11 @@ private:
           const auto &adjacent = edges_[id];
           const auto &edge = adjacent.edge;
           if (edge.label == a) {
-            const Weight candidate = pathProduct(entry.second, adjacent.weight);
-            if (candidate == domain_.zero())
-              continue;
-            auto it = next.find(edge.to);
-            if (it == next.end())
-              next.emplace(edge.to, candidate);
-            else
-              domain_.combineWith(it->second, candidate);
+            const auto inserted = next.try_emplace(edge.to, domain_.zero());
+            const bool changed = direction_ == Direction::Post
+                ? productAt(inserted.first->second, adjacent.weight, entry.second)
+                : productAt(inserted.first->second, entry.second, adjacent.weight);
+            if (!changed && inserted.second) next.erase(inserted.first);
           }
         }
       active = std::move(next);
@@ -628,10 +691,14 @@ public:
   using TransitionId = typename Automaton<Domain>::TransitionId;
   using Delta = typename DomainDelta<Domain>::Type;
   static constexpr bool HAS_DELTA = DomainDelta<Domain>::available;
+  // An execution-domain override must preserve the source system's algebra;
+  // it supplies per-query instrumentation without recompiling immutable rules.
   SaturationSession(const System &system, const RegularSet &seed,
-                    Direction direction = Direction::Post, Limits limits = {})
+                    Direction direction = Direction::Post, Limits limits = {},
+                    std::optional<Domain> execution_domain = std::nullopt)
       : system_(system), base_indexes_(system.compiledRuleIndexes()),
-        result_(system.domain(), system.controls(), direction),
+        result_(execution_domain ? std::move(*execution_domain) : system.domain(),
+                system.controls(), direction),
         base_rule_count_(system.rules().size()), limits_(limits),
         wildcard_indexed_(system.controls()) {
     if (seed.controls() != system.controls())
@@ -830,7 +897,7 @@ private:
   std::size_t ruleCount() const {
     return base_rule_count_ + added_rules_.size();
   }
-  const Domain &domain() const { return system_.domain(); }
+  const Domain &domain() const { return result_.domain(); }
   void checkUsable() const {
     if (poisoned_)
       throw std::logic_error("failed SPDS session; discard and restart");

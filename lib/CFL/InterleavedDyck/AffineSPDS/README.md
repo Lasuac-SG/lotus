@@ -100,9 +100,23 @@ target and likewise computes only the selected mode. The graph-to-PDS conversion
 is reused across queries, but saturation is still performed separately per
 selected anchor.
 
-Query results cache default-stack readouts. A single `QueryResult` is therefore
-not safe for concurrent readout from several threads without synchronization.
-Distinct solvers/results share no mutable global analysis state.
+Prepared analyses store dense edge endpoints and adjacency indexes. Directional
+slices are cached by SCC and direction, bounded by `max_cached_slices` and
+`max_cached_slice_rules` (either zero disables caching). Rules reuse original
+edge weights and prepared multipliers; identity edges share one weight.
+Demand slices intersect anchor reachability with reverse reachability from the
+requested endpoints. All-pairs queries likewise avoid unrelated components.
+Saturation still runs independently for each anchor; cached slices do not merge
+the results or histories of different anchors.
+
+`QueryResult` starts with individual readout and promotes to cached bulk endpoint
+weights after `readout_batch_threshold` queries (default 8, zero disables automatic
+promotion). `prepareReadout()` requests bulk evaluation explicitly. Full-endpoint
+APIs batch immediately; sparse demand groups use individual queries. Explicit
+stack queries and `SynchronizedResult` readouts have bounded 64-entry caches.
+A single result is not safe for concurrent readout without caller synchronization.
+Independent queries have separate algebra counters. Shared slice compilation
+caches are protected by a mutex; saturation runs outside the lock.
 
 ## Fixed computational algebra
 
@@ -115,6 +129,8 @@ Bit vectors of up to four machine words are stored inline, covering the default
 automatic observer without per-vector heap allocation. Identity observers use
 the Boolean prepared analysis for all-pairs and batch scopes; this is exact
 because every reachable affine history is the singleton identity matrix.
+Affine rules for identity observers are created lazily only when an API requests
+affine histories; Boolean-compatible analysis does not build unused weighted PDSs.
 Affine bases keep their first two directions inline and share immutable storage
 across weight snapshots; mutation detaches on demand. Product candidates are
 inserted as a stream and reduced in one batch, so a full-rank result stops early.
@@ -125,6 +141,26 @@ After a transition's first full visit, saturation propagates only newly added
 basis pivots through epsilon, rule, and pre* push joins. Pending pivots use a
 lazy paged arena, so transitions whose weight never grows pay no per-edge delta
 allocation. Full propagation remains a separate fast path.
+Bulk weighted readout also propagates basis deltas and fuses product generation
+with insertion. Delta products terminate when the destination becomes full,
+including before triple-product fallbacks. Right-direction multipliers are reused
+across left input deltas.
+
+Block-diagonal observers use concatenated block entries with a single JOINT basis.
+For the largest default observer this reduces 196 coordinates to 34, retaining
+cross-block correlations. Every assigned matrix is checked before compression;
+custom matrices with cross-block entries use the dense layout. Set
+`Options::compress_observer=false` for an exact dense-layout comparison.
+Products operate blockwise, while `Matrix` objects and certificates remain dense
+public matrices. `AffineSpace::coordinates()` reports the stored coordinate count;
+`offset()` and `directions()` use that layout. Use `decodeEntries(bits)` to turn
+an encoded point/direction into a dense matrix. Affine-space equality and
+intersection support comparison with a dense representation of the same hull.
+
+Intersection tests first recognize shared offsets and full spaces, then use
+echelon elimination without unnecessary RREF maintenance. A negative
+`HistoryComparison` retains its separating equation from that same elimination,
+so a later `certificate()` call does not factor the hulls again.
 
 An affine space is either empty or `a + span(B)`. `B` is a canonical reduced
 row-echelon basis; `a` is reduced by that basis. Equality is semantic, so redundant
@@ -151,7 +187,8 @@ ab + span( u_i*b, a*v_j, u_i*v_j ).
 ```
 
 The bilinear terms are required; points are never enumerated. For matrix
-dimension `r`, the ambient dimension is `D=r*r`, so affine rank and strict
+dimension `r`, the dense ambient dimension is `D=r*r`; a block layout uses
+`D=sum(block_dimension^2)`. Affine rank and strict
 ascending chains are finite. Multiplying ranks `h` and `k` produces at most
 `1+h+k+h*k` vectors before basis reduction.
 
@@ -263,7 +300,13 @@ flags are listed by `--help`.
 
 The shared serial corpus runner and manifest are documented in the SPDS README.
 Select this engine with `--engine affine`; phase counters include affine
-saturation and weighted readout.
+saturation and weighted readout. Statistics also expose the stored coordinate
+dimension, new prepared weights, compiled rules, slice-cache hits, matrix products,
+basis reductions/insertions, and copy-on-write detachments. Algebra counters belong
+to one query and include its readout and comparisons. `--timings` additionally
+reports observer construction, intersection and certificate microseconds; these
+comparison times are separate from automaton readout. Bulk statistics are captured
+after comparisons, and the reported maximum rank includes queried readout hulls.
 
 The Core DOT parser currently reads edge statements, not isolated vertex
 statements. Use `--vertex V` or `Graph::addVertex(V)` to retain isolated vertices.
@@ -318,11 +361,12 @@ synchronized builder when that shared mapping should be enforced structurally.
 
 `Options::limits` applies to each individual PDS saturation. Optional limits
 cover states, transitions, and weight promotions; `max_matrix_dimension` guards
-the accepted observer dimension before graph saturation. Allocation/resource
+the accepted observer dimension before graph saturation. For automatic observers,
+the dimension is checked before allocating direct-sum matrices. Allocation/resource
 failures throw exceptions. No rank truncation, widening, partial saturation, or
 resource exhaustion is silently interpreted as a sound negative result.
-The dimension check is not a global memory budget for constructing an observer;
-choose modest feature budgets for large graphs.
+The dimension check is not a global memory budget and cannot undo allocation of
+a custom observer already built by the caller; choose modest feature budgets.
 
 Readout over a saturated automaton is finite-height too, but its extra work is
 not counted against the saturation's update limit. This version does not expose

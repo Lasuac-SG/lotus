@@ -31,8 +31,9 @@ public:
         return bottom();
       call_word.push_back(found->second);
     }
-    return synchronize(calls_, {variables_.at(query.node.variable), call_word},
-                       fields_, {node->second, field_word});
+    return HistoryComparison(
+        read(true, variables_.at(query.node.variable), call_word, false),
+        read(false, node->second, field_word, false));
   }
   bool mayAccept(const SynchronizedConfiguration &query) const {
     return compare(query).mayReach();
@@ -45,20 +46,18 @@ public:
     std::vector<spds::Symbol> word;
     if (found == locations_.end() || !encodeFields(fields, word))
       return bottom();
-    return HistoryComparison(
-        calls_.weightWithPrefix(variables_.at(node.variable),
-                                {statements_.at(node.statement)}),
-        fields_.weight(found->second, word));
+    return HistoryComparison(read(true, variables_.at(node.variable),
+                                  {statements_.at(node.statement)}, true),
+                             read(false, found->second, word, false));
   }
   bool mayAlias(FlowNode node) const { return compareAt(node).mayReach(); }
   HistoryComparison compareNode(FlowNode node) const {
     auto found = locations_.find(node);
     if (found == locations_.end())
       return bottom();
-    return HistoryComparison(
-        calls_.weightWithPrefix(variables_.at(node.variable),
-                                {statements_.at(node.statement)}),
-        fields_.weightWithPrefix(found->second, {}));
+    return HistoryComparison(read(true, variables_.at(node.variable),
+                                  {statements_.at(node.statement)}, true),
+                             read(false, found->second, {}, true));
   }
   bool mayReachNode(FlowNode node) const {
     return compareNode(node).mayReach();
@@ -66,6 +65,24 @@ public:
 
 private:
   friend class SynchronizedSystem;
+  using ReadKey =
+      std::tuple<bool, bool, spds::State, std::vector<spds::Symbol>>;
+  // Bounded per-result memoization; const queries on one result are serialized
+  // by the caller, as for QueryResult.
+  mutable std::map<ReadKey, AffineSpace> read_cache_;
+  AffineSpace read(bool calls, spds::State control,
+                   const std::vector<spds::Symbol> &word, bool prefix) const {
+    const ReadKey key{calls, prefix, control, word};
+    if (const auto found = read_cache_.find(key); found != read_cache_.end())
+      return found->second;
+    const auto &automaton = calls ? calls_ : fields_;
+    auto result = prefix ? automaton.weightWithPrefix(control, word)
+                         : automaton.weight(control, word);
+    if (read_cache_.size() == 64)
+      read_cache_.erase(read_cache_.begin());
+    read_cache_.emplace(key, result);
+    return result;
+  }
   SynchronizedResult(spds::Automaton<AffineSemiring> calls,
                      spds::Automaton<AffineSemiring> fields,
                      std::map<Variable, spds::State> variables,

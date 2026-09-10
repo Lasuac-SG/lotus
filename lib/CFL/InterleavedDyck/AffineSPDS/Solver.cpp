@@ -2,120 +2,33 @@
 
 #include <algorithm>
 #include <chrono>
+#include <deque>
+#include <mutex>
+#include <numeric>
 #include <set>
 #include <stdexcept>
 
 namespace lotus::cfl::interleaved_dyck::affine {
-HistoryComparison::HistoryComparison(AffineSpace call_history,
-                                     AffineSpace field_history)
-    : calls_(std::move(call_history)), fields_(std::move(field_history)) {
-  if (calls_.dimension() != fields_.dimension())
-    throw std::invalid_argument("history dimension mismatch");
-}
-Verdict HistoryComparison::verdict() const {
-  if (!verdict_)
-    verdict_ = !spdsMayReach()              ? Verdict::ProjectionRejected
-               : calls_.intersects(fields_) ? Verdict::MayReach
-                                            : Verdict::AffineSeparated;
-  return *verdict_;
-}
-bool HistoryComparison::mayReach() const {
-  return verdict() == Verdict::MayReach;
-}
-const std::optional<SeparationCertificate> &
-HistoryComparison::certificate() const {
-  if (!certificate_)
-    certificate_ = verdict() == Verdict::AffineSeparated
-                       ? separate(calls_, fields_)
-                       : std::optional<SeparationCertificate>{};
-  return *certificate_;
-}
-bool HistoryComparison::independentMayReach(
-    const HistoryObserver &observer) const {
-  if (observer.dimension() != calls_.dimension())
-    throw std::invalid_argument("observer/history mismatch");
-  if (!spdsMayReach())
-    return false;
-  for (const auto &block : observer.blocks())
-    if (!calls_.block(block.first, block.second)
-             .intersects(fields_.block(block.first, block.second)))
-      return false;
-  return true;
-}
-HistoryComparison synchronize(const spds::Automaton<AffineSemiring> &calls,
-                              const spds::Configuration &call_query,
-                              const spds::Automaton<AffineSemiring> &fields,
-                              const spds::Configuration &field_query) {
-  if (calls.direction() != fields.direction())
-    throw std::invalid_argument("mixed post/pre synchronization");
-  return HistoryComparison(
-      calls.weight(call_query.control, call_query.stack),
-      fields.weight(field_query.control, field_query.stack));
-}
 namespace {
+using Clock = std::chrono::steady_clock;
 using spds::State;
 using spds::Symbol;
 using System = spds::PushdownSystem<AffineSemiring>;
 using Automaton = spds::Automaton<AffineSemiring>;
+constexpr State Missing = std::numeric_limits<State>::max();
+std::uint64_t elapsed(Clock::time_point start) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() -
+                                                               start)
+      .count();
+}
 Symbol symbol(unsigned id) { return static_cast<Symbol>(id) + 1; }
 std::vector<Symbol> word(const std::vector<unsigned> &ids) {
   std::vector<Symbol> result;
+  result.reserve(ids.size() + 1);
   for (unsigned id : ids)
     result.push_back(symbol(id));
   result.push_back(0);
   return result;
-}
-struct Projections {
-  explicit Projections(std::size_t dimension)
-      : calls(AffineSemiring(dimension)), fields(AffineSemiring(dimension)) {}
-  std::map<Vertex, State> controls;
-  System calls, fields;
-};
-Projections project(const Graph &graph, const HistoryObserver &observer) {
-  Projections result(observer.dimension());
-  auto vertices = graph.vertices();
-  std::sort(vertices.begin(), vertices.end());
-  for (Vertex v : vertices) {
-    const auto p = result.calls.addControl();
-    result.fields.addControl();
-    result.controls.emplace(v, p);
-  }
-  auto edges = graph.edges();
-  std::sort(edges.begin(), edges.end(), EdgeLess{});
-  auto build = [&](System &system, bool calls) {
-    const auto open =
-        calls ? LabelKind::OpenParenthesis : LabelKind::OpenBracket;
-    const auto close =
-        calls ? LabelKind::CloseParenthesis : LabelKind::CloseBracket;
-    for (const auto &edge : edges) {
-      const auto from = result.controls.at(edge.source),
-                 to = result.controls.at(edge.target);
-      // Even a stack-neutral original edge contributes exactly ONE event.
-      const auto weight = system.domain().lift(observer.matrix(edge));
-      if (edge.label.kind == close)
-        system.addRule(from, symbol(edge.label.id), to, {}, weight);
-      else if (edge.label.kind == open)
-        system.addPushRule(from, to, symbol(edge.label.id), weight);
-      else if (edge.label.kind == LabelKind::OpenParenthesis ||
-               edge.label.kind == LabelKind::CloseParenthesis ||
-               edge.label.kind == LabelKind::OpenBracket ||
-               edge.label.kind == LabelKind::CloseBracket ||
-               edge.label.kind == LabelKind::Neutral)
-        system.addPreserveRule(from, to, weight);
-      else
-        throw std::invalid_argument("invalid AffineSPDS graph label kind");
-    }
-  };
-  build(result.calls, true);
-  build(result.fields, false);
-  return result;
-}
-Automaton saturate(const System &system, State anchor,
-                   spds::Direction direction, spds::Limits limits) {
-  auto seed = spds::RegularSet::singleton(system.controls(), {anchor, {0}});
-  return direction == spds::Direction::Post
-             ? spds::postStar(system, seed, limits)
-             : spds::preStar(system, seed, limits);
 }
 void add(spds::Statistics &a, const spds::Statistics &b) {
   a.states += b.states;
@@ -128,7 +41,115 @@ void add(spds::Statistics &a, const spds::Statistics &b) {
   a.readout_microseconds += b.readout_microseconds;
   a.projection_microseconds += b.projection_microseconds;
 }
+void add(Statistics &a, const Statistics &b) {
+  add(a.saturation, b.saturation);
+  a.slice_cache_hits += b.slice_cache_hits;
+  a.compiled_rules += b.compiled_rules;
+  a.prepared_weights += b.prepared_weights;
+  a.maximum_affine_rank =
+      std::max(a.maximum_affine_rank, b.maximum_affine_rank);
+  a.algebra.matrix_products += b.algebra.matrix_products;
+  a.algebra.basis_reductions += b.algebra.basis_reductions;
+  a.algebra.basis_insertions += b.algebra.basis_insertions;
+  a.algebra.cow_detaches += b.algebra.cow_detaches;
+  a.algebra.intersection_tests += b.algebra.intersection_tests;
+  a.algebra.intersection_fast_paths += b.algebra.intersection_fast_paths;
+  a.algebra.intersection_us += b.algebra.intersection_us;
+  a.algebra.certificate_us += b.algebra.certificate_us;
+}
+bool selected(const HistoryComparison &c, const HistoryObserver &o,
+              ComparisonMode mode) {
+  switch (mode) {
+  case ComparisonMode::Joint:
+    return c.mayReach();
+  case ComparisonMode::Independent:
+    return c.independentMayReach(o);
+  case ComparisonMode::Projection:
+    return c.spdsMayReach();
+  }
+  throw std::invalid_argument("invalid AffineSPDS comparison mode");
+}
+Automaton saturate(const System &system, State anchor,
+                   spds::Direction direction, spds::Limits limits,
+                   std::shared_ptr<AlgebraStatistics> statistics) {
+  auto seed = spds::RegularSet::singleton(system.controls(), {anchor, {0}});
+  spds::SaturationSession<AffineSemiring> session(
+      system, seed, direction, limits,
+      system.domain().withStatistics(std::move(statistics)));
+  session.run();
+  return session.takeResult();
+}
 } // namespace
+
+HistoryComparison::HistoryComparison(
+    AffineSpace calls, AffineSpace fields,
+    std::shared_ptr<AlgebraStatistics> statistics)
+    : calls_(std::move(calls)), fields_(std::move(fields)),
+      statistics_(std::move(statistics)) {
+  if (calls_.dimension() != fields_.dimension())
+    throw std::invalid_argument("history dimension mismatch");
+}
+Verdict HistoryComparison::verdict() const {
+  if (!verdict_) {
+    const auto started = Clock::now();
+    const auto certificate_before =
+        statistics_ ? statistics_->certificate_us : 0;
+    if (!spdsMayReach()) {
+      verdict_ = Verdict::ProjectionRejected;
+      certificate_.emplace(std::nullopt);
+    } else {
+      // Keep the small separating equation, not an entire factorization.
+      // A later certificate() call performs no second elimination.
+      certificate_ = separate(calls_, fields_, statistics_.get());
+      verdict_ = *certificate_ ? Verdict::AffineSeparated : Verdict::MayReach;
+    }
+    if (statistics_)
+      statistics_->intersection_us +=
+          elapsed(started) - (statistics_->certificate_us - certificate_before);
+  }
+  return *verdict_;
+}
+bool HistoryComparison::mayReach() const {
+  return verdict() == Verdict::MayReach;
+}
+const std::optional<SeparationCertificate> &
+HistoryComparison::certificate() const {
+  (void)verdict();
+  return *certificate_;
+}
+bool HistoryComparison::independentMayReach(
+    const HistoryObserver &observer) const {
+  if (observer.dimension() != calls_.dimension())
+    throw std::invalid_argument("observer/history mismatch");
+  if (independent_ && independent_->first == observer.blocks())
+    return independent_->second;
+  const auto start = Clock::now();
+  bool result = spdsMayReach();
+  if (result)
+    for (const auto &block : observer.blocks())
+      if (!calls_.block(block.first, block.second)
+               .intersects(fields_.block(block.first, block.second),
+                           statistics_.get())) {
+        result = false;
+        break;
+      }
+  independent_ = std::make_pair(observer.blocks(), result);
+  if (statistics_)
+    statistics_->intersection_us += elapsed(start);
+  return result;
+}
+HistoryComparison synchronize(const Automaton &calls,
+                              const spds::Configuration &call_query,
+                              const Automaton &fields,
+                              const spds::Configuration &field_query) {
+  if (calls.direction() != fields.direction())
+    throw std::invalid_argument("mixed post/pre synchronization");
+  return HistoryComparison(
+      calls.weight(call_query.control, call_query.stack),
+      fields.weight(field_query.control, field_query.stack),
+      calls.domain().statistics());
+}
+
 QueryResult::QueryResult(
     Vertex anchor, spds::Direction direction, Options options,
     std::shared_ptr<const std::map<Vertex, State>> controls,
@@ -138,6 +159,7 @@ QueryResult::QueryResult(
       controls_(std::move(controls)), observer_(std::move(observer)),
       calls_(std::move(calls)), fields_(std::move(fields)) {
   statistics_.matrix_dimension = observer_->dimension();
+  statistics_.coordinate_dimension = calls_.domain().coordinates();
   for (const auto *automaton : {&calls_, &fields_}) {
     add(statistics_.saturation, automaton->statistics());
     for (const auto &entry : automaton->transitions())
@@ -146,122 +168,367 @@ QueryResult::QueryResult(
   }
 }
 Statistics QueryResult::statistics() const {
-  Statistics result = statistics_;
+  auto result = statistics_;
   result.saturation.readout_microseconds =
       calls_.statistics().readout_microseconds +
       fields_.statistics().readout_microseconds;
+  if (calls_.domain().statistics())
+    result.algebra = *calls_.domain().statistics();
   return result;
+}
+void QueryResult::prepareReadout() const {
+  if (call_weights_ && field_weights_)
+    return;
+  if (!call_weights_)
+    call_weights_ = options_.parentheses == spds::StackAcceptance::Empty
+                        ? calls_.controlWeights({0})
+                        : calls_.controlWeightsWithPrefix({});
+  if (!field_weights_)
+    field_weights_ = options_.brackets == spds::StackAcceptance::Empty
+                         ? fields_.controlWeights({0})
+                         : fields_.controlWeightsWithPrefix({});
+  for (const auto *weights : {&*call_weights_, &*field_weights_})
+    for (const auto &weight : *weights)
+      statistics_.maximum_affine_rank =
+          std::max(statistics_.maximum_affine_rank, weight.rank());
 }
 AffineSpace QueryResult::history(const Automaton &automaton, Vertex vertex,
                                  spds::StackAcceptance acceptance) const {
   const auto found = controls_->find(vertex);
   if (found == controls_->end())
     return automaton.domain().zero();
+  const auto &weights = &automaton == &calls_ ? call_weights_ : field_weights_;
+  if (weights)
+    return (*weights)[found->second];
   return acceptance == spds::StackAcceptance::Empty
              ? automaton.weight(found->second, {0})
              : automaton.weightWithPrefix(found->second, {});
 }
 const HistoryComparison &QueryResult::compare(Vertex vertex) const {
+  if (!controls_->count(vertex)) {
+    if (!missing_)
+      missing_.emplace(calls_.domain().zero(), fields_.domain().zero());
+    return *missing_;
+  }
   auto found = cache_.find(vertex);
-  if (found == cache_.end())
+  if (found == cache_.end()) {
+    if (options_.readout_batch_threshold &&
+        cache_.size() >= options_.readout_batch_threshold)
+      prepareReadout();
     found =
         cache_
             .emplace(vertex, HistoryComparison(
                                  history(calls_, vertex, options_.parentheses),
-                                 history(fields_, vertex, options_.brackets)))
+                                 history(fields_, vertex, options_.brackets),
+                                 calls_.domain().statistics()))
             .first;
+    statistics_.maximum_affine_rank = std::max(
+        {statistics_.maximum_affine_rank, found->second.callHistory().rank(),
+         found->second.fieldHistory().rank()});
+  }
   return found->second;
 }
 HistoryComparison
 QueryResult::compareStacks(Vertex vertex, const std::vector<unsigned> &calls,
                            const std::vector<unsigned> &fields) const {
-  auto found = controls_->find(vertex);
+  const auto found = controls_->find(vertex);
   if (found == controls_->end())
     return HistoryComparison(calls_.domain().zero(), fields_.domain().zero());
-  return synchronize(calls_, {found->second, word(calls)}, fields_,
-                     {found->second, word(fields)});
-}
-void Solver::validate(const Graph &graph,
-                      const HistoryObserver &observer) const {
-  if (options_.max_matrix_dimension &&
-      observer.dimension() > options_.max_matrix_dimension)
-    throw spds::ResourceLimit("AffineSPDS matrix-dimension limit exceeded");
-  observer.validate(graph);
-}
-PreparedAnalysis::PreparedAnalysis(
-    Options options, const Graph &graph, std::map<Vertex, State> controls,
-    std::shared_ptr<const HistoryObserver> observer, System calls,
-    System fields, std::optional<spds::PreparedAnalysis> boolean)
-    : options_(options),
-      controls_(
-          std::make_shared<const std::map<Vertex, State>>(std::move(controls))),
-      observer_(std::move(observer)), calls_(std::move(calls)),
-      fields_(std::move(fields)), boolean_(std::move(boolean)),
-      vertices_(controls_->size()), edges_(graph.edges()),
-      successors_(controls_->size()), predecessors_(controls_->size()) {
-  for (const auto &entry : *controls_)
-    vertices_[entry.second] = entry.first;
-  for (const auto &edge : edges_) {
-    const State from = controls_->at(edge.source);
-    const State to = controls_->at(edge.target);
-    successors_[from].push_back(to);
-    predecessors_[to].push_back(from);
-  }
-}
-std::optional<Graph>
-PreparedAnalysis::relevantGraph(Vertex anchor,
-                                spds::Direction direction) const {
-  const State start = controls_->at(anchor);
-  const auto &adjacency =
-      direction == spds::Direction::Post ? successors_ : predecessors_;
-  std::vector<bool> live(controls_->size(), false);
-  std::vector<State> worklist{start};
-  live[start] = true;
-  for (std::size_t cursor = 0; cursor < worklist.size(); ++cursor)
-    for (State next : adjacency[worklist[cursor]])
-      if (!live[next]) {
-        live[next] = true;
-        worklist.push_back(next);
-      }
-  if (worklist.size() == controls_->size())
-    return std::nullopt;
-  Graph result;
-  for (State state : worklist)
-    result.addVertex(vertices_[state]);
-  for (const auto &edge : edges_)
-    if (live[controls_->at(edge.source)] && live[controls_->at(edge.target)])
-      result.addEdge(edge.source, edge.target, edge.label);
+  const StackKey key{vertex, calls, fields};
+  if (const auto cached = stack_cache_.find(key); cached != stack_cache_.end())
+    return cached->second;
+  auto result = synchronize(calls_, {found->second, word(calls)}, fields_,
+                            {found->second, word(fields)});
+  statistics_.maximum_affine_rank =
+      std::max({statistics_.maximum_affine_rank, result.callHistory().rank(),
+                result.fieldHistory().rank()});
+  if (stack_cache_.size() == 64)
+    stack_cache_.erase(stack_cache_.begin());
+  stack_cache_.emplace(key, result);
   return result;
 }
-QueryResult PreparedAnalysis::query(Vertex anchor, spds::Direction direction,
-                                    bool slice_graph) const {
-  auto found = controls_->find(anchor);
-  if (found == controls_->end())
-    throw std::invalid_argument("AffineSPDS query vertex is not in graph");
-  if (slice_graph) {
-    const auto slice_started = std::chrono::steady_clock::now();
-    if (auto graph = relevantGraph(anchor, direction)) {
-      auto systems = project(*graph, *observer_);
-      const auto slice_projection_microseconds = static_cast<std::uint64_t>(
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              std::chrono::steady_clock::now() - slice_started)
-              .count());
-      const State state = systems.controls.at(anchor);
-      auto calls = saturate(systems.calls, state, direction, options_.limits);
-      auto fields = saturate(systems.fields, state, direction, options_.limits);
-      auto controls = std::make_shared<const std::map<Vertex, State>>(
-          std::move(systems.controls));
-      QueryResult result(anchor, direction, options_, std::move(controls),
-                         observer_, std::move(calls), std::move(fields));
-      result.statistics_.saturation.projection_microseconds =
-          slice_projection_microseconds;
-      return result;
+
+struct PreparedAnalysis::Storage {
+  struct DenseEdge {
+    State from, to;
+  };
+  struct WeightedEdge {
+    AffineSpace weight;
+    AffineSemiring::PreparedWeight prepared;
+  };
+  struct Projection {
+    explicit Projection(const AffineSemiring &domain)
+        : calls(domain), fields(domain) {}
+    std::shared_ptr<const std::map<Vertex, State>> controls;
+    System calls, fields;
+  };
+  Options options;
+  std::shared_ptr<const HistoryObserver> observer;
+  AffineSemiring domain;
+  std::map<Vertex, State> controls;
+  std::vector<Vertex> vertices;
+  std::vector<Edge> edges;
+  std::vector<DenseEdge> dense_edges;
+  std::vector<std::vector<std::size_t>> outgoing, incoming;
+  std::vector<State> scc;
+  std::optional<spds::PreparedAnalysis> boolean;
+  std::uint64_t preparation_us = 0, observer_us = 0;
+  // Only slice compilation touches these caches. Independent saturations and
+  // readouts have distinct counters and run outside this lock.
+  mutable std::mutex mutex;
+  mutable std::unordered_map<std::size_t, std::shared_ptr<const WeightedEdge>>
+      weights;
+  mutable std::shared_ptr<const WeightedEdge> identity_weight;
+  mutable std::map<std::pair<spds::Direction, State>,
+                   std::shared_ptr<const Projection>>
+      slices;
+  mutable std::deque<std::pair<spds::Direction, State>> order;
+  mutable std::size_t cached_rules = 0;
+
+  Storage(Options opts, const Graph &graph,
+          std::shared_ptr<const HistoryObserver> obs)
+      : options(opts), observer(std::move(obs)),
+        domain(observer->dimension(),
+               options.compress_observer ? observer->compactLayout() : nullptr),
+        vertices(graph.vertices()), edges(graph.edges()) {
+    std::sort(vertices.begin(), vertices.end());
+    std::sort(edges.begin(), edges.end(), EdgeLess{});
+    outgoing.resize(vertices.size());
+    incoming.resize(vertices.size());
+    for (State v = 0; v < vertices.size(); ++v)
+      controls.emplace(vertices[v], v);
+    for (const auto &edge : edges) {
+      const auto from = controls.at(edge.source), to = controls.at(edge.target);
+      const auto id = dense_edges.size();
+      dense_edges.push_back({from, to});
+      outgoing[from].push_back(id);
+      incoming[to].push_back(id);
+    }
+    // Iterative Kosaraju: SCC members share each directional structural slice.
+    std::vector<bool> seen(vertices.size(), false);
+    std::vector<State> finish;
+    for (State root = 0; root < vertices.size(); ++root) {
+      if (seen[root])
+        continue;
+      seen[root] = true;
+      std::vector<std::pair<State, std::size_t>> stack{{root, 0}};
+      while (!stack.empty()) {
+        auto &frame = stack.back();
+        if (frame.second == outgoing[frame.first].size()) {
+          finish.push_back(frame.first);
+          stack.pop_back();
+          continue;
+        }
+        const State next =
+            dense_edges[outgoing[frame.first][frame.second++]].to;
+        if (!seen[next]) {
+          seen[next] = true;
+          stack.emplace_back(next, 0);
+        }
+      }
+    }
+    scc.assign(vertices.size(), Missing);
+    for (auto root = finish.rbegin(); root != finish.rend(); ++root) {
+      if (scc[*root] != Missing)
+        continue;
+      std::vector<State> work{*root};
+      scc[*root] = *root;
+      for (std::size_t cursor = 0; cursor < work.size(); ++cursor)
+        for (auto id : incoming[work[cursor]]) {
+          const auto next = dense_edges[id].from;
+          if (scc[next] == Missing) {
+            scc[next] = *root;
+            work.push_back(next);
+          }
+        }
+    }
+    bool identity = true;
+    for (const auto &entry : observer->assignments())
+      if (!entry.second.isIdentity()) {
+        identity = false;
+        break;
+      }
+    if (identity) {
+      spds::Options baseline;
+      baseline.parentheses = options.parentheses;
+      baseline.brackets = options.brackets;
+      baseline.limits = options.limits;
+      boolean.emplace(spds::Solver(baseline).prepare(graph));
     }
   }
-  auto calls = saturate(calls_, found->second, direction, options_.limits);
-  auto fields = saturate(fields_, found->second, direction, options_.limits);
-  QueryResult result(anchor, direction, options_, controls_, observer_,
-                     std::move(calls), std::move(fields));
+  std::vector<bool> reachable(const std::vector<State> &seeds,
+                              spds::Direction direction) const {
+    const auto &adjacency =
+        direction == spds::Direction::Post ? outgoing : incoming;
+    std::vector<bool> live(vertices.size(), false);
+    std::vector<State> work;
+    for (State seed : seeds)
+      if (!live[seed]) {
+        live[seed] = true;
+        work.push_back(seed);
+      }
+    for (std::size_t cursor = 0; cursor < work.size(); ++cursor)
+      for (auto id : adjacency[work[cursor]]) {
+        const auto next = direction == spds::Direction::Post
+                              ? dense_edges[id].to
+                              : dense_edges[id].from;
+        if (!live[next]) {
+          live[next] = true;
+          work.push_back(next);
+        }
+      }
+    return live;
+  }
+  std::shared_ptr<const WeightedEdge> weight(std::size_t id,
+                                             Statistics &statistics) const {
+    if (const auto found = weights.find(id); found != weights.end())
+      return found->second;
+    const auto &matrix = observer->matrix(edges[id]);
+    if (matrix.isIdentity()) {
+      if (!identity_weight) {
+        ++statistics.prepared_weights;
+        identity_weight = std::make_shared<const WeightedEdge>(
+            WeightedEdge{domain.one(), nullptr});
+      }
+      return identity_weight;
+    }
+    ++statistics.prepared_weights;
+    auto value = domain.lift(matrix);
+    auto prepared = domain.prepareWeight(value);
+    auto entry = std::make_shared<const WeightedEdge>(
+        WeightedEdge{std::move(value), std::move(prepared)});
+    weights.emplace(id, entry);
+    return entry;
+  }
+  static System::Rule rule(const Edge &edge, const WeightedEdge &value,
+                           bool call) {
+    const auto open =
+        call ? LabelKind::OpenParenthesis : LabelKind::OpenBracket;
+    const auto close =
+        call ? LabelKind::CloseParenthesis : LabelKind::CloseBracket;
+    if (edge.label.kind == close)
+      return {System::RuleKind::Exact,
+              0,
+              symbol(edge.label.id),
+              0,
+              {},
+              value.weight,
+              value.prepared};
+    if (edge.label.kind == open)
+      return {System::RuleKind::PushAny,
+              0,
+              0,
+              0,
+              {symbol(edge.label.id)},
+              value.weight,
+              value.prepared};
+    return {System::RuleKind::PreserveAny,
+            0,
+            0,
+            0,
+            {},
+            value.weight,
+            value.prepared};
+  }
+  std::shared_ptr<const Projection>
+  project(Vertex anchor, spds::Direction direction,
+          const std::vector<Vertex> *endpoints, Statistics &statistics) const {
+    std::lock_guard<std::mutex> lock(mutex);
+    const State start = controls.at(anchor);
+    const auto key = std::make_pair(direction, scc[start]);
+    if (!endpoints)
+      if (const auto found = slices.find(key); found != slices.end()) {
+        ++statistics.slice_cache_hits;
+        return found->second;
+      }
+    auto live = reachable({start}, direction);
+    if (endpoints) {
+      std::vector<State> destinations;
+      for (Vertex v : *endpoints)
+        destinations.push_back(controls.at(v));
+      const auto reverse =
+          reachable(destinations, direction == spds::Direction::Post
+                                      ? spds::Direction::Pre
+                                      : spds::Direction::Post);
+      for (State v = 0; v < vertices.size(); ++v)
+        live[v] = live[v] && reverse[v];
+      live[start] = true;
+    }
+    auto projection = std::make_shared<Projection>(domain);
+    auto local = std::make_shared<std::map<Vertex, State>>();
+    std::vector<State> indices(vertices.size(), Missing);
+    for (State v = 0; v < vertices.size(); ++v)
+      if (live[v]) {
+        const auto id = projection->calls.addControl();
+        projection->fields.addControl();
+        indices[v] = id;
+        local->emplace(vertices[v], id);
+      }
+    projection->controls = local;
+    for (State v = 0; v < vertices.size(); ++v)
+      if (live[v])
+        for (auto id : outgoing[v]) {
+          const auto &edge = dense_edges[id];
+          if (!live[edge.to])
+            continue;
+          const auto value = weight(id, statistics);
+          projection->calls.addMappedRule(rule(edges[id], *value, true),
+                                          indices[edge.from], indices[edge.to]);
+          projection->fields.addMappedRule(rule(edges[id], *value, false),
+                                           indices[edge.from],
+                                           indices[edge.to]);
+        }
+    const auto count =
+        projection->calls.rules().size() + projection->fields.rules().size();
+    statistics.compiled_rules += count;
+    if (!endpoints && options.max_cached_slices &&
+        options.max_cached_slice_rules &&
+        count <= options.max_cached_slice_rules) {
+      while (!order.empty() &&
+             (slices.size() >= options.max_cached_slices ||
+              count > options.max_cached_slice_rules - cached_rules)) {
+        const auto oldest = order.front();
+        order.pop_front();
+        const auto &p = slices.at(oldest);
+        cached_rules -= p->calls.rules().size() + p->fields.rules().size();
+        slices.erase(oldest);
+      }
+      slices.emplace(key, projection);
+      order.push_back(key);
+      cached_rules += count;
+    }
+    return projection;
+  }
+};
+
+PreparedAnalysis::PreparedAnalysis(std::shared_ptr<Storage> storage)
+    : storage_(std::move(storage)) {}
+const HistoryObserver &PreparedAnalysis::observer() const {
+  return *storage_->observer;
+}
+QueryResult
+PreparedAnalysis::query(Vertex anchor, spds::Direction direction,
+                        const std::vector<Vertex> *endpoints) const {
+  if (!storage_->controls.count(anchor))
+    throw std::invalid_argument("AffineSPDS query vertex is not in graph");
+  const auto start = Clock::now();
+  Statistics compilation;
+  auto projection =
+      storage_->project(anchor, direction, endpoints, compilation);
+  const auto projection_us = elapsed(start);
+  auto statistics = std::make_shared<AlgebraStatistics>();
+  const auto state = projection->controls->at(anchor);
+  auto calls = saturate(projection->calls, state, direction,
+                        storage_->options.limits, statistics);
+  auto fields = saturate(projection->fields, state, direction,
+                         storage_->options.limits, statistics);
+  QueryResult result(anchor, direction, storage_->options, projection->controls,
+                     storage_->observer, std::move(calls), std::move(fields));
+  result.statistics_.saturation.projection_microseconds = projection_us;
+  result.statistics_.slice_cache_hits = compilation.slice_cache_hits;
+  result.statistics_.compiled_rules = compilation.compiled_rules;
+  result.statistics_.prepared_weights = compilation.prepared_weights;
+  result.statistics_.observer_microseconds = storage_->observer_us;
   return result;
 }
 QueryResult PreparedAnalysis::queryFrom(Vertex source) const {
@@ -270,225 +537,172 @@ QueryResult PreparedAnalysis::queryFrom(Vertex source) const {
 QueryResult PreparedAnalysis::queryTo(Vertex target) const {
   return query(target, spds::Direction::Pre);
 }
-namespace {
-std::vector<AffineSemiring::Weight>
-endpointWeights(const Automaton &automaton, spds::StackAcceptance acceptance) {
-  return acceptance == spds::StackAcceptance::Empty
-             ? automaton.controlWeights({0})
-             : automaton.controlWeightsWithPrefix({});
-}
-bool selected(const HistoryComparison &comparison,
-              const HistoryObserver &observer, ComparisonMode mode) {
-  switch (mode) {
-  case ComparisonMode::Joint:
-    return comparison.mayReach();
-  case ComparisonMode::Independent:
-    return comparison.independentMayReach(observer);
-  case ComparisonMode::Projection:
-    return comparison.spdsMayReach();
-  }
-  throw std::invalid_argument("invalid AffineSPDS comparison mode");
-}
-} // namespace
+
 Result PreparedAnalysis::analyzeFrom(Vertex source, ComparisonMode mode) const {
-  Result result;
-  result.mode = mode;
-  result.statistics.matrix_dimension = observer_->dimension();
-  result.statistics.saturation.projection_microseconds =
-      projection_microseconds_;
-  if (boolean_) {
-    auto baseline = boolean_->analyzeFrom(source);
-    result.pairs = std::move(baseline.upper_bound);
+  if (storage_->boolean) {
+    auto baseline = storage_->boolean->analyzeFrom(source);
+    Result result{std::move(baseline.upper_bound), mode, {}};
     result.statistics.saturation = baseline.statistics;
+    result.statistics.matrix_dimension = observer().dimension();
+    result.statistics.coordinate_dimension = storage_->domain.coordinates();
+    result.statistics.observer_microseconds = storage_->observer_us;
     result.statistics.saturation.projection_microseconds =
-        projection_microseconds_;
+        storage_->preparation_us;
     return result;
   }
   auto query = queryFrom(source);
-  auto calls = endpointWeights(query.callAutomaton(), options_.parentheses);
-  auto fields = endpointWeights(query.fieldAutomaton(), options_.brackets);
+  query.prepareReadout();
+  Result result;
+  result.mode = mode;
+  for (const auto &entry : *query.controls_)
+    if (selected(query.compare(entry.first), observer(), mode))
+      result.pairs.insert({source, entry.first});
   result.statistics = query.statistics();
   result.statistics.saturation.projection_microseconds +=
-      projection_microseconds_;
-  for (const auto &target : *controls_) {
-    const auto found = query.controls_->find(target.first);
-    if (found == query.controls_->end())
-      continue;
-    HistoryComparison comparison(std::move(calls[found->second]),
-                                 std::move(fields[found->second]));
-    if (selected(comparison, *observer_, mode))
-      result.pairs.insert({source, target.first});
-  }
+      storage_->preparation_us;
   return result;
 }
 Result PreparedAnalysis::analyzeTo(Vertex target, ComparisonMode mode) const {
-  Result result;
-  result.mode = mode;
-  result.statistics.matrix_dimension = observer_->dimension();
-  result.statistics.saturation.projection_microseconds =
-      projection_microseconds_;
-  if (boolean_) {
-    auto baseline = boolean_->analyzeTo(target);
-    result.pairs = std::move(baseline.upper_bound);
+  if (storage_->boolean) {
+    auto baseline = storage_->boolean->analyzeTo(target);
+    Result result{std::move(baseline.upper_bound), mode, {}};
     result.statistics.saturation = baseline.statistics;
+    result.statistics.matrix_dimension = observer().dimension();
+    result.statistics.coordinate_dimension = storage_->domain.coordinates();
+    result.statistics.observer_microseconds = storage_->observer_us;
     result.statistics.saturation.projection_microseconds =
-        projection_microseconds_;
+        storage_->preparation_us;
     return result;
   }
   auto query = queryTo(target);
-  auto calls = endpointWeights(query.callAutomaton(), options_.parentheses);
-  auto fields = endpointWeights(query.fieldAutomaton(), options_.brackets);
+  query.prepareReadout();
+  Result result;
+  result.mode = mode;
+  for (const auto &entry : *query.controls_)
+    if (selected(query.compare(entry.first), observer(), mode))
+      result.pairs.insert({entry.first, target});
   result.statistics = query.statistics();
   result.statistics.saturation.projection_microseconds +=
-      projection_microseconds_;
-  for (const auto &source : *controls_) {
-    const auto found = query.controls_->find(source.first);
-    if (found == query.controls_->end())
-      continue;
-    HistoryComparison comparison(std::move(calls[found->second]),
-                                 std::move(fields[found->second]));
-    if (selected(comparison, *observer_, mode))
-      result.pairs.insert({source.first, target});
-  }
+      storage_->preparation_us;
   return result;
 }
 Result PreparedAnalysis::analyzeAll(ComparisonMode mode) const {
   Result result;
   result.mode = mode;
-  result.statistics.matrix_dimension = observer_->dimension();
+  result.statistics.matrix_dimension = observer().dimension();
+  result.statistics.coordinate_dimension = storage_->domain.coordinates();
+  result.statistics.observer_microseconds = storage_->observer_us;
   result.statistics.saturation.projection_microseconds =
-      projection_microseconds_;
-  if (boolean_) {
-    auto baseline = boolean_->analyzeAll();
+      storage_->preparation_us;
+  if (storage_->boolean) {
+    auto baseline = storage_->boolean->analyzeAll();
     result.pairs = std::move(baseline.upper_bound);
     result.statistics.saturation = baseline.statistics;
     result.statistics.saturation.projection_microseconds =
-        projection_microseconds_;
+        storage_->preparation_us;
     return result;
   }
-  for (const auto &source : *controls_) {
-    auto query = this->query(source.first, spds::Direction::Post, false);
-    auto call_weights =
-        endpointWeights(query.callAutomaton(), options_.parentheses);
-    auto field_weights =
-        endpointWeights(query.fieldAutomaton(), options_.brackets);
-    const auto query_stats = query.statistics();
-    add(result.statistics.saturation, query_stats.saturation);
-    result.statistics.maximum_affine_rank = std::max(
-        result.statistics.maximum_affine_rank, query_stats.maximum_affine_rank);
-    for (const auto &target : *controls_) {
-      const Pair pair{source.first, target.first};
-      HistoryComparison comparison(std::move(call_weights[target.second]),
-                                   std::move(field_weights[target.second]));
-      if (selected(comparison, *observer_, mode))
-        result.pairs.insert(pair);
-    }
+  for (Vertex source : storage_->vertices) {
+    auto query = queryFrom(source); // Never saturate unrelated weak components.
+    query.prepareReadout();
+    for (const auto &target : *query.controls_)
+      if (selected(query.compare(target.first), observer(), mode))
+        result.pairs.insert({source, target.first});
+    add(result.statistics, query.statistics());
   }
   return result;
 }
 Result PreparedAnalysis::analyzeDemands(const std::vector<Pair> &demands,
                                         ComparisonMode mode,
                                         spds::DemandDirection direction) const {
-  std::map<Vertex, std::vector<Vertex>> by_source, by_target;
+  std::map<Vertex, std::vector<Vertex>> sources, targets;
   PairSet unique;
-  for (const Pair &pair : demands) {
-    if (!controls_->count(pair.source) || !controls_->count(pair.target))
+  for (const auto &pair : demands) {
+    if (!storage_->controls.count(pair.source) ||
+        !storage_->controls.count(pair.target))
       throw std::invalid_argument("AffineSPDS demand vertex is not in graph");
     if (unique.insert(pair).second) {
-      by_source[pair.source].push_back(pair.target);
-      by_target[pair.target].push_back(pair.source);
+      sources[pair.source].push_back(pair.target);
+      targets[pair.target].push_back(pair.source);
     }
   }
   Result result;
   result.mode = mode;
-  result.statistics.matrix_dimension = observer_->dimension();
+  result.statistics.matrix_dimension = observer().dimension();
+  result.statistics.coordinate_dimension = storage_->domain.coordinates();
+  result.statistics.observer_microseconds = storage_->observer_us;
   result.statistics.saturation.projection_microseconds =
-      projection_microseconds_;
-  if (boolean_) {
-    auto baseline = boolean_->analyzeDemands(demands, direction);
+      storage_->preparation_us;
+  if (storage_->boolean) {
+    auto baseline = storage_->boolean->analyzeDemands(demands, direction);
     result.pairs = std::move(baseline.upper_bound);
     result.statistics.saturation = baseline.statistics;
     result.statistics.saturation.projection_microseconds =
-        projection_microseconds_;
+        storage_->preparation_us;
     return result;
   }
-  const bool use_post = direction == spds::DemandDirection::Post ||
-                        (direction == spds::DemandDirection::Auto &&
-                         by_source.size() <= by_target.size());
-  auto merge_stats = [&](const QueryResult &query) {
-    const auto statistics = query.statistics();
-    add(result.statistics.saturation, statistics.saturation);
-    result.statistics.maximum_affine_rank =
-        std::max(result.statistics.maximum_affine_rank,
-                 statistics.maximum_affine_rank);
-  };
-  if (use_post) {
-    for (const auto &entry : by_source) {
-      auto query = queryFrom(entry.first);
-      auto calls = endpointWeights(query.callAutomaton(), options_.parentheses);
-      auto fields = endpointWeights(query.fieldAutomaton(), options_.brackets);
-      merge_stats(query);
-      for (Vertex target : entry.second) {
-        const auto found = query.controls_->find(target);
-        if (found == query.controls_->end())
-          continue;
-        const State state = found->second;
-        HistoryComparison comparison(std::move(calls[state]),
-                                     std::move(fields[state]));
-        if (selected(comparison, *observer_, mode))
-          result.pairs.insert({entry.first, target});
-      }
-    }
-  } else {
-    for (const auto &entry : by_target) {
-      auto query = queryTo(entry.first);
-      auto calls = endpointWeights(query.callAutomaton(), options_.parentheses);
-      auto fields = endpointWeights(query.fieldAutomaton(), options_.brackets);
-      merge_stats(query);
-      for (Vertex source : entry.second) {
-        const auto found = query.controls_->find(source);
-        if (found == query.controls_->end())
-          continue;
-        const State state = found->second;
-        HistoryComparison comparison(std::move(calls[state]),
-                                     std::move(fields[state]));
-        if (selected(comparison, *observer_, mode))
-          result.pairs.insert({source, entry.first});
-      }
-    }
+  const bool post = direction == spds::DemandDirection::Post ||
+                    (direction == spds::DemandDirection::Auto &&
+                     sources.size() <= targets.size());
+  for (const auto &group : post ? sources : targets) {
+    auto query = this->query(
+        group.first, post ? spds::Direction::Post : spds::Direction::Pre,
+        &group.second);
+    if (storage_->options.readout_batch_threshold &&
+        group.second.size() >= storage_->options.readout_batch_threshold)
+      query.prepareReadout();
+    for (Vertex endpoint : group.second)
+      if (selected(query.compare(endpoint), observer(), mode))
+        result.pairs.insert(post ? Pair{group.first, endpoint}
+                                 : Pair{endpoint, group.first});
+    add(result.statistics, query.statistics());
   }
   return result;
 }
+
+void Solver::validate(const Graph &graph,
+                      const HistoryObserver &observer) const {
+  if (options_.max_matrix_dimension &&
+      observer.dimension() > options_.max_matrix_dimension)
+    throw spds::ResourceLimit("AffineSPDS matrix-dimension limit exceeded");
+  observer.validate(graph);
+  for (const auto &edge : graph.edges())
+    switch (edge.label.kind) {
+    case LabelKind::OpenParenthesis:
+    case LabelKind::CloseParenthesis:
+    case LabelKind::OpenBracket:
+    case LabelKind::CloseBracket:
+    case LabelKind::Neutral:
+      break;
+    default:
+      throw std::invalid_argument("invalid AffineSPDS graph label kind");
+    }
+}
 PreparedAnalysis Solver::prepare(const Graph &graph) const {
-  return prepare(graph, HistoryObserver::automatic(graph, options_.observer));
+  auto opts = options_.observer;
+  if (options_.max_matrix_dimension &&
+      (!opts.max_matrix_dimension ||
+       opts.max_matrix_dimension > options_.max_matrix_dimension))
+    opts.max_matrix_dimension = options_.max_matrix_dimension;
+  const auto start = Clock::now();
+  HistoryObserver observer;
+  try {
+    observer = HistoryObserver::automatic(graph, opts);
+  } catch (const std::length_error &e) {
+    throw spds::ResourceLimit(e.what());
+  }
+  const auto observer_us = elapsed(start);
+  auto result = prepare(graph, observer);
+  result.storage_->observer_us = observer_us;
+  return result;
 }
 PreparedAnalysis Solver::prepare(const Graph &graph,
                                  const HistoryObserver &observer) const {
-  const auto started = std::chrono::steady_clock::now();
+  const auto start = Clock::now();
   validate(graph, observer);
-  auto projected = project(graph, observer);
-  bool identity = true;
-  for (const auto &edge : graph.edges())
-    if (!observer.matrix(edge).isIdentity()) {
-      identity = false;
-      break;
-    }
-  std::optional<spds::PreparedAnalysis> boolean;
-  if (identity) {
-    spds::Options options;
-    options.parentheses = options_.parentheses;
-    options.brackets = options_.brackets;
-    options.limits = options_.limits;
-    boolean.emplace(spds::Solver(options).prepare(graph));
-  }
-  PreparedAnalysis result(options_, graph, std::move(projected.controls),
-                          std::make_shared<const HistoryObserver>(observer),
-                          std::move(projected.calls),
-                          std::move(projected.fields), std::move(boolean));
-  result.projection_microseconds_ = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::steady_clock::now() - started)
-          .count());
-  return result;
+  auto storage = std::make_shared<PreparedAnalysis::Storage>(
+      options_, graph, std::make_shared<const HistoryObserver>(observer));
+  storage->preparation_us = elapsed(start);
+  return PreparedAnalysis(std::move(storage));
 }
 } // namespace lotus::cfl::interleaved_dyck::affine

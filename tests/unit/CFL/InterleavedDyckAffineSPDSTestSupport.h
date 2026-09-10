@@ -38,7 +38,7 @@ inline std::vector<Matrix> enumerate(const AffineSpace &space) {
   for (std::size_t mask=0;mask<(std::size_t{1}<<space.rank());++mask) {
     auto point=space.offset();
     for (std::size_t i=0;i<space.rank();++i) if ((mask>>i)&1U) point^=space.directions()[i];
-    result.emplace_back(space.dimension(),point);
+    result.push_back(space.decodeEntries(point));
   }
   return result;
 }

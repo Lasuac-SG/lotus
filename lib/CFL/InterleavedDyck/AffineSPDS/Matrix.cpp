@@ -199,6 +199,9 @@ void BitVector::xorChunk(std::size_t offset, std::size_t count,
 }
 Matrix::Matrix(std::size_t dimension)
     : dimension_(dimension), entries_(square(dimension)) {}
+std::size_t Matrix::coordinateCount(std::size_t dimension) {
+  return square(dimension);
+}
 Matrix::Matrix(std::size_t dimension, BitVector entries)
     : dimension_(dimension), entries_(std::move(entries)) {
   compatible(square(dimension), entries_.size());
@@ -254,11 +257,62 @@ RightMatrixMultiplier::RightMatrixMultiplier(std::size_t dimension,
     rows_[row] = value & row_mask;
   }
 }
-BitVector RightMatrixMultiplier::multiply(const BitVector &left) const {
-  compatible(square(dimension_), left.size());
-  return multiply(left.data());
+RightMatrixMultiplier::RightMatrixMultiplier(
+    std::size_t dimension, const BitVector &right,
+    std::shared_ptr<const MatrixLayout> layout)
+    : dimension_(dimension), right_(right.data()), layout_(std::move(layout)) {
+  compatible(layout_ ? layout_->coordinates() : square(dimension),
+             right.size());
+  if (layout_ && layout_->dimension() != dimension)
+    throw std::invalid_argument("matrix layout dimension mismatch");
+  if (!layout_) {
+    *this = RightMatrixMultiplier(dimension, right);
+    return;
+  }
+  if (dimension_ <= 64)
+    for (const auto &block : layout_->blocks())
+      for (std::size_t row = 0; row < block.dimension; ++row)
+        rows_[block.offset + row] = extractWords(
+            right_, block.coordinate + row * block.dimension, block.dimension);
 }
-BitVector RightMatrixMultiplier::multiply(const std::uint64_t *left) const {
+BitVector RightMatrixMultiplier::multiply(const BitVector &left,
+                                          AlgebraStatistics *statistics) const {
+  compatible(layout_ ? layout_->coordinates() : square(dimension_),
+             left.size());
+  return multiply(left.data(), statistics);
+}
+BitVector RightMatrixMultiplier::multiply(const std::uint64_t *left,
+                                          AlgebraStatistics *statistics) const {
+  if (statistics)
+    ++statistics->matrix_products;
+  if (layout_) {
+    BitVector result(layout_->coordinates());
+    for (const auto &b : layout_->blocks())
+      for (std::size_t row = 0; row < b.dimension; ++row)
+        for (std::size_t first = 0; first < b.dimension; first += 64) {
+          auto selectors =
+              extractWords(left, b.coordinate + row * b.dimension + first,
+                           std::min<std::size_t>(64, b.dimension - first));
+          while (selectors) {
+            const auto selected = first + trailing(selectors);
+            selectors &= selectors - 1;
+            for (std::size_t column = 0; column < b.dimension; column += 64) {
+              const auto count =
+                  std::min<std::size_t>(64, b.dimension - column);
+              const auto value =
+                  dimension_ <= 64
+                      ? rows_[b.offset + selected]
+                      : extractWords(right_,
+                                     b.coordinate + selected * b.dimension +
+                                         column,
+                                     count);
+              result.xorChunk(b.coordinate + row * b.dimension + column, count,
+                              value);
+            }
+          }
+        }
+    return result;
+  }
   BitVector result(square(dimension_));
   if (dimension_ > 64) {
     for (std::size_t row = 0; row < dimension_; ++row)
@@ -271,8 +325,7 @@ BitVector RightMatrixMultiplier::multiply(const std::uint64_t *left) const {
           const std::size_t selected = block + trailing(selectors);
           selectors &= selectors - 1;
           for (std::size_t column = 0; column < dimension_; column += 64) {
-            const auto count =
-                std::min<std::size_t>(64, dimension_ - column);
+            const auto count = std::min<std::size_t>(64, dimension_ - column);
             result.xorChunk(
                 row * dimension_ + column, count,
                 extractWords(right_, selected * dimension_ + column, count));
@@ -306,7 +359,85 @@ BitVector RightMatrixMultiplier::multiply(const std::uint64_t *left) const {
 }
 Matrix RightMatrixMultiplier::multiply(const Matrix &left) const {
   compatible(left.dimension_, dimension_);
+  if (layout_)
+    return layout_->unpack(multiply(layout_->pack(left)));
   return Matrix(dimension_, multiply(left.entries_));
+}
+
+MatrixLayout::MatrixLayout(
+    std::size_t dimension,
+    const std::vector<std::pair<std::size_t, std::size_t>> &blocks)
+    : dimension_(dimension) {
+  (void)square(dimension);
+  row_blocks_.resize(dimension);
+  std::size_t next = 0, coordinates = 0;
+  for (const auto &block : blocks) {
+    if (block.first != next || !block.second || block.second > dimension - next)
+      throw std::invalid_argument("invalid matrix block layout");
+    blocks_.push_back({next, block.second, coordinates});
+    for (std::size_t row = next; row < next + block.second; ++row)
+      row_blocks_[row] = blocks_.size() - 1;
+    coordinates += square(block.second);
+    next += block.second;
+  }
+  if (next != dimension)
+    throw std::invalid_argument("incomplete matrix block layout");
+  identity_ = BitVector(coordinates);
+  for (const auto &block : blocks_)
+    for (std::size_t i = 0; i < block.dimension; ++i)
+      identity_.set(block.coordinate + i * (block.dimension + 1));
+}
+std::size_t MatrixLayout::coordinate(std::size_t row,
+                                     std::size_t column) const {
+  if (row >= dimension_ || column >= dimension_)
+    throw std::out_of_range("layout matrix index");
+  if (row_blocks_[row] != row_blocks_[column])
+    return std::numeric_limits<std::size_t>::max();
+  const auto &block = blocks_[row_blocks_[row]];
+  return block.coordinate + (row - block.offset) * block.dimension + column -
+         block.offset;
+}
+bool MatrixLayout::contains(const Matrix &matrix) const {
+  if (matrix.dimension() != dimension_)
+    return false;
+  for (std::size_t row = 0; row < dimension_; ++row)
+    for (std::size_t column = 0; column < dimension_; ++column)
+      if (row_blocks_[row] != row_blocks_[column] && matrix.get(row, column))
+        return false;
+  return true;
+}
+BitVector MatrixLayout::pack(const Matrix &matrix) const {
+  if (!contains(matrix))
+    throw std::invalid_argument("matrix is outside block-diagonal layout");
+  return project(matrix);
+}
+BitVector MatrixLayout::project(const Matrix &matrix) const {
+  compatible(dimension_, matrix.dimension());
+  BitVector result(coordinates());
+  for (const auto &block : blocks_)
+    for (std::size_t row = 0; row < block.dimension; ++row)
+      for (std::size_t column = 0; column < block.dimension; ++column)
+        if (matrix.get(block.offset + row, block.offset + column))
+          result.set(block.coordinate + row * block.dimension + column);
+  return result;
+}
+Matrix MatrixLayout::unpack(const BitVector &entries) const {
+  compatible(coordinates(), entries.size());
+  Matrix result(dimension_);
+  for (const auto &block : blocks_)
+    for (std::size_t row = 0; row < block.dimension; ++row)
+      for (std::size_t column = 0; column < block.dimension; ++column)
+        if (entries.test(block.coordinate + row * block.dimension + column))
+          result.set(block.offset + row, block.offset + column);
+  return result;
+}
+bool MatrixLayout::operator==(const MatrixLayout &other) const {
+  if (dimension_ != other.dimension_ || blocks_.size() != other.blocks_.size())
+    return false;
+  for (std::size_t i = 0; i < blocks_.size(); ++i)
+    if (blocks_[i].dimension != other.blocks_[i].dimension)
+      return false;
+  return true;
 }
 Matrix Matrix::operator^(const Matrix &right) const {
   compatible(dimension_, right.dimension_);

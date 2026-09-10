@@ -1,6 +1,7 @@
 #include "CFL/InterleavedDyck/AffineSPDS/Solver.h"
 
 #include <charconv>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -138,11 +139,22 @@ std::vector<dyck::Pair> ordered(const dyck::PairSet &set) {
 const char *boolean(bool b) { return b ? "true" : "false"; }
 const char *answer(bool b) { return b ? "may-reach" : "unreachable"; }
 void statistics(std::ostream &out, const affine::Statistics &stats, bool json,
-                bool timings) {
+                bool timings, std::uint64_t observer_us = 0) {
   const auto &s = stats.saturation;
   if (json) {
     out << "\"statistics\":{\"matrix_dimension\":" << stats.matrix_dimension
-        << ",\"max_transition_rank\":" << stats.maximum_affine_rank
+        << ",\"coordinate_dimension\":" << stats.coordinate_dimension
+        << ",\"slice_cache_hits\":" << stats.slice_cache_hits
+        << ",\"compiled_rules\":" << stats.compiled_rules
+        << ",\"prepared_weights\":" << stats.prepared_weights
+        << ",\"matrix_products\":" << stats.algebra.matrix_products
+        << ",\"basis_reductions\":" << stats.algebra.basis_reductions
+        << ",\"basis_insertions\":" << stats.algebra.basis_insertions
+        << ",\"cow_detaches\":" << stats.algebra.cow_detaches
+        << ",\"intersection_tests\":" << stats.algebra.intersection_tests
+        << ",\"intersection_fast_paths\":"
+        << stats.algebra.intersection_fast_paths
+        << ",\"max_affine_rank\":" << stats.maximum_affine_rank
         << ",\"states\":" << s.states << ",\"transitions\":" << s.transitions
         << ",\"updates\":" << s.updates << ",\"processed\":" << s.processed
         << ",\"rules\":" << s.rules;
@@ -150,11 +162,23 @@ void statistics(std::ostream &out, const affine::Statistics &stats, bool json,
       out << ",\"setup_us\":" << s.setup_microseconds
           << ",\"saturation_us\":" << s.saturation_microseconds
           << ",\"readout_us\":" << s.readout_microseconds
-          << ",\"projection_us\":" << s.projection_microseconds;
+          << ",\"projection_us\":" << s.projection_microseconds
+          << ",\"observer_us\":" << stats.observer_microseconds + observer_us
+          << ",\"intersection_us\":" << stats.algebra.intersection_us
+          << ",\"certificate_us\":" << stats.algebra.certificate_us;
     out << '}';
   } else {
     out << "matrix-dimension: " << stats.matrix_dimension
-        << "\nmax-transition-rank: " << stats.maximum_affine_rank
+        << "\ncoordinate-dimension: " << stats.coordinate_dimension
+        << "\nslice-cache-hits: " << stats.slice_cache_hits
+        << "\ncompiled-rules: " << stats.compiled_rules
+        << "\nprepared-weights: " << stats.prepared_weights
+        << "\nmatrix-products: " << stats.algebra.matrix_products
+        << "\nbasis-reductions: " << stats.algebra.basis_reductions
+        << "\nbasis-insertions: " << stats.algebra.basis_insertions
+        << "\ncow-detaches: " << stats.algebra.cow_detaches
+        << "\nintersection-tests: " << stats.algebra.intersection_tests
+        << "\nmax-affine-rank: " << stats.maximum_affine_rank
         << "\nstates: " << s.states << "\ntransitions: " << s.transitions
         << "\nweight-updates: " << s.updates << "\nprocessed: " << s.processed
         << "\nrules: " << s.rules << '\n';
@@ -162,7 +186,10 @@ void statistics(std::ostream &out, const affine::Statistics &stats, bool json,
       out << "setup-us: " << s.setup_microseconds
           << "\nsaturation-us: " << s.saturation_microseconds
           << "\nreadout-us: " << s.readout_microseconds
-          << "\nprojection-us: " << s.projection_microseconds << '\n';
+          << "\nprojection-us: " << s.projection_microseconds
+          << "\nobserver-us: " << stats.observer_microseconds + observer_us
+          << "\nintersection-us: " << stats.algebra.intersection_us
+          << "\ncertificate-us: " << stats.algebra.certificate_us << '\n';
   }
 }
 void certificate(std::ostream &out, const affine::HistoryComparison &comparison,
@@ -343,14 +370,25 @@ int main(int argc, char **argv) {
         (target && !graph.containsVertex(*target)))
       throw std::invalid_argument(
           "query vertex is not in graph; use --vertex for isolated vertices");
+    const auto observer_started = std::chrono::steady_clock::now();
+    options.observer.max_matrix_dimension = options.max_matrix_dimension;
     affine::HistoryObserver observer;
     if (!observer_path.empty()) {
       std::ifstream input(observer_path);
       if (!input)
         throw std::invalid_argument("cannot open observer file");
       observer = affine::HistoryObserver::read(input);
-    } else if (!identity)
-      observer = affine::HistoryObserver::automatic(graph, options.observer);
+    } else if (!identity) {
+      try {
+        observer = affine::HistoryObserver::automatic(graph, options.observer);
+      } catch (const std::length_error &error) {
+        throw spds::ResourceLimit(error.what());
+      }
+    }
+    const auto observer_us = static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - observer_started)
+            .count());
     const bool reverse =
         (target && !source) ||
         (single && demand_direction == spds::DemandDirection::Pre);
@@ -406,7 +444,7 @@ int main(int argc, char **argv) {
         out << "\"requested_pairs\":" << demands.size() << ',';
       else
         out << "requested-pairs: " << demands.size() << '\n';
-      statistics(out, result.statistics, json, timings);
+      statistics(out, result.statistics, json, timings, observer_us);
     } else if (source || target) {
       if (single) {
         auto result =
@@ -450,17 +488,17 @@ int main(int argc, char **argv) {
           if (show_certificate)
             certificate(out, comparison, false);
         }
-        statistics(out, result.statistics(), json, timings);
+        statistics(out, result.statistics(), json, timings, observer_us);
       } else {
         auto result = reverse ? analysis.analyzeTo(*target, comparison_mode)
                               : analysis.analyzeFrom(*source, comparison_mode);
         candidates = std::move(result.pairs);
-        statistics(out, result.statistics, json, timings);
+        statistics(out, result.statistics, json, timings, observer_us);
       }
     } else {
       auto result = analysis.analyzeAll(comparison_mode);
       candidates = result.pairs;
-      statistics(out, result.statistics, json, timings);
+      statistics(out, result.statistics, json, timings, observer_us);
     }
     if (json) {
       out << ",\"candidate_pairs\":" << candidates.size();
