@@ -382,8 +382,7 @@ int main(int argc, char **argv) {
           << stats.fully_ordered_cycle_simplifications
           << ",\"graspan_epochs\":" << stats.graspan_epochs
           << ",\"endpoint_quotient_cells\":" << stats.endpoint_quotient_cells
-          << ",\"endpoint_quotient_facts\":"
-          << stats.endpoint_quotient_facts
+          << ",\"endpoint_quotient_facts\":" << stats.endpoint_quotient_facts
           << ",\"endpoint_quotient_seed_facts\":"
           << stats.endpoint_quotient_seed_facts
           << ",\"endpoint_quotient_inferred_facts\":"
@@ -404,6 +403,24 @@ int main(int argc, char **argv) {
           << stats.endpoint_quotient_saturation_us
           << ",\"endpoint_quotient_count_us\":"
           << stats.endpoint_quotient_count_us
+          << ",\"endpoint_quotient_insert_attempts\":"
+          << stats.endpoint_quotient_insert_attempts
+          << ",\"endpoint_quotient_duplicate_inserts\":"
+          << stats.endpoint_quotient_duplicate_inserts
+          << ",\"endpoint_quotient_binary_propagations\":"
+          << stats.endpoint_quotient_binary_propagations
+          << ",\"endpoint_quotient_successful_binary_propagations\":"
+          << stats.endpoint_quotient_successful_binary_propagations
+          << ",\"endpoint_quotient_repeated_binary_outputs\":"
+          << stats.endpoint_quotient_repeated_binary_outputs
+          << ",\"endpoint_quotient_binary_join_words\":"
+          << stats.endpoint_quotient_binary_join_words
+          << ",\"endpoint_quotient_partitions_built\":"
+          << stats.endpoint_quotient_partitions_built
+          << ",\"endpoint_quotient_bridges_built\":"
+          << stats.endpoint_quotient_bridges_built
+          << ",\"endpoint_quotient_lifts_built\":"
+          << stats.endpoint_quotient_lifts_built
           << ",\"simplified_nodes\":" << simplification_stats.reduced_nodes
           << ",\"scc_nodes_merged\":" << simplification_stats.scc_nodes_merged
           << ",\"folded_nodes\":" << simplification_stats.folded_nodes

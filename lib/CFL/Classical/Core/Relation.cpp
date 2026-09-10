@@ -38,44 +38,34 @@ public:
     return it != by_symbol.end() && it->second.count(target) != 0;
   }
 
-  void
-  forEachSuccessor(SymbolId symbol, NodeId source,
-                   llvm::function_ref<void(NodeId)> visitor) const override {
-    visit(successors_.at(source), symbol, visitor);
+  bool visitSuccessors(SymbolId symbol, NodeId source,
+                       NodeVisitor visitor) const override {
+    return visit(successors_.at(source), symbol, visitor);
   }
 
-  void
-  forEachPredecessor(SymbolId symbol, NodeId target,
-                     llvm::function_ref<void(NodeId)> visitor) const override {
-    visit(predecessors_.at(target), symbol, visitor);
+  bool visitPredecessors(SymbolId symbol, NodeId target,
+                         NodeVisitor visitor) const override {
+    return visit(predecessors_.at(target), symbol, visitor);
   }
 
-  std::vector<RelationEdge> edges() const override {
-    std::vector<RelationEdge> result;
-    result.reserve(edge_count_);
-    for (NodeId source = 0; source < successors_.size(); ++source) {
-      for (const auto &[symbol, targets] : successors_[source]) {
-        for (NodeId target : targets) {
-          result.push_back({symbol, source, target});
-        }
-      }
-    }
-    return result;
+  bool visitEdges(EdgeVisitor visitor) const override {
+    for (NodeId source = 0; source < successors_.size(); ++source)
+      for (const auto &[symbol, targets] : successors_[source])
+        for (NodeId target : targets)
+          if (!visitor({symbol, source, target}))
+            return false;
+    return true;
   }
 
-  std::vector<RelationEdge> edges(SymbolId symbol) const override {
-    std::vector<RelationEdge> result;
-    result.reserve(edgeCount(symbol));
+  bool visitEdges(SymbolId symbol, EdgeVisitor visitor) const override {
     for (NodeId source = 0; source < successors_.size(); ++source) {
       const auto it = successors_[source].find(symbol);
-      if (it == successors_[source].end()) {
-        continue;
-      }
-      for (NodeId target : it->second) {
-        result.push_back({symbol, source, target});
-      }
+      if (it != successors_[source].end())
+        for (NodeId target : it->second)
+          if (!visitor({symbol, source, target}))
+            return false;
     }
-    return result;
+    return true;
   }
 
   std::size_t edgeCount() const override { return edge_count_; }
@@ -104,15 +94,14 @@ private:
   using NodeSet = std::unordered_set<NodeId>;
   using SymbolMap = std::unordered_map<SymbolId, NodeSet>;
 
-  static void visit(const SymbolMap &map, SymbolId symbol,
-                    llvm::function_ref<void(NodeId)> visitor) {
+  static bool visit(const SymbolMap &map, SymbolId symbol,
+                    NodeVisitor visitor) {
     const auto it = map.find(symbol);
-    if (it == map.end()) {
-      return;
-    }
-    for (NodeId node : it->second) {
-      visitor(node);
-    }
+    if (it != map.end())
+      for (NodeId node : it->second)
+        if (!visitor(node))
+          return false;
+    return true;
   }
 
   std::vector<SymbolMap> successors_;
@@ -153,44 +142,34 @@ public:
     return it != by_symbol.end() && it->second.test(target);
   }
 
-  void
-  forEachSuccessor(SymbolId symbol, NodeId source,
-                   llvm::function_ref<void(NodeId)> visitor) const override {
-    visit(successors_.at(source), symbol, visitor);
+  bool visitSuccessors(SymbolId symbol, NodeId source,
+                       NodeVisitor visitor) const override {
+    return visit(successors_.at(source), symbol, visitor);
   }
 
-  void
-  forEachPredecessor(SymbolId symbol, NodeId target,
-                     llvm::function_ref<void(NodeId)> visitor) const override {
-    visit(predecessors_.at(target), symbol, visitor);
+  bool visitPredecessors(SymbolId symbol, NodeId target,
+                         NodeVisitor visitor) const override {
+    return visit(predecessors_.at(target), symbol, visitor);
   }
 
-  std::vector<RelationEdge> edges() const override {
-    std::vector<RelationEdge> result;
-    result.reserve(edge_count_);
-    for (NodeId source = 0; source < successors_.size(); ++source) {
-      for (const auto &[symbol, targets] : successors_[source]) {
-        for (unsigned target : targets) {
-          result.push_back({symbol, source, target});
-        }
-      }
-    }
-    return result;
+  bool visitEdges(EdgeVisitor visitor) const override {
+    for (NodeId source = 0; source < successors_.size(); ++source)
+      for (const auto &[symbol, targets] : successors_[source])
+        for (NodeId target : targets)
+          if (!visitor({symbol, source, target}))
+            return false;
+    return true;
   }
 
-  std::vector<RelationEdge> edges(SymbolId symbol) const override {
-    std::vector<RelationEdge> result;
-    result.reserve(edgeCount(symbol));
+  bool visitEdges(SymbolId symbol, EdgeVisitor visitor) const override {
     for (NodeId source = 0; source < successors_.size(); ++source) {
       const auto it = successors_[source].find(symbol);
-      if (it == successors_[source].end()) {
-        continue;
-      }
-      for (unsigned target : it->second) {
-        result.push_back({symbol, source, target});
-      }
+      if (it != successors_[source].end())
+        for (NodeId target : it->second)
+          if (!visitor({symbol, source, target}))
+            return false;
     }
-    return result;
+    return true;
   }
 
   std::size_t edgeCount() const override { return edge_count_; }
@@ -219,15 +198,14 @@ private:
   using BitVector = llvm::SparseBitVector<>;
   using SymbolMap = std::map<SymbolId, BitVector>;
 
-  static void visit(const SymbolMap &map, SymbolId symbol,
-                    llvm::function_ref<void(NodeId)> visitor) {
+  static bool visit(const SymbolMap &map, SymbolId symbol,
+                    NodeVisitor visitor) {
     const auto it = map.find(symbol);
-    if (it == map.end()) {
-      return;
-    }
-    for (unsigned node : it->second) {
-      visitor(node);
-    }
+    if (it != map.end())
+      for (NodeId node : it->second)
+        if (!visitor(node))
+          return false;
+    return true;
   }
 
   std::vector<SymbolMap> successors_;
@@ -237,6 +215,44 @@ private:
 };
 
 } // namespace
+
+void Relation::forEachSuccessor(
+    SymbolId symbol, NodeId source,
+    llvm::function_ref<void(NodeId)> visitor) const {
+  visitSuccessors(symbol, source, [&](NodeId target) {
+    visitor(target);
+    return true;
+  });
+}
+
+void Relation::forEachPredecessor(
+    SymbolId symbol, NodeId target,
+    llvm::function_ref<void(NodeId)> visitor) const {
+  visitPredecessors(symbol, target, [&](NodeId source) {
+    visitor(source);
+    return true;
+  });
+}
+
+std::vector<RelationEdge> Relation::edges() const {
+  std::vector<RelationEdge> result;
+  result.reserve(edgeCount());
+  visitEdges([&](const RelationEdge &edge) {
+    result.push_back(edge);
+    return true;
+  });
+  return result;
+}
+
+std::vector<RelationEdge> Relation::edges(SymbolId symbol) const {
+  std::vector<RelationEdge> result;
+  result.reserve(edgeCount(symbol));
+  visitEdges(symbol, [&](const RelationEdge &edge) {
+    result.push_back(edge);
+    return true;
+  });
+  return result;
+}
 
 std::unique_ptr<Relation> createRelation(RelationBackend backend,
                                          std::size_t node_count) {

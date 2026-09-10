@@ -47,8 +47,8 @@ struct Problem {
 };
 
 enum class PartitionMode {
-  Grammar,   // Separate FIRST/LAST-derived partitions for every symbol.
-  Global,    // Ablation: every symbol observes every edge label.
+  Grammar,  // Separate FIRST/LAST-derived partitions for every symbol.
+  Global,   // Ablation: every symbol observes every edge label.
   Singleton // Ablation: no endpoint compression.
 };
 
@@ -61,6 +61,8 @@ struct SymbolStatistics {
   Count target_classes = 0;
   Count positive_cells = 0;
   Count positive_facts = 0;
+  Count logical_facts = 0;
+  Count diagonal_facts = 0;
 };
 
 struct Statistics {
@@ -76,20 +78,24 @@ struct Statistics {
   Count worklist_pushes = 0;
   Count worklist_pops = 0;
   Count peak_worklist = 0;
-  Count binary_joins = 0; // Compatible ordered pairs of positive cells.
+  Count binary_joins = 0;       // Compatible ordered pairs of positive cells.
   Count unary_propagations = 0; // Candidate parent cells after refinement.
   Count binary_propagations = 0;
   Count successful_unary_propagations = 0;
   Count successful_binary_propagations = 0;
   Count bridge_pairs = 0; // Sum over distinct normalized binary productions.
+  Count partitions_built = 0;
+  Count bridges_built = 0;
+  Count lifts_built = 0;
+  Count repeated_binary_outputs = 0;
+  Count binary_join_words =
+      0; // Word operations used instead of individual joins.
   double preprocess_ms = 0;
   double saturation_ms = 0;
   double count_ms = 0;
   std::vector<SymbolStatistics> per_symbol;
 };
 
-// This is a self-contained research API, NOT a claimed adapter to Lotus's
-// existing Grammar/LabeledGraph/CFLSolver interfaces. See the artifact README.
 // All IDs are dense in [0,nodes) or [0,symbols). The problem is owned by value.
 class Solver {
 public:
@@ -105,6 +111,21 @@ public:
   bool contains(Id symbol, Id source, Id target) const;
   bool isNullable(Id symbol) const;
   const Statistics &statistics() const;
+  Id nodeCount() const;
+  std::size_t estimatedPayloadBytes() const;
+
+  // Streaming queries on the solved snapshot. Return false if the visitor
+  // stops traversal by returning false. No concrete result vector is built.
+  using NodeVisitor = std::function<bool(Id)>;
+  using PairVisitor = std::function<bool(Id, Id)>;
+  bool visitSuccessors(Id symbol, Id source, const NodeVisitor &visitor) const;
+  bool visitPredecessors(Id symbol, Id target,
+                         const NodeVisitor &visitor) const;
+  bool visitFacts(Id symbol, const PairVisitor &visitor) const;
+
+  // Counts distinct (source,target) pairs across symbols, excluding self pairs.
+  // Uses common source classes and a reusable target marking array.
+  Count countOffDiagonalUnion(std::vector<Id> symbols) const;
 
   // Visits each logical fact exactly once. Expansion is output-sensitive and
   // is intentionally NOT performed by solve() or statistics().
@@ -113,8 +134,8 @@ public:
 
   // Visits disjoint rectangles of POSITIVE-LENGTH reachability only. Epsilon
   // diagonals are separate, accessible through isNullable()/contains().
-  using RectangleVisitor = std::function<void(
-      Id, const std::vector<Id> &, const std::vector<Id> &)>;
+  using RectangleVisitor =
+      std::function<void(Id, const std::vector<Id> &, const std::vector<Id> &)>;
   void forEachPositiveRectangle(const RectangleVisitor &visitor) const;
 
 private:

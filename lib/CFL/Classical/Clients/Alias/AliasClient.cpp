@@ -618,6 +618,45 @@ ReachabilityStats AliasClient::solveToFixedPoint(
     aggregate.fully_ordered_cycle_simplifications +=
         current.fully_ordered_cycle_simplifications;
     aggregate.graspan_epochs += current.graspan_epochs;
+    aggregate.endpoint_quotient_cells = current.endpoint_quotient_cells;
+    aggregate.endpoint_quotient_facts = current.endpoint_quotient_facts;
+    aggregate.endpoint_quotient_seed_facts =
+        current.endpoint_quotient_seed_facts;
+    aggregate.endpoint_quotient_inferred_facts =
+        current.endpoint_quotient_inferred_facts;
+    aggregate.endpoint_quotient_source_classes =
+        current.endpoint_quotient_source_classes;
+    aggregate.endpoint_quotient_target_classes =
+        current.endpoint_quotient_target_classes;
+    aggregate.endpoint_quotient_nullable_symbols =
+        current.endpoint_quotient_nullable_symbols;
+    aggregate.endpoint_quotient_binary_joins +=
+        current.endpoint_quotient_binary_joins;
+    aggregate.endpoint_quotient_bridge_pairs +=
+        current.endpoint_quotient_bridge_pairs;
+    aggregate.endpoint_quotient_preprocess_us +=
+        current.endpoint_quotient_preprocess_us;
+    aggregate.endpoint_quotient_saturation_us +=
+        current.endpoint_quotient_saturation_us;
+    aggregate.endpoint_quotient_count_us += current.endpoint_quotient_count_us;
+    aggregate.endpoint_quotient_insert_attempts +=
+        current.endpoint_quotient_insert_attempts;
+    aggregate.endpoint_quotient_duplicate_inserts +=
+        current.endpoint_quotient_duplicate_inserts;
+    aggregate.endpoint_quotient_binary_propagations +=
+        current.endpoint_quotient_binary_propagations;
+    aggregate.endpoint_quotient_successful_binary_propagations +=
+        current.endpoint_quotient_successful_binary_propagations;
+    aggregate.endpoint_quotient_repeated_binary_outputs +=
+        current.endpoint_quotient_repeated_binary_outputs;
+    aggregate.endpoint_quotient_binary_join_words +=
+        current.endpoint_quotient_binary_join_words;
+    aggregate.endpoint_quotient_partitions_built +=
+        current.endpoint_quotient_partitions_built;
+    aggregate.endpoint_quotient_bridges_built +=
+        current.endpoint_quotient_bridges_built;
+    aggregate.endpoint_quotient_lifts_built +=
+        current.endpoint_quotient_lifts_built;
     ++aggregate.solver_rounds;
     if (!discover_constraints(*this)) {
       return aggregate;
@@ -849,11 +888,17 @@ void AliasClient::rebuildGrammar() {
     std::size_t target;
   };
   std::vector<NamedFact> preserved_facts;
-  if (session_) {
-    for (const RelationEdge &edge : session_->relation().edges()) {
-      const std::string &symbol = state_->grammar.symbolName(edge.symbol);
+  // The quotient backend recomputes from the encoded graph after a grammar
+  // extension. Feeding its old closure back as axioms would expand every
+  // rectangle, retain redundant input facts, and defeat compressed storage.
+  if (session_ && backend_ != SolverBackend::EndpointQuotient) {
+    for (SymbolId id = 0; id < state_->grammar.symbolCount(); ++id) {
+      const std::string &symbol = state_->grammar.symbolName(id);
       if (!state_->grammar.isGeneratedNonterminal(symbol)) {
-        preserved_facts.push_back({symbol, edge.source, edge.target});
+        session_->relation().visitEdges(id, [&](const RelationEdge &edge) {
+          preserved_facts.push_back({symbol, edge.source, edge.target});
+          return true;
+        });
       }
     }
   }
@@ -1031,9 +1076,10 @@ void AliasClient::indexAddressTakenObjects(
     }
   } else {
     const SymbolId value_symbol = state_->grammar.symbolId("V");
-    for (const RelationEdge &edge : session_->relation().edges(value_symbol)) {
-      project_pair(edge.source, edge.target);
-    }
+    for (NodeId source : pending)
+      session_->relation().forEachSuccessor(
+          value_symbol, source,
+          [&](NodeId target) { project_pair(source, target); });
   }
 
   for (auto &[pointer, objects] : unique_objects) {

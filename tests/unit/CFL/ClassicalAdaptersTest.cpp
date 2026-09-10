@@ -518,6 +518,37 @@ TEST(ClassicalAdaptersTest, IncrementalGepExtendsAttributedGrammar) {
   EXPECT_TRUE(client.graph().hasEdge(base, field, "gep_9"));
 }
 
+TEST(ClassicalAdaptersTest, QuotientGrammarExtensionDoesNotMaterializeOldClosure) {
+  AliasConstraintGraph graph;
+  const auto object = graph.addNode("object");
+  const auto pointer = graph.addNode("pointer");
+  const auto alias = graph.addNode("alias");
+  const auto field = graph.addNode("field");
+  graph.addEdge(object, pointer, AliasConstraintEdgeKind::Addr);
+  graph.addEdge(pointer, alias, AliasConstraintEdgeKind::Copy);
+  AliasClient client = AliasClient::fromConstraintGraph(graph);
+  client.solve(SolverBackend::EndpointQuotient);
+  ASSERT_TRUE(client.mayValueAlias(pointer, alias));
+  client.addConstraint(alias, field, AliasConstraintEdgeKind::NormalGep, 17);
+  const auto stats = client.solve(SolverBackend::EndpointQuotient);
+  EXPECT_EQ(stats.endpoint_quotient_seed_facts, client.graph().edgeCount());
+  EXPECT_TRUE(client.mayValueAlias(pointer, alias));
+  EXPECT_EQ(client.addressTakenObjects(alias), std::vector<std::size_t>({object}));
+
+  graph.addEdge(alias, field, AliasConstraintEdgeKind::NormalGep, 17);
+  AliasClient fresh = AliasClient::fromConstraintGraph(graph);
+  fresh.solve(SolverBackend::SparseBitVector);
+  for (std::size_t u = 0; u < graph.nodeNames().size(); ++u)
+    for (std::size_t v = 0; v < graph.nodeNames().size(); ++v)
+      EXPECT_EQ(client.mayValueAlias(u, v), fresh.mayValueAlias(u, v));
+
+  const auto aggregate = client.solveToFixedPoint(
+      SolverBackend::EndpointQuotient, [](AliasClient &) { return false; });
+  EXPECT_EQ(aggregate.endpoint_quotient_cells, stats.endpoint_quotient_cells);
+  EXPECT_EQ(aggregate.endpoint_quotient_facts, stats.endpoint_quotient_facts);
+  EXPECT_EQ(aggregate.endpoint_quotient_insert_attempts, 0u);
+}
+
 TEST(ClassicalAdaptersTest, ValueFlowClientEncodesSvfgCallsAndReachability) {
   const char *source = R"(
     define i32 @callee(i32 %x) {

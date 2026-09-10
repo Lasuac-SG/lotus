@@ -116,7 +116,8 @@ public:
   template <typename... Arguments>
   ClosureRelation(const std::unordered_set<SymbolId> &transitive_symbols,
                   std::size_t node_count, Arguments &&...arguments)
-      : base_(createRelation(RelationBackend::SparseBitVectors, node_count)) {
+      : node_count_(node_count),
+        base_(createRelation(RelationBackend::SparseBitVectors, node_count)) {
     for (SymbolId symbol : transitive_symbols) {
       closures_.emplace(symbol,
                         std::make_unique<Closure>(
@@ -125,6 +126,7 @@ public:
   }
 
   void ensureNodeCount(std::size_t node_count) override {
+    node_count_ = node_count;
     base_->ensureNodeCount(node_count);
     for (auto &[_, closure] : closures_) {
       closure->ensureNodeCount(node_count);
@@ -185,47 +187,51 @@ public:
     return base_->contains(symbol, source, target);
   }
 
-  void
-  forEachSuccessor(SymbolId symbol, NodeId source,
-                   llvm::function_ref<void(NodeId)> visitor) const override {
+  bool visitSuccessors(SymbolId symbol, NodeId source,
+                       NodeVisitor visitor) const override {
     if (const auto it = closures_.find(symbol); it != closures_.end()) {
-      it->second->forEachSuccessor(source, visitor);
-      return;
+      bool complete = true;
+      it->second->forEachSuccessor(source, [&](NodeId target) {
+        if (complete)
+          complete = visitor(target);
+      });
+      return complete;
     }
-    base_->forEachSuccessor(symbol, source, visitor);
+    return base_->visitSuccessors(symbol, source, visitor);
   }
 
-  void
-  forEachPredecessor(SymbolId symbol, NodeId target,
-                     llvm::function_ref<void(NodeId)> visitor) const override {
+  bool visitPredecessors(SymbolId symbol, NodeId target,
+                         NodeVisitor visitor) const override {
     if (const auto it = closures_.find(symbol); it != closures_.end()) {
-      it->second->forEachPredecessor(target, visitor);
-      return;
+      bool complete = true;
+      it->second->forEachPredecessor(target, [&](NodeId source) {
+        if (complete)
+          complete = visitor(source);
+      });
+      return complete;
     }
-    base_->forEachPredecessor(symbol, target, visitor);
+    return base_->visitPredecessors(symbol, target, visitor);
   }
 
-  std::vector<RelationEdge> edges() const override {
-    std::vector<RelationEdge> result = base_->edges();
-    result.reserve(edgeCount());
-    for (const auto &[symbol, closure] : closures_) {
-      for (const auto &[source, target] : closure->edges()) {
-        result.push_back({symbol, source, target});
-      }
-    }
-    return result;
+  bool visitEdges(EdgeVisitor visitor) const override {
+    if (!base_->visitEdges(visitor))
+      return false;
+    for (const auto &[symbol, closure] : closures_)
+      if (!visitEdges(symbol, visitor))
+        return false;
+    return true;
   }
 
-  std::vector<RelationEdge> edges(SymbolId symbol) const override {
-    if (const auto it = closures_.find(symbol); it != closures_.end()) {
-      std::vector<RelationEdge> result;
-      result.reserve(it->second->edgeCount());
-      for (const auto &[source, target] : it->second->edges()) {
-        result.push_back({symbol, source, target});
-      }
-      return result;
+  bool visitEdges(SymbolId symbol, EdgeVisitor visitor) const override {
+    if (closures_.count(symbol)) {
+      for (NodeId source = 0; source < node_count_; ++source)
+        if (!visitSuccessors(symbol, source, [&](NodeId target) {
+              return visitor({symbol, source, target});
+            }))
+          return false;
+      return true;
     }
-    return base_->edges(symbol);
+    return base_->visitEdges(symbol, visitor);
   }
 
   std::size_t edgeCount() const override {
@@ -254,6 +260,7 @@ public:
   const auto &closures() const { return closures_; }
 
 private:
+  std::size_t node_count_ = 0;
   std::unique_ptr<Relation> base_;
   std::unordered_map<SymbolId, std::unique_ptr<Closure>> closures_;
 };
@@ -264,10 +271,11 @@ using PocrClosureRelation = ClosureRelation<engines::PocrTransitiveClosure>;
 using FullyOrderedClosureRelation =
     ClosureRelation<engines::FullyOrderedTransitiveClosure>;
 
-std::unique_ptr<Relation>
-createSolverRelation(SolverBackend backend,
-                     const std::unordered_set<SymbolId> &transitive_symbols,
-                     std::size_t node_count, bool simplify_focr_cycles) {
+std::unique_ptr<Relation> createSolverRelation(SolverBackend backend,
+                                               const Grammar &grammar,
+                                               std::size_t node_count,
+                                               bool simplify_focr_cycles) {
+  const auto &transitive_symbols = grammar.transitiveSymbols();
   switch (backend) {
   case SolverBackend::SparseSet:
     return createRelation(RelationBackend::SparseSets, node_count);
@@ -288,7 +296,8 @@ createSolverRelation(SolverBackend backend,
     return std::make_unique<FullyOrderedClosureRelation>(
         transitive_symbols, node_count, simplify_focr_cycles);
   case SolverBackend::EndpointQuotient:
-    return createRelation(RelationBackend::SparseSets, node_count);
+    return std::make_unique<engines::EndpointQuotientEngine>(grammar,
+                                                             node_count);
   }
   throw std::invalid_argument("Unknown CFL solver backend");
 }
@@ -361,9 +370,9 @@ public:
        const SolverOptions &options)
       : graph_(graph), grammar_(grammar), backend_(options.backend),
         unidirectional_(options.unidirectional),
-        relation_(createSolverRelation(
-            options.backend, grammar.transitiveSymbols(), graph.vertexCount(),
-            options.simplify_focr_cycles)),
+        relation_(createSolverRelation(options.backend, grammar,
+                                       graph.vertexCount(),
+                                       options.simplify_focr_cycles)),
         expected_graph_version_(graph.mutationVersion()) {
     for (const GrammarIssue &issue : grammar.validate()) {
       if (issue.severity == GrammarIssueSeverity::Error) {
@@ -400,8 +409,8 @@ public:
           grammar, *relation_, graph.vertexCount(), std::move(pearl_options));
     }
     if (backend_ == SolverBackend::EndpointQuotient) {
-      eq_engine_ = std::make_unique<engines::EndpointQuotientEngine>(
-          grammar, *relation_, graph.vertexCount());
+      eq_engine_ =
+          static_cast<engines::EndpointQuotientEngine *>(relation_.get());
     }
     if (unidirectional_) {
       candidate_relation_ = createRelation(RelationBackend::SparseBitVectors,
@@ -448,9 +457,6 @@ public:
     }
     if (pearl_engine_) {
       pearl_engine_->ensureNodeCount(graph_.vertexCount());
-    }
-    if (eq_engine_) {
-      eq_engine_->ensureNodeCount(graph_.vertexCount());
     }
     if (candidate_relation_) {
       candidate_relation_->ensureNodeCount(graph_.vertexCount());
@@ -527,6 +533,17 @@ public:
       stats.endpoint_quotient_preprocess_us = eq.preprocess_us;
       stats.endpoint_quotient_saturation_us = eq.saturation_us;
       stats.endpoint_quotient_count_us = eq.count_us;
+      stats.endpoint_quotient_insert_attempts = eq.insert_attempts;
+      stats.endpoint_quotient_duplicate_inserts = eq.duplicate_facts;
+      stats.endpoint_quotient_binary_propagations = eq.binary_propagations;
+      stats.endpoint_quotient_successful_binary_propagations =
+          eq.successful_binary_propagations;
+      stats.endpoint_quotient_repeated_binary_outputs =
+          eq.repeated_binary_outputs;
+      stats.endpoint_quotient_binary_join_words = eq.binary_join_words;
+      stats.endpoint_quotient_partitions_built = eq.partitions_built;
+      stats.endpoint_quotient_bridges_built = eq.bridges_built;
+      stats.endpoint_quotient_lifts_built = eq.lifts_built;
     } else if (backend_ == SolverBackend::HierarchicalPocr) {
       do {
         while (!primary_worklist_.empty()) {
@@ -551,16 +568,26 @@ public:
     stats.relation_edges = relation_->edgeCount();
     stats.start_symbol_edges = relation_->edgeCount(grammar_.startSymbolId());
     if (!grammar_.countSymbols().empty()) {
-      std::set<std::pair<NodeId, NodeId>> counted_pairs;
-      for (const std::string &symbol : grammar_.countSymbols()) {
-        for (const RelationEdge &edge :
-             relation_->edges(grammar_.symbolId(symbol))) {
-          if (edge.source != edge.target) {
-            counted_pairs.insert({edge.source, edge.target});
-          }
+      std::vector<SymbolId> symbols;
+      for (const auto &symbol : grammar_.countSymbols())
+        symbols.push_back(grammar_.symbolId(symbol));
+      if (eq_engine_) {
+        stats.count_symbol_edges =
+            eq_engine_->countOffDiagonalUnion(std::move(symbols));
+      } else {
+        // Deduplicate one source's union at a time instead of retaining every
+        // counted pair or collecting whole relations into temporary vectors.
+        std::unordered_set<NodeId> targets;
+        for (NodeId source = 0; source < graph_.vertexCount(); ++source) {
+          targets.clear();
+          for (SymbolId symbol : symbols)
+            relation_->forEachSuccessor(symbol, source, [&](NodeId target) {
+              if (target != source)
+                targets.insert(target);
+            });
+          stats.count_symbol_edges += targets.size();
         }
       }
-      stats.count_symbol_edges = counted_pairs.size();
     }
     stats.relation_payload_bytes_estimate = relation_->estimatedPayloadBytes();
     stats.candidate_relation_edges = candidate_relation_
@@ -904,7 +931,7 @@ private:
   bool addDerived(SymbolId symbol, NodeId source, NodeId target,
                   ReachabilityStats &stats, bool force_candidate = false) {
     if (backend_ == SolverBackend::EndpointQuotient) {
-      if (!eq_engine_->addEdge(symbol, source, target)) {
+      if (!eq_engine_->add(symbol, source, target)) {
         ++stats.duplicate_edges;
         return false;
       }
@@ -1096,7 +1123,7 @@ private:
 
   bool insertInputFact(SymbolId symbol, NodeId source, NodeId target) {
     if (backend_ == SolverBackend::EndpointQuotient) {
-      if (!eq_engine_->addEdge(symbol, source, target)) {
+      if (!eq_engine_->add(symbol, source, target)) {
         return false;
       }
       addCandidate(symbol, source, target, true);
@@ -1195,7 +1222,7 @@ private:
   std::unique_ptr<GraspanData> graspan_current_;
   std::unique_ptr<engines::SqidEngine> sqid_engine_;
   std::unique_ptr<engines::PearlEngine> pearl_engine_;
-  std::unique_ptr<engines::EndpointQuotientEngine> eq_engine_;
+  engines::EndpointQuotientEngine *eq_engine_ = nullptr;
   std::size_t input_edges_ = 0;
   std::size_t current_peak_worklist_size_ = 0;
   std::size_t pending_derived_edges_ = 0;

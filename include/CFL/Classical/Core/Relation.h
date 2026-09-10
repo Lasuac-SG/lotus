@@ -18,7 +18,9 @@ struct RelationEdge {
   NodeId target = 0;
 };
 
-/// Solver-neutral storage for terminal and derived CFL relations.
+/// Solver-neutral queries over terminal and derived CFL relations. Backends
+/// may retain compressed results. Traversal order is unspecified and each
+/// fact is visited once. Do not mutate the relation from a visitor.
 class Relation {
 public:
   virtual ~Relation() = default;
@@ -27,14 +29,23 @@ public:
   virtual bool add(SymbolId symbol, NodeId source, NodeId target) = 0;
   virtual bool contains(SymbolId symbol, NodeId source,
                         NodeId target) const = 0;
-  virtual void
-  forEachSuccessor(SymbolId symbol, NodeId source,
-                   llvm::function_ref<void(NodeId)> visitor) const = 0;
-  virtual void
-  forEachPredecessor(SymbolId symbol, NodeId target,
-                     llvm::function_ref<void(NodeId)> visitor) const = 0;
-  virtual std::vector<RelationEdge> edges() const = 0;
-  virtual std::vector<RelationEdge> edges(SymbolId symbol) const = 0;
+  using NodeVisitor = llvm::function_ref<bool(NodeId)>;
+  using EdgeVisitor = llvm::function_ref<bool(const RelationEdge &)>;
+  // Return false when the visitor requests termination, true on completion.
+  virtual bool visitSuccessors(SymbolId symbol, NodeId source,
+                               NodeVisitor visitor) const = 0;
+  virtual bool visitPredecessors(SymbolId symbol, NodeId target,
+                                 NodeVisitor visitor) const = 0;
+  virtual bool visitEdges(EdgeVisitor visitor) const = 0;
+  virtual bool visitEdges(SymbolId symbol, EdgeVisitor visitor) const = 0;
+
+  void forEachSuccessor(SymbolId symbol, NodeId source,
+                        llvm::function_ref<void(NodeId)> visitor) const;
+  void forEachPredecessor(SymbolId symbol, NodeId target,
+                          llvm::function_ref<void(NodeId)> visitor) const;
+  // Explicit collection allocates space proportional to the requested output.
+  std::vector<RelationEdge> edges() const;
+  std::vector<RelationEdge> edges(SymbolId symbol) const;
   virtual std::size_t edgeCount() const = 0;
   virtual std::size_t edgeCount(SymbolId symbol) const = 0;
   /// Estimated container payload only; excludes allocator and node overhead.

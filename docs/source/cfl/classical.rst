@@ -58,9 +58,9 @@ layout:
    reverse label indices support direct incoming-edge queries.
 
 ``Relation``
-   Separates terminal and derived facts from the graph frontend. Sparse-set
-   and LLVM sparse-bitvector implementations provide visitor-based indexed
-   successor and predecessor lookup without materializing vectors in joins.
+   Separates terminal and derived facts from the graph frontend. Sparse-set,
+   LLVM sparse-bitvector, and endpoint-quotient implementations provide indexed
+   successor and predecessor lookup and streaming edge enumeration.
 
 ``SolverSession``
    Retains a relation and worklist across calls. ``addTerminalEdge`` followed
@@ -122,12 +122,76 @@ Solver backends
    the complete exact CFL relation. Select it with ``--solver focr``; add
    ``--focr-scc`` for POCR's optional critical-graph cycle simplification.
 
+``EndpointQuotient``
+   Select with ``--solver endpoint-quotient``. Retains exact reachability as
+   cells over grammar-dependent source and target partitions, with nullable
+   diagonals represented separately. Solving and ordinary queries do not
+   materialize the complete concrete relation. Identical partitions, lifts,
+   and bridges are shared; dense identity-lift joins propagate bitmap deltas.
+   Other joins use indexed cell traversal and cache repeated nontrivial lift
+   products. Temporary join indexes and grammar plans are released after solving.
+
+   The endpoint engine implements ``Relation`` directly. It buffers new input
+   facts and rebuilds its static quotient on the next ``solve()``. Until that
+   solve completes, queries see the previous snapshot (or an empty relation
+   before the first solve). An unchanged solve performs no new solver work.
+   Adding an isolated node also invalidates the snapshot, so nullable facts
+   for that node appear after the next solve.
+   Alias-client grammar extensions rebuild from the encoded input graph;
+   they do not expand and reinsert the previous quotient closure as axioms.
+
 All backends return exactly the same grammar-relative relation. Tests compare
 their complete triples, not only start-symbol answers, against an independent
 cubic recognizer and exercise incremental additions and non-nullable cycles.
 
 ``ConstraintGroundingSolver`` is separate: it computes structural set-variable
 grounding statistics and does not expose a CFL node-pair relation.
+
+Querying compressed results
+---------------------------
+
+Clients use the same relation interface for every backend:
+
+.. code-block:: cpp
+
+   const auto &relation = session.relation();
+   const auto symbol = grammar.symbolId("S");
+   bool reachable = relation.contains(symbol, source, target);
+
+   relation.forEachSuccessor(symbol, source, [&](NodeId target) {
+     consumeTarget(target);
+   });
+
+   // Return false to stop; visitEdges returns false when stopped early.
+   relation.visitEdges(symbol, [&](const RelationEdge &edge) {
+     return consumeEdgeAndContinue(edge);
+   });
+
+``visitSuccessors`` and ``visitPredecessors`` also support early termination;
+the ``forEach`` variants take void callbacks. ``visitEdges(visitor)`` visits all
+symbols, and ``visitEdges(symbol, visitor)`` visits only the selected symbol.
+Traversal order is unspecified, facts are unique, and callbacks must not
+mutate or solve the relation. ``edges()`` and ``edges(symbol)`` explicitly
+collect a vector when the caller needs owned results or sorting.
+
+The endpoint backend expands only the queried source row or target column
+for local enumeration. Full enumeration necessarily takes time proportional
+to the output, but does not allocate a full result vector. Nullable diagonals
+are included exactly once, even when a positive-length cycle also reaches
+the same node. The standalone endpoint ``Solver`` additionally exposes
+``forEachPositiveRectangle`` for clients that process whole compressed blocks.
+
+``edgeCount`` reads cached exact counts. Session ``Count`` statistics exclude
+self-pairs and deduplicate overlapping symbols; the endpoint backend computes
+this union by grouping equivalent source rows, without storing all concrete
+pairs. ``relation_payload_bytes_estimate`` measures retained compressed
+containers and buffered inputs, excluding allocator overhead and temporary
+peak solve memory. Endpoint statistics expose partition/bridge/lift builds,
+insertion attempts, duplicate inserts, skipped repeated binary outputs, and
+bitmap join words. ``binary_joins`` still counts compatible cell pairs even
+when a bitmap operation handles many of them at once. Core phase timings
+exclude snapshot replacement and session-level statistics; use the session's
+``solve_time_microseconds`` for end-to-end solve timing.
 
 POCR support utilities
 ----------------------

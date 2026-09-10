@@ -74,6 +74,15 @@ struct ReachabilityStats {
   std::uint64_t endpoint_quotient_preprocess_us = 0;
   std::uint64_t endpoint_quotient_saturation_us = 0;
   std::uint64_t endpoint_quotient_count_us = 0;
+  std::size_t endpoint_quotient_insert_attempts = 0;
+  std::size_t endpoint_quotient_duplicate_inserts = 0;
+  std::size_t endpoint_quotient_binary_propagations = 0;
+  std::size_t endpoint_quotient_successful_binary_propagations = 0;
+  std::size_t endpoint_quotient_repeated_binary_outputs = 0;
+  std::size_t endpoint_quotient_binary_join_words = 0;
+  std::size_t endpoint_quotient_partitions_built = 0;
+  std::size_t endpoint_quotient_bridges_built = 0;
+  std::size_t endpoint_quotient_lifts_built = 0;
 
   // Aggregates report how many solve calls they combine.
   std::size_t solver_rounds = 1;
