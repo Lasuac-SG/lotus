@@ -1,6 +1,7 @@
 #ifndef DATAFLOW_APA_SOLVER_PATHSUMMARYEQUATIONSOLVER_H_
 #define DATAFLOW_APA_SOLVER_PATHSUMMARYEQUATIONSOLVER_H_
 
+#include "Dataflow/APA/Core/Options.h"
 #include "Dataflow/APA/Core/PathExpr.h"
 
 #include <algorithm>
@@ -89,6 +90,10 @@ enum class PathSummaryEquationDirection {
 struct PathSummaryEquationOptions final {
   PathSummaryEquationDirection Direction =
       PathSummaryEquationDirection::DependencyPrefix;
+  // EAN/Greedy post-optimization of the solved summary batch, applied by
+  // ForwardInterSummarySolver between summary solving and interpretation.
+  // Default is a no-op pass, so the interprocedural baseline is unchanged.
+  InterEANOptions EAN = {};
 };
 
 struct PathSummaryEquationDiagnostics final {
@@ -109,6 +114,11 @@ public:
   }
 
   const std::map<KeyT, expr_ref_t> &summaries() const { return Summaries; }
+  // Non-const access so a post-solve optimization pass (EAN/Greedy in
+  // ForwardInterSummarySolver) can replace each context's summary expression
+  // in place with a semantically-equivalent, cost-minimized form before
+  // interpretation. Keys are never added or removed through this handle.
+  std::map<KeyT, expr_ref_t> &summaries() { return Summaries; }
   const PathSummaryEquationDiagnostics &diagnostics() const {
     return Diagnostics;
   }
@@ -380,7 +390,20 @@ private:
     SummaryByNode[Node] = forwardBaseForNode(Node);
   }
 
+  // Dense cyclic SCCs use Floyd--Warshall; large SCCs above this node count use
+  // sparse min-fill Gaussian elimination (R2-intra: the dense O(N^3) closure
+  // dominates on big cyclic control-flow regions, e.g. a 152-node component).
+  static constexpr std::size_t kDenseCyclicThreshold = 16;
+
   void solveForwardCyclicComponent(const Component &C) {
+    if (C.Nodes.size() <= kDenseCyclicThreshold) {
+      solveForwardCyclicComponentDense(C);
+    } else {
+      solveForwardCyclicComponentSparse(C);
+    }
+  }
+
+  void solveForwardCyclicComponentDense(const Component &C) {
     const std::size_t N = C.Nodes.size();
     std::unordered_map<std::size_t, std::size_t> LocalIndex;
     LocalIndex.reserve(N);
@@ -446,6 +469,163 @@ private:
         Summary = unite(Summary, concat(Base[I], Matrix[I][J]));
       }
       SummaryByNode[C.Nodes[J]] = Summary;
+    }
+  }
+
+  // Sparse forward cyclic solve: Gaussian (Lehmann/Tarjan) elimination of the
+  // left-linear system  X_v = base_v  U  U_{u->v} X_u . W[u][v],  choosing
+  // pivots by min-fill (min-degree tiebreak).  Eliminating v only rewrites its
+  // remaining predecessor x successor pairs, so a sparse SCC never materializes
+  // the dense N*N closure.  Value-equivalent to solveForwardCyclicComponentDense.
+  void solveForwardCyclicComponentSparse(const Component &C) {
+    const std::size_t N = C.Nodes.size();
+    std::unordered_map<std::size_t, std::size_t> LocalIndex;
+    LocalIndex.reserve(N);
+    for (std::size_t I = 0; I < N; ++I) {
+      LocalIndex.emplace(C.Nodes[I], I);
+    }
+
+    // Sparse adjacency over local indices: Succ[u][v] = Pred[v][u] = weight u->v.
+    std::vector<std::map<std::size_t, expr_ref_t>> Succ(N), Pred(N);
+    std::vector<expr_ref_t> Base(N);
+    for (std::size_t I = 0; I < N; ++I) {
+      Base[I] = forwardBaseForNode(C.Nodes[I]);
+      if (!Base[I]) {
+        Base[I] = zero();
+      }
+    }
+    auto addEdge = [&](std::size_t U, std::size_t V, const expr_ref_t &W) {
+      auto SIt = Succ[U].find(V);
+      if (SIt == Succ[U].end()) {
+        Succ[U].emplace(V, W);
+        Pred[V].emplace(U, W);
+      } else {
+        expr_ref_t Merged = unite(SIt->second, W);
+        SIt->second = Merged;
+        Pred[V][U] = Merged;
+      }
+    };
+    for (std::size_t I = 0; I < N; ++I) {
+      for (std::size_t EdgeId : OutEdges[C.Nodes[I]]) {
+        const auto &E = Graph.edges()[EdgeId];
+        auto It = LocalIndex.find(E.Target);
+        if (It == LocalIndex.end()) {
+          continue;
+        }
+        addEdge(I, It->second, E.Weight);
+      }
+    }
+
+    std::vector<bool> Elim(N, false);
+    std::vector<std::size_t> Order;
+    Order.reserve(N);
+    std::vector<expr_ref_t> RecStar(N), RecBase(N);
+    std::vector<std::vector<std::pair<std::size_t, expr_ref_t>>> RecPreds(N);
+
+    for (std::size_t Step = 0; Step < N; ++Step) {
+      // Select the remaining pivot with the fewest fill edges (min-degree tie).
+      std::size_t Pivot = N;
+      std::size_t BestFill = 0, BestDeg = 0;
+      for (std::size_t V = 0; V < N; ++V) {
+        if (Elim[V]) {
+          continue;
+        }
+        std::vector<std::size_t> Ps, Ss;
+        for (const auto &PR : Pred[V]) {
+          if (PR.first != V && !Elim[PR.first]) {
+            Ps.push_back(PR.first);
+          }
+        }
+        for (const auto &SC : Succ[V]) {
+          if (SC.first != V && !Elim[SC.first]) {
+            Ss.push_back(SC.first);
+          }
+        }
+        const std::size_t Deg = Ps.size() + Ss.size();
+        std::size_t Fill = 0;
+        for (std::size_t U : Ps) {
+          for (std::size_t S : Ss) {
+            if (U != S && Succ[U].find(S) == Succ[U].end()) {
+              ++Fill;
+            }
+          }
+        }
+        if (Pivot == N || Fill < BestFill ||
+            (Fill == BestFill && Deg < BestDeg)) {
+          Pivot = V;
+          BestFill = Fill;
+          BestDeg = Deg;
+        }
+      }
+
+      const std::size_t V = Pivot;
+      auto SelfIt = Succ[V].find(V);
+      const expr_ref_t Wstar =
+          star(SelfIt == Succ[V].end() ? zero() : SelfIt->second);
+
+      // Record v's equation for back-substitution before splicing it out.
+      // X_v = (base_v  U  U_{u!=v} X_u . W[u][v]) . W[v][v]*.
+      RecStar[V] = Wstar;
+      RecBase[V] = Base[V];
+      std::vector<std::pair<std::size_t, expr_ref_t>> Preds, Succs;
+      for (const auto &PR : Pred[V]) {
+        if (PR.first != V && !Elim[PR.first]) {
+          Preds.push_back(PR);
+          RecPreds[V].push_back(PR);
+        }
+      }
+      for (const auto &SC : Succ[V]) {
+        if (SC.first != V && !Elim[SC.first]) {
+          Succs.push_back(SC);
+        }
+      }
+
+      // Fold v's base into successors: base_s U base_v . W[v][v]* . W[v][s].
+      if (!expr_factory_t::isZero(Base[V])) {
+        const expr_ref_t BaseLeft = concat(Base[V], Wstar);
+        for (const auto &SC : Succs) {
+          Base[SC.first] = unite(Base[SC.first], concat(BaseLeft, SC.second));
+        }
+      }
+
+      // Add fill edges u->s: W[u][s] U W[u][v] . W[v][v]* . W[v][s].
+      for (const auto &PR : Preds) {
+        const expr_ref_t Left = concat(PR.second, Wstar);
+        for (const auto &SC : Succs) {
+          addEdge(PR.first, SC.first, concat(Left, SC.second));
+        }
+      }
+
+      // Splice v out of the remaining graph.
+      for (const auto &PR : Pred[V]) {
+        if (PR.first != V) {
+          Succ[PR.first].erase(V);
+        }
+      }
+      for (const auto &SC : Succ[V]) {
+        if (SC.first != V) {
+          Pred[SC.first].erase(V);
+        }
+      }
+      Succ[V].clear();
+      Pred[V].clear();
+      Elim[V] = true;
+      Order.push_back(V);
+    }
+
+    // Back-substitute in reverse elimination order: every recorded predecessor
+    // was eliminated after v, so its solution X[u] is already available here.
+    std::vector<expr_ref_t> X(N);
+    for (auto It = Order.rbegin(); It != Order.rend(); ++It) {
+      const std::size_t V = *It;
+      expr_ref_t Acc = RecBase[V];
+      for (const auto &PR : RecPreds[V]) {
+        Acc = unite(Acc, concat(X[PR.first], PR.second));
+      }
+      X[V] = concat(Acc, RecStar[V]);
+    }
+    for (std::size_t I = 0; I < N; ++I) {
+      SummaryByNode[C.Nodes[I]] = X[I];
     }
   }
 

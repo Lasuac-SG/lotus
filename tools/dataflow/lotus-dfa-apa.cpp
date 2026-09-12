@@ -21,12 +21,14 @@
 #include "Dataflow/APA/Analyses/Intra/NonNull.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
+#include "Dataflow/APA/Analyses/Intra/IntraAffineEqualities.h"
 #include "Dataflow/APA/Analyses/Intra/Sign.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
 #include "ToolSupport.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -34,6 +36,24 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+// psapi.h must follow windows.h
+#include <psapi.h>
+// windows.h defines IN/OUT as empty SAL macros, which would mangle the solver
+// result accessor Result.IN(...). Drop them.
+#undef IN
+#undef OUT
+#else
+#include <sys/resource.h>
+#endif
 
 using namespace llvm;
 
@@ -79,12 +99,183 @@ static cl::opt<unsigned> AffineMaxTrackedOpt(
              "limit)"),
     cl::init(32));
 
+// --- EAN / Order (evaluation) configuration ---------------------------------
+static cl::opt<std::string>
+    OrderingOpt("ordering",
+                cl::desc("Pivot order for state elimination: default|cost-aware"),
+                cl::init("default"));
+static cl::opt<bool> EanOpt("ean",
+                            cl::desc("Run the EAN normalizer post-pass"),
+                            cl::init(false));
+static cl::opt<bool>
+    GreedyOpt("greedy",
+              cl::desc("Run the Greedy one-pass simplifier post-pass"),
+              cl::init(false));
+static cl::opt<bool>
+    EanMonotoneOpt("ean-monotone",
+                   cl::desc("EAN returns the input if its output has more nodes"),
+                   cl::init(false));
+static cl::opt<std::string>
+    EanLawsOpt("ean-laws", cl::desc("EAN law profile: safe|kleene"),
+               cl::init("safe"));
+static cl::opt<std::string>
+    EanCostOpt("ean-cost",
+               cl::desc("EAN extraction cost: uniform|dag (dag counts edges "
+                        "≈ exported factory nodes)"),
+               cl::init("uniform"));
+static cl::opt<unsigned>
+    EanRoundLimit("ean-round-limit",
+                  cl::desc("EAN saturation round budget (0 = unbounded)"),
+                  cl::init(0));
+static cl::opt<unsigned>
+    EanNodeLimit("ean-node-limit",
+                 cl::desc("EAN e-node budget (0 = unbounded)"), cl::init(0));
+static cl::opt<double>
+    EanTimeLimit("ean-time-limit",
+                 cl::desc("EAN wall-clock budget in seconds (0 = unbounded)"),
+                 cl::init(0.0));
+static cl::opt<bool>
+    MeasurePeakOpt("measure-peak",
+                   cl::desc("Record peak construction nodes (slower)"),
+                   cl::init(false));
+static cl::opt<unsigned>
+    MaxFuncInsts("max-func-insts",
+                 cl::desc("Skip functions with more instructions (0 = no cap)"),
+                 cl::init(0));
+static cl::opt<unsigned>
+    EanMinNodes("ean-min-nodes",
+                cl::desc("Invocation gate: run EAN only if raw batch has >= N "
+                         "unique DAG nodes (0 = always)"),
+                cl::init(0));
+static cl::opt<unsigned>
+    InterpRepeat("interp-repeat",
+                 cl::desc("Interpret each summary N times (amortization, RQ2)"),
+                 cl::init(1));
+static cl::opt<unsigned>
+    RepeatOpt("repeat", cl::desc("Measured runs per function (timing median)"),
+              cl::init(1));
+static cl::opt<unsigned>
+    WarmupOpt("warmup", cl::desc("Warmup runs per function before measuring"),
+              cl::init(0));
+static cl::opt<bool> InterSummaryOpt(
+    "inter-summary",
+    cl::desc("Route interprocedural clients to the path-summary solver "
+             "(ForwardInterSummarySolver) so EAN/Greedy apply to summaries"),
+    cl::init(false));
+static cl::opt<bool> ModularInterOpt(
+    "modular-inter",
+    cl::desc("Route interprocedural reachable to the modular per-procedure "
+             "summary solver (E6, functional/context-insensitive)"),
+    cl::init(false));
+static cl::opt<bool> MemoInterpOpt(
+    "memo-interp",
+    cl::desc("Affine client only: memoizing transformer interpreter "
+             "(eval cost proportional to unique DAG nodes, not tree size)"),
+    cl::init(false));
+static cl::opt<std::string> InterpOpt(
+    "interp",
+    cl::desc("Path-expression interpreter: generic (framework eval) | translapa "
+             "(closed-form Gen/Kill semiring baseline). Applies to the reachable "
+             "and reachdef clients."),
+    cl::init("generic"));
+
 namespace {
 
 using lotus::dataflow_tool::FunctionView;
 using lotus::dataflow_tool::ValueIdMap;
 using InstructionExprFactory = elimination::PathExprFactory<Instruction *>;
 using InstructionExprRef = InstructionExprFactory::Ref;
+
+// Aggregated stage timings (microseconds) across the measured repeats.
+struct Timings final {
+  std::uint64_t gen = 0;
+  std::uint64_t norm = 0;
+  std::uint64_t interp = 0;
+  std::uint64_t end2end = 0;
+  unsigned runs = 1;
+};
+
+std::uint64_t medianOf(std::vector<std::uint64_t> V) {
+  if (V.empty())
+    return 0;
+  std::sort(V.begin(), V.end());
+  return V[V.size() / 2];
+}
+
+// Peak resident memory of this process in KiB (Table VII Peak RSS).
+std::uint64_t peakRssKb() {
+#ifdef _WIN32
+  PROCESS_MEMORY_COUNTERS PMC;
+  if (GetProcessMemoryInfo(GetCurrentProcess(), &PMC, sizeof(PMC)))
+    return static_cast<std::uint64_t>(PMC.PeakWorkingSetSize) / 1024;
+  return 0;
+#elif defined(__APPLE__)
+  struct rusage RU;
+  if (getrusage(RUSAGE_SELF, &RU) == 0)
+    return static_cast<std::uint64_t>(RU.ru_maxrss) / 1024; // bytes on macOS
+  return 0;
+#else
+  struct rusage RU;
+  if (getrusage(RUSAGE_SELF, &RU) == 0)
+    return static_cast<std::uint64_t>(RU.ru_maxrss); // KiB on Linux
+  return 0;
+#endif
+}
+
+// Build EliminationOptions from the evaluation CLI flags.
+elimination::EliminationOptions buildElimOpts() {
+  auto Opts = lotus::dataflow_tool::parseEliminationOptions(ElimMethodOpt);
+  if (OrderingOpt == "cost-aware")
+    Opts.Ordering = elimination::OrderingPolicy::CostAware;
+  Opts.EnableEAN = EanOpt;
+  Opts.EnableGreedy = GreedyOpt;
+  Opts.EANLaws = (EanLawsOpt == "kleene")
+                     ? elimination::ean::LawProfile::kleeneAlgebra()
+                     : elimination::ean::LawProfile::safeMinimal();
+  Opts.EANCost = (EanCostOpt == "dag")
+                     ? elimination::ean::CostModel::dag()
+                     : elimination::ean::CostModel::uniform();
+  elimination::ean::Budget B = elimination::ean::Budget::unbounded();
+  if (EanRoundLimit)
+    B.roundLimit = EanRoundLimit;
+  if (EanNodeLimit)
+    B.nodeLimit = EanNodeLimit;
+  if (EanTimeLimit > 0.0)
+    B.timeLimitSec = EanTimeLimit;
+  Opts.EANBudget = B;
+  Opts.MeasurePeakNodes = MeasurePeakOpt;
+  Opts.EANMinNodes = EanMinNodes;
+  Opts.EANMonotone = EanMonotoneOpt;
+  Opts.InterpRepeat = InterpRepeat ? InterpRepeat : 1;
+  Opts.InterpMemo = MemoInterpOpt;
+  return Opts;
+}
+
+// Build PathSummaryEquationOptions (with the EAN sub-config) for the
+// interprocedural path-summary solver from the same evaluation CLI flags.
+elimination::PathSummaryEquationOptions buildInterSummaryOpts() {
+  elimination::PathSummaryEquationOptions Opts;
+  auto &E = Opts.EAN;
+  E.EnableEAN = EanOpt;
+  E.EnableGreedy = GreedyOpt;
+  E.EANLaws = (EanLawsOpt == "kleene")
+                  ? elimination::ean::LawProfile::kleeneAlgebra()
+                  : elimination::ean::LawProfile::safeMinimal();
+  E.EANCost = (EanCostOpt == "dag") ? elimination::ean::CostModel::dag()
+                                    : elimination::ean::CostModel::uniform();
+  elimination::ean::Budget B = elimination::ean::Budget::unbounded();
+  if (EanRoundLimit)
+    B.roundLimit = EanRoundLimit;
+  if (EanNodeLimit)
+    B.nodeLimit = EanNodeLimit;
+  if (EanTimeLimit > 0.0)
+    B.timeLimitSec = EanTimeLimit;
+  E.EANBudget = B;
+  E.EANMinNodes = EanMinNodes;
+  E.EANMonotone = EanMonotoneOpt;
+  E.InterpRepeat = InterpRepeat ? InterpRepeat : 1;
+  return Opts;
+}
 
 ValueIdMap buildModuleValueIdMap(Module &M) {
   ValueIdMap ValueToId;
@@ -408,7 +599,8 @@ void printSolveMetadata(raw_ostream &OS, const ResultT &Result) {
      << ", fallback=" << toString(Diag.fallback_reason)
      << ", adt_reason=" << toString(Diag.adt_rejection_reason)
      << ", star_iters=" << Diag.star_iterations_total
-     << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false") << "\n";
+     << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false")
+     << ", peak_nodes=" << Diag.peak_matrix_nodes << "\n";
 }
 
 template <unsigned K, typename FactT, typename TransferT, typename NodeT>
@@ -423,7 +615,7 @@ void printSolveMetadata(
 
 template <typename ResultT>
 void dumpProfile(raw_ostream &OS, const FunctionView &View,
-                 const ResultT &Result, std::chrono::microseconds Elapsed) {
+                 const ResultT &Result, const Timings &T) {
   const auto CFG = collectCFGStats(View.Function);
   OS << "  [cfg] args=" << CFG.Arguments << ", blocks=" << CFG.Blocks
      << ", insts=" << CFG.Instructions << ", edges=" << CFG.Edges
@@ -431,8 +623,31 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
      << ", max_succs=" << CFG.MaxSuccessors << ", phis=" << CFG.PhiNodes
      << ", calls=" << CFG.Calls << ", returns=" << CFG.Returns
      << ", unreachable=" << CFG.Unreachable
-     << ", elapsed_us=" << Elapsed.count() << "\n";
+     << ", elapsed_us=" << T.end2end << "\n";
+  OS << "  [timing] gen_us=" << T.gen << ", norm_us=" << T.norm
+     << ", interp_us=" << T.interp << ", end2end_us=" << T.end2end
+     << ", runs=" << T.runs << "\n";
   printSolveMetadata(OS, Result);
+
+  // Unified DAG statistics over the whole summary batch (matches the synthetic
+  // evaluation's DagStats — the Table VI structural metrics). The transfer type
+  // is deduced from the result so clients with a non-Instruction* atom (e.g.
+  // NonNull's edge transfer) profile correctly.
+  using ResultTransferT = typename ResultT::transfer_t;
+  using BatchExprRef = typename elimination::PathExprFactory<ResultTransferT>::Ref;
+  std::vector<BatchExprRef> Batch;
+  Batch.reserve(View.OrderedInsts.size());
+  for (auto *I : View.OrderedInsts) {
+    auto E = Result.ExprTo(I);
+    if (E)
+      Batch.push_back(E);
+  }
+  const auto DS = elimination::ean::computeDagStats<ResultTransferT>(Batch);
+  OS << "  [dagstats] nodes=" << DS.uniqueNodes << ", edges=" << DS.uniqueEdges
+     << ", tree=" << DS.expandedTree << ", seq=" << DS.concats
+     << ", stars=" << DS.stars << ", unions=" << DS.unions
+     << ", atoms=" << DS.atoms << ", sharing=" << DS.sharing()
+     << ", roots=" << Batch.size() << "\n";
 
   size_t NodesWithExpr = 0;
   size_t MissingExpr = 0;
@@ -500,10 +715,10 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
 
 template <typename ResultT, typename Printer>
 void dumpTimedResult(raw_ostream &OS, const FunctionView &View, ResultT &Result,
-                     std::chrono::microseconds Elapsed, Printer &&PrintState) {
+                     const Timings &T, Printer &&PrintState) {
   const bool HasOutput = StdoutOpt || !OutDir.empty();
   if (HasOutput && (DumpProfileOpt || DumpExprsOpt))
-    dumpProfile(OS, View, Result, Elapsed);
+    dumpProfile(OS, View, Result, T);
   if (ProfileOnlyOpt || !HasOutput)
     return;
   lotus::dataflow_tool::printInstructionStates(
@@ -514,11 +729,45 @@ template <typename Runner, typename Printer>
 void runTimedAnalysis(raw_ostream &OS, const FunctionView &View,
                       const elimination::EliminationOptions &ElimOpts,
                       Runner &&Run, Printer &&PrintState) {
+  for (unsigned W = 0; W < WarmupOpt; ++W) {
+    auto Warm = Run(View.Function, ElimOpts);
+    (void)Warm;
+  }
+  const unsigned R = std::max(1u, static_cast<unsigned>(RepeatOpt));
+  std::vector<std::uint64_t> Gen, Norm, Interp, End;
+  Gen.reserve(R);
+  Norm.reserve(R);
+  Interp.reserve(R);
+  End.reserve(R);
+
+  // The R-1 timing-only runs are constructed and discarded (DataFlowResultT is
+  // not assignable, so we never reassign — we construct fresh each run).
+  auto Sample = [&](const auto &Res, std::uint64_t Us) {
+    const auto &D = Res.solveDiagnostics();
+    Gen.push_back(D.gen_time_us);
+    Norm.push_back(D.norm_time_us);
+    Interp.push_back(D.interp_time_us);
+    End.push_back(Us);
+  };
+  for (unsigned I = 0; I + 1 < R; ++I) {
+    const auto Start = std::chrono::steady_clock::now();
+    auto Tmp = Run(View.Function, ElimOpts);
+    Sample(Tmp, static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now() - Start)
+                        .count()));
+  }
+  // Final measured run is kept for the structural dump.
   const auto Start = std::chrono::steady_clock::now();
   auto Result = Run(View.Function, ElimOpts);
-  const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-      std::chrono::steady_clock::now() - Start);
-  dumpTimedResult(OS, View, Result, Elapsed, std::forward<Printer>(PrintState));
+  Sample(Result, static_cast<std::uint64_t>(
+                     std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::steady_clock::now() - Start)
+                         .count()));
+
+  const Timings T{medianOf(Gen), medianOf(Norm), medianOf(Interp),
+                  medianOf(End), R};
+  dumpTimedResult(OS, View, Result, T, std::forward<Printer>(PrintState));
 }
 
 template <typename ResultT, typename Printer>
@@ -571,6 +820,116 @@ void runTimedInterproceduralAnalysis(raw_ostream &OS, Module &M,
                             [&](const auto &Key, const auto &Res) {
                               PrintState(Key, Res, ValueToId);
                             });
+}
+
+// Emit the path-summary solver's Table VI/VII diagnostics (equation graph, the
+// EAN/Greedy stage timings, and the batch structural stats before/after
+// optimization). Within one EAN/Greedy run, dagstats-before is the raw
+// (Default) batch and dagstats-after is the optimized one.
+template <unsigned K, typename FactT, typename TransferT, typename NodeT>
+void emitInterSummaryDiagnostics(
+    raw_ostream &OS,
+    const elimination::InterDataFlowResultT<K, FactT, TransferT, NodeT>
+        &Result) {
+  if (!Result.hasSummarySolveDiagnostics())
+    return;
+  const auto &D = Result.summarySolveDiagnostics();
+  OS << "  [inter-summary] contexts=" << D.discovered_context_node_count
+     << ", seeds=" << D.seed_count << ", eqn_nodes=" << D.equation_node_count
+     << ", eqn_edges=" << D.equation_edge_count << ", scc=" << D.scc_count
+     << ", cyclic_scc=" << D.cyclic_scc_count << ", gen_us=" << D.gen_time_us
+     << ", norm_us=" << D.norm_time_us << ", interp_us=" << D.interp_time_us
+     << "\n";
+  auto EmitStats = [&](const char *Tag, const elimination::ean::DagStats &S) {
+    OS << "  [" << Tag << "] nodes=" << S.uniqueNodes
+       << ", edges=" << S.uniqueEdges << ", tree=" << S.expandedTree
+       << ", seq=" << S.concats << ", stars=" << S.stars
+       << ", unions=" << S.unions << ", atoms=" << S.atoms
+       << ", sharing=" << S.sharing() << "\n";
+  };
+  EmitStats("dagstats-before", D.summary_before);
+  EmitStats("dagstats-after", D.summary_after);
+}
+
+// Run one interprocedural client through the path-summary solver (EAN/Greedy
+// applied to the summary batch) and emit timing + Table VI/VII diagnostics,
+// then the per-(inst,ctx) facts (for RQ1-inter differential).
+template <typename Runner, typename Printer>
+void runInterSummaryAnalysis(raw_ostream &OS, Module &M, Function &Entry,
+                             Runner &&Run, Printer &&PrintState) {
+  const auto Start = std::chrono::steady_clock::now();
+  auto Result = Run(Entry);
+  const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::steady_clock::now() - Start);
+  const auto ValueToId = buildModuleValueIdMap(M);
+  OS << "  [profile] elapsed_us=" << Elapsed.count() << "\n";
+  printSolveMetadata(OS, Result);
+  emitInterSummaryDiagnostics(OS, Result);
+  dumpInterproceduralResult(OS, M, ValueToId, Result,
+                            [&](const auto &Key, const auto &Res) {
+                              PrintState(Key, Res, ValueToId);
+                            });
+}
+
+// Summary-solver variants of the interprocedural clients. reachable is clean
+// (Entry, ICF, Options); the others take LLVM analyses that we leave null (the
+// summary problem tolerates null AA/MSSA/AC/DT/TLI, degrading precision but not
+// crashing) — the driver records any client that fails to run.
+void runInterSummaryReachable(raw_ostream &OS, Module &M, Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimReachable(&F, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &) {
+        OS << (Result.IN(Key) ? "true" : "false");
+      });
+}
+
+void runInterSummaryReachingDefinitions(raw_ostream &OS, Module &M,
+                                        Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimReachingDefinitions(
+            &F, nullptr, nullptr, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueSet(OS, Result.IN(Key), ValueToId);
+      });
+}
+
+void runInterSummaryUninitialized(raw_ostream &OS, Module &M, Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimUninitVariables(
+            &F, nullptr, nullptr, nullptr, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueSet(OS, Result.IN(Key), ValueToId);
+      });
+}
+
+void runInterSummaryConstantPropagation(raw_ostream &OS, Module &M,
+                                        Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimConstantPropagation(
+            &F, nullptr, nullptr, nullptr, nullptr, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueMap(
+            OS, Result.IN(Key), ValueToId,
+            [&](const elimination::ConstantPropagationValue &Value) {
+              return formatValueLatticeElement(Value);
+            });
+      });
 }
 
 template <typename Runner>
@@ -627,10 +986,17 @@ void runBoolInterAnalysis(raw_ostream &OS, Module &M, Function &Entry,
 
 void runReachingDefinitions(raw_ostream &OS, const FunctionView &View,
                             const elimination::EliminationOptions &ElimOpts) {
+  const bool TranslApa = (InterpOpt == "translapa");
+  OS << "  [interp] mode=" << (TranslApa ? "translapa" : "generic") << "\n";
   runSetIntraAnalysis(
       OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimReachingDefinitions(&F, nullptr, Opts);
+      [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
+        return TranslApa
+                   ? elimination::runIntraTranslApaReachingDefinitions(&F,
+                                                                       nullptr,
+                                                                       Opts)
+                   : elimination::runIntraElimReachingDefinitions(&F, nullptr,
+                                                                  Opts);
       });
 }
 
@@ -641,6 +1007,55 @@ void runUninitialized(raw_ostream &OS, const FunctionView &View,
       [](Function &F, const elimination::EliminationOptions &Opts) {
         return elimination::runIntraElimUninitVariables(&F, nullptr, Opts);
       });
+}
+
+// Canonical, vocabulary-free serialization of an affine relation: the Howell
+// normal form's rows are already canonical, so equal relations serialize
+// identically. This lets the RQ1 differential compare Default vs EAN(safe/kleene)
+// affine facts as text WITHOUT needing the (already-freed) per-function
+// vocabulary at print time.
+std::string serializeAffine(const elimination::AffineRelation &R) {
+  if (R.bottom)
+    return "bottom";
+  std::string Buf;
+  raw_string_ostream OS(Buf);
+  bool FirstComp = true;
+  for (const auto &Entry : R.components) {
+    if (!FirstComp)
+      OS << "|";
+    FirstComp = false;
+    OS << "w" << Entry.first << ":";
+    std::vector<std::string> Rows;
+    Rows.reserve(Entry.second.constraints.size());
+    for (const auto &Row : Entry.second.constraints) {
+      std::string RowStr;
+      for (std::size_t i = 0; i < Row.size(); ++i) {
+        if (i)
+          RowStr += ",";
+        RowStr += std::to_string(Row[i].getZExtValue());
+      }
+      Rows.push_back(std::move(RowStr));
+    }
+    std::sort(Rows.begin(), Rows.end()); // guard against row-order nondeterminism
+    bool FirstRow = true;
+    for (auto &Row : Rows) {
+      if (!FirstRow)
+        OS << ";";
+      FirstRow = false;
+      OS << Row;
+    }
+  }
+  return OS.str();
+}
+
+void runAffine(raw_ostream &OS, const FunctionView &View,
+               const elimination::EliminationOptions &ElimOpts) {
+  runTimedAnalysis(
+      OS, View, ElimOpts,
+      [](Function &F, const elimination::EliminationOptions &Opts) {
+        return elimination::runIntraElimAffine(&F, Opts);
+      },
+      [&](Instruction *I, auto &Result) { OS << serializeAffine(Result.IN(I)); });
 }
 
 void runConstantPropagation(raw_ostream &OS, const FunctionView &View,
@@ -714,26 +1129,41 @@ void runSign(raw_ostream &OS, const FunctionView &View,
 
 void runReachable(raw_ostream &OS, const FunctionView &View,
                   const elimination::EliminationOptions &ElimOpts) {
+  const bool TranslApa = (InterpOpt == "translapa");
+  OS << "  [interp] mode=" << (TranslApa ? "translapa" : "generic") << "\n";
   runBoolIntraAnalysis(
       OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimReachable(&F, Opts);
+      [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
+        return TranslApa ? elimination::runIntraTranslApaReachable(&F, Opts)
+                         : elimination::runIntraElimReachable(&F, Opts);
       });
 }
 
 void runInterReachingDefinitions(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryReachingDefinitions(OS, M, Entry);
+    return;
+  }
   runSetInterAnalysis(OS, M, Entry, [](Function &F) {
     return elimination::runInterElimReachingDefinitions(&F);
   });
 }
 
 void runInterUninitialized(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryUninitialized(OS, M, Entry);
+    return;
+  }
   runSetInterAnalysis(OS, M, Entry, [](Function &F) {
     return elimination::runInterElimUninitVariables(&F);
   });
 }
 
 void runInterConstantPropagation(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryConstantPropagation(OS, M, Entry);
+    return;
+  }
   runMapInterAnalysis(
       OS, M, Entry,
       [](Function &F) {
@@ -745,6 +1175,22 @@ void runInterConstantPropagation(raw_ostream &OS, Module &M, Function &Entry) {
 }
 
 void runInterReachable(raw_ostream &OS, Module &M, Function &Entry) {
+  if (ModularInterOpt) {
+    auto Opts = buildInterSummaryOpts();
+    runInterSummaryAnalysis(
+        OS, M, Entry,
+        [&](Function &F) {
+          return elimination::runModularInterReachable(&F, nullptr, Opts);
+        },
+        [&](const auto &Key, const auto &Result, const auto &) {
+          OS << (Result.IN(Key) ? "true" : "false");
+        });
+    return;
+  }
+  if (InterSummaryOpt) {
+    runInterSummaryReachable(OS, M, Entry);
+    return;
+  }
   runBoolInterAnalysis(OS, M, Entry, [](Function &F) {
     return elimination::runInterElimReachable(&F);
   });
@@ -817,31 +1263,69 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  const auto *Handler =
-      lotus::dataflow_tool::findHandler(AnalysisOpt, Handlers);
-  if (!Handler) {
-    errs() << "error: unknown elimination analysis '" << AnalysisOpt << "'\n";
+  // Parse a comma-separated client list (amortizes module loading across
+  // clients in one process).
+  std::vector<const AnalysisHandler *> Clients;
+  {
+    std::stringstream SS(AnalysisOpt);
+    std::string Name;
+    while (std::getline(SS, Name, ',')) {
+      if (Name.empty())
+        continue;
+      const auto *H = lotus::dataflow_tool::findHandler(StringRef(Name), Handlers);
+      if (!H) {
+        errs() << "error: unknown elimination analysis '" << Name << "'\n";
+        return 1;
+      }
+      Clients.push_back(H);
+    }
+  }
+  if (Clients.empty()) {
+    errs() << "error: no analysis selected\n";
     return 1;
   }
 
-  const auto ElimOpts =
-      lotus::dataflow_tool::parseEliminationOptions(ElimMethodOpt);
-  OS << "[elim:" << AnalysisOpt << "]\n";
+  const auto ElimOpts = buildElimOpts();
+  OS << "[elim] clients=" << AnalysisOpt << ", method=" << ElimMethodOpt
+     << ", ordering=" << OrderingOpt << ", ean=" << (EanOpt ? "on" : "off")
+     << ", ean_laws=" << EanLawsOpt << ", repeat=" << RepeatOpt
+     << ", ean_min_nodes=" << EanMinNodes << ", interp_repeat=" << InterpRepeat
+     << ", max_func_insts=" << MaxFuncInsts << "\n";
 
-  if (Handler->ModuleScoped) {
+  const bool AnyModule =
+      std::any_of(Clients.begin(), Clients.end(),
+                  [](const AnalysisHandler *H) { return H->ModuleScoped; });
+  if (AnyModule) {
+    if (Clients.size() != 1) {
+      errs() << "error: module-scoped analyses must be run one at a time\n";
+      return 1;
+    }
     Function *Entry = M->getFunction(EntryFunctionOpt);
     if (Entry == nullptr || Entry->isDeclaration()) {
       errs() << "error: entry function '" << EntryFunctionOpt
              << "' not found or is a declaration\n";
       return 1;
     }
-    Handler->RunModule(OS, *M, *Entry);
+    Clients.front()->RunModule(OS, *M, *Entry);
   } else {
+    std::size_t Skipped = 0;
     lotus::dataflow_tool::forEachDefinedFunction(
         *M, OS, [&](const FunctionView &View) {
-          Handler->RunFunction(OS, View, ElimOpts);
+          if (MaxFuncInsts != 0 &&
+              View.OrderedInsts.size() > MaxFuncInsts) {
+            OS << "  [skipped] reason=too_large insts="
+               << View.OrderedInsts.size() << "\n";
+            ++Skipped;
+            return;
+          }
+          for (const AnalysisHandler *H : Clients) {
+            OS << "  [client:" << H->Name << "]\n";
+            H->RunFunction(OS, View, ElimOpts);
+          }
         });
+    OS << "[summary] skipped_functions=" << Skipped << "\n";
   }
 
+  OS << "[mem] peak_rss_kb=" << peakRssKb() << "\n";
   return 0;
 }

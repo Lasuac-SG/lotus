@@ -162,3 +162,43 @@ TEST(PathSummaryEquationSolver, ForwardPathDirectionComposesAfterSource) {
   EXPECT_TRUE(containsWord(Result, "mid", "sa"));
   EXPECT_TRUE(containsWord(Result, "exit", "sab"));
 }
+
+// Large cyclic SCC (> kDenseCyclicThreshold) forces the sparse min-fill
+// Gaussian-elimination path.  A 20-node ring n0->n1->...->n19->n0 with a base
+// word at n0 must still yield the correct forward languages, matching what the
+// dense Floyd--Warshall closure would produce on a small ring.
+TEST(PathSummaryEquationSolver, LargeCyclicSCCSparsePathMatchesLanguage) {
+  Graph G;
+  auto &E = G.exprs();
+  const std::size_t N = 20; // > 16, so the solver takes the sparse branch
+  auto name = [](std::size_t I) { return "n" + std::to_string(I); };
+  // Base word "s" enters the ring at n0; every other node starts empty.
+  G.addNode(name(0), E.atom("s"));
+  for (std::size_t I = 1; I < N; ++I) {
+    G.addNode(name(I));
+  }
+  // Ring edges labelled with single distinct letters a, b, c, ...
+  for (std::size_t I = 0; I < N; ++I) {
+    std::string Lbl(1, static_cast<char>('a' + static_cast<int>(I)));
+    G.addEdge(name(I), name((I + 1) % N), E.atom(Lbl));
+  }
+
+  elimination::PathSummaryEquationOptions Options;
+  Options.Direction = elimination::PathSummaryEquationDirection::ForwardPath;
+  elimination::PathSummaryEquationSolver<std::string, std::string> Solver(
+      G, Options);
+  auto Result = Solver.solve();
+
+  // One strongly-connected component that is cyclic (confirms the sparse path
+  // exercised the cyclic branch, not the acyclic singleton one).
+  EXPECT_EQ(Result.diagnostics().scc_count, 1u);
+  EXPECT_EQ(Result.diagnostics().cyclic_scc_count, 1u);
+
+  // Forward reachability from the base at n0: X_{nk} contains s followed by the
+  // edge labels a,b,c,... up to nk (within the length-8 language bound).
+  EXPECT_TRUE(containsWord(Result, "n0", "s"));
+  EXPECT_TRUE(containsWord(Result, "n1", "sa"));
+  EXPECT_TRUE(containsWord(Result, "n2", "sab"));
+  EXPECT_TRUE(containsWord(Result, "n3", "sabc"));
+  EXPECT_TRUE(containsWord(Result, "n5", "sabcde"));
+}

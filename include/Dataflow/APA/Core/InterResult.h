@@ -2,6 +2,7 @@
 #define DATAFLOW_APA_CORE_INTERRESULT_H_
 
 #include "Dataflow/APA/Core/Options.h"
+#include "Dataflow/APA/EAN/DagStats.h"
 #include "Dataflow/Mono/Solver/CallStringSolver.h"
 
 #include <vector>
@@ -15,6 +16,21 @@ struct InterSummarySolveDiagnostics final {
   std::size_t equation_edge_count = 0;
   std::size_t scc_count = 0;
   std::size_t cyclic_scc_count = 0;
+  // EAN/Greedy post-pass instrumentation (see ForwardInterSummarySolver). All
+  // zero/empty unless the summary solver ran.
+  //   gen_time_us    – build the equation graph + solve it into path exprs,
+  //   norm_time_us   – EAN/Greedy optimization of the summary batch (0 if off),
+  //   interp_time_us – evaluate summaries into client facts.
+  // summary_before/after are the FULL structural stats of the summary batch
+  // pre/post optimization (equal when no pass ran). Within a single EAN/Greedy
+  // run, summary_before is the raw (Default-configuration) batch and
+  // summary_after is the optimized one, so one run yields the Default↔EAN
+  // reduction directly. These fill the paper's interprocedural Table VI/VII.
+  std::size_t gen_time_us = 0;
+  std::size_t norm_time_us = 0;
+  std::size_t interp_time_us = 0;
+  ean::DagStats summary_before;
+  ean::DagStats summary_after;
 };
 
 template <unsigned K, typename FactT, typename TransferT,

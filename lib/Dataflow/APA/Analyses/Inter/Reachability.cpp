@@ -1,6 +1,7 @@
 #include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
 #include "Dataflow/APA/Solver/ForwardInterSummarySolver.h"
+#include "Dataflow/APA/Solver/ModularInterSummaryDriver.h"
 
 namespace elimination {
 namespace {
@@ -105,6 +106,31 @@ runInterSummaryElimReachable(llvm::Function *Entry,
   }
   Out.setSolveStatus(Status);
   Out.setSummarySolveDiagnostics(Solver.resultDiagnostics());
+  return Out;
+}
+
+InterReachableResult
+runModularInterReachable(llvm::Function *Entry,
+                         const dataflow::controlflow::InterCFG *ICF,
+                         PathSummaryEquationOptions Options) {
+  InterReachableResult Out;
+  if (Entry == nullptr || Entry->isDeclaration()) {
+    return Out;
+  }
+
+  std::unique_ptr<dataflow::controlflow::LLVMInterCFG> OwnedICF;
+  if (ICF == nullptr) {
+    OwnedICF = std::make_unique<dataflow::controlflow::LLVMInterCFG>(
+        Entry != nullptr ? Entry->getParent() : nullptr);
+    ICF = OwnedICF.get();
+  }
+
+  InterElimReachableProblem Problem(Entry, ICF);
+  ModularInterSummaryDriver<InterReachabilityAnalysisTypes,
+                            kDefaultInterElimReachabilityCallStringLength>
+      Driver(Problem, *ICF, Options);
+  // Reachability seed: the entry procedure starts reachable (fact = true).
+  Out = Driver.solve(std::vector<llvm::Function *>{Entry}, /*InitialFact=*/true);
   return Out;
 }
 
