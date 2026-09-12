@@ -4,6 +4,7 @@
 #include "Dataflow/APA/Core/Options.h"
 #include "Dataflow/APA/Domains/AffineRelationDomain.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <unordered_map>
@@ -67,13 +68,29 @@ struct AffineState {
 
 class InterAffineEqualities {
 public:
+  enum class VocabularyMode { AllScalars, ObservableSlice };
+
+  struct Options {
+    explicit Options(VocabularyMode Vocabulary = VocabularyMode::AllScalars,
+                     bool Verbose = false, std::size_t MaxTrackedValues = 0)
+        : vocabulary(Vocabulary), verbose(Verbose),
+          maxTrackedValues(MaxTrackedValues) {}
+
+    VocabularyMode vocabulary;
+    bool verbose;
+    // Zero means unlimited. Values outside a bounded observable slice are
+    // soundly treated as untracked/havoced.
+    std::size_t maxTrackedValues;
+  };
+
   struct Result {
     SolveStatus status = SolveStatus::Ok;
+    std::size_t trackedValues = 0;
     std::map<FunctionKey, AffineRelationDomain::value_type> summaries;
     std::map<BlockKey, AffineRelationDomain::value_type> blockRelations;
   };
 
-  static Result run(llvm::Module &M, bool verbose = false);
+  static Result run(llvm::Module &M, Options options = Options());
 };
 
 AffineState

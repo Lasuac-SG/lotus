@@ -34,6 +34,7 @@ struct AffineRelationComponent {
 
 struct AffineRelation {
   bool bottom = false;
+  bool identity = false;
   std::map<unsigned, AffineRelationComponent> components;
 
   bool operator==(const AffineRelation &other) const;
@@ -153,6 +154,7 @@ public:
 private:
   static AffineRelationVocabulary Vocabulary;
   static bool HasVocabulary;
+  static unsigned ConfiguredBitWidth;
 };
 
 } // namespace elimination

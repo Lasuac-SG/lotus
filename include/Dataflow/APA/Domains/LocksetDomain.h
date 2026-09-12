@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Dataflow/APA/Core/AbstractDomain.h"
-
-#include <set>
+#include "Dataflow/APA/Domains/IndexedSet.h"
 
 namespace llvm {
 class Value;
@@ -10,7 +8,7 @@ class Value;
 
 namespace elimination {
 
-struct LocksetDomain : UnionDomain<std::set<const llvm::Value *>> {};
+struct LocksetDomain : IndexedUnionDomain<const llvm::Value *> {};
 
 using LocksetFact = LocksetDomain::value_type;
 

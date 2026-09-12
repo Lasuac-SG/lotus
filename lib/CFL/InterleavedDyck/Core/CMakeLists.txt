@@ -3,5 +3,3 @@ add_library(CanaryInterleavedDyckCore STATIC
     Graph.cpp
     UnaryGraph.cpp
 )
-
-target_compile_features(CanaryInterleavedDyckCore PUBLIC cxx_std_17)

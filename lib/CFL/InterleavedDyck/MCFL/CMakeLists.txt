@@ -5,6 +5,4 @@ add_library(CanaryInterleavedDyckMCFL STATIC
     Solver.cpp
 )
 
-target_compile_features(CanaryInterleavedDyckMCFL PUBLIC cxx_std_17)
-
 target_link_libraries(CanaryInterleavedDyckMCFL PUBLIC CanaryInterleavedDyckCore)

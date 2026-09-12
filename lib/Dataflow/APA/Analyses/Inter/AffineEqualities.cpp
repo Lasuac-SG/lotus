@@ -115,11 +115,12 @@ std::optional<AffineExpr>
 affineExprForValue(const llvm::Value *value,
                    std::unordered_set<const llvm::Value *> &visiting);
 
-PartialConstant partialConstantForExpr(const AffineExpr &expr, unsigned bitWidth);
+PartialConstant partialConstantForExpr(const AffineExpr &expr,
+                                       unsigned bitWidth);
 
-std::optional<AffineExpr> affineExprForBinary(const llvm::BinaryOperator &BinOp,
-                                              std::unordered_set<const llvm::Value *>
-                                                  &visiting) {
+std::optional<AffineExpr>
+affineExprForBinary(const llvm::BinaryOperator &BinOp,
+                    std::unordered_set<const llvm::Value *> &visiting) {
   auto width = integerBitWidth(&BinOp);
   if (!width)
     return std::nullopt;
@@ -153,10 +154,11 @@ std::optional<AffineExpr> affineExprForBinary(const llvm::BinaryOperator &BinOp,
         rhsConst < 0 || static_cast<unsigned>(rhsConst) >= *width) {
       break;
     }
-    return scaleExpr(
-        *lhsExpr,
-        llvm::APInt(*width, 1).shl(static_cast<unsigned>(rhsConst)).getSExtValue(),
-        *width);
+    return scaleExpr(*lhsExpr,
+                     llvm::APInt(*width, 1)
+                         .shl(static_cast<unsigned>(rhsConst))
+                         .getSExtValue(),
+                     *width);
   default:
     break;
   }
@@ -187,9 +189,9 @@ std::optional<AffineExpr> exactQuotientByPowerOfTwo(const AffineExpr &expr,
   return normalizeExpr(std::move(out), bitWidth);
 }
 
-std::optional<AffineExpr> affineExprForCast(const llvm::CastInst &Cast,
-                                            std::unordered_set<const llvm::Value *>
-                                                &visiting) {
+std::optional<AffineExpr>
+affineExprForCast(const llvm::CastInst &Cast,
+                  std::unordered_set<const llvm::Value *> &visiting) {
   auto dstWidth = integerBitWidth(&Cast);
   auto srcWidth = integerBitWidth(Cast.getOperand(0));
   if (!dstWidth || !srcWidth)
@@ -254,12 +256,12 @@ affineExprForValue(const llvm::Value *value,
   int64_t constant = 0;
   if (getConstantIntValue(value, constant)) {
     auto width = integerBitWidth(value);
-    return width ? std::optional<AffineExpr>(constExpr(wrapToBitWidth(
-                       constant, *width)))
+    return width ? std::optional<AffineExpr>(
+                       constExpr(wrapToBitWidth(constant, *width)))
                  : std::nullopt;
   }
 
-  if (!isTrackedScalar(value))
+  if (!D::isTrackedValue(value))
     return std::nullopt;
   if (!visiting.insert(value).second)
     return variableExpr(value);
@@ -302,8 +304,8 @@ std::optional<AffineExpr> affineExprForValue(const llvm::Value *value) {
   return affineExprForValue(value, visiting);
 }
 
-Relation equalityConstraintForExprs(const AffineExpr &lhs, const AffineExpr &rhs,
-                                    unsigned bitWidth) {
+Relation equalityConstraintForExprs(const AffineExpr &lhs,
+                                    const AffineExpr &rhs, unsigned bitWidth) {
   std::unordered_map<const llvm::Value *, int64_t> coeffs = lhs.terms;
   for (const auto &term : rhs.terms)
     coeffs[term.first] -= term.second;
@@ -321,13 +323,12 @@ Relation equalityConstraintForExprs(const AffineExpr &lhs, const AffineExpr &rhs
   return D::addStateConstraint(D::identity(), constant, terms);
 }
 
-std::optional<bool>
-evaluateAffineComparison(const AffineExpr &lhs, const AffineExpr &rhs,
-                         llvm::CmpInst::Predicate predicate,
-                         unsigned bitWidth) {
-  AffineExpr diff = normalizeExpr(addExpr(lhs, scaleExpr(rhs, -1, bitWidth),
-                                          bitWidth),
-                                  bitWidth);
+std::optional<bool> evaluateAffineComparison(const AffineExpr &lhs,
+                                             const AffineExpr &rhs,
+                                             llvm::CmpInst::Predicate predicate,
+                                             unsigned bitWidth) {
+  AffineExpr diff = normalizeExpr(
+      addExpr(lhs, scaleExpr(rhs, -1, bitWidth), bitWidth), bitWidth);
   if (!diff.terms.empty())
     return std::nullopt;
 
@@ -336,7 +337,8 @@ evaluateAffineComparison(const AffineExpr &lhs, const AffineExpr &rhs,
   return llvm::ICmpInst::compare(lhsValue, rhsValue, predicate);
 }
 
-std::optional<bool> compareEquivalentAffineExprs(llvm::CmpInst::Predicate predicate) {
+std::optional<bool>
+compareEquivalentAffineExprs(llvm::CmpInst::Predicate predicate) {
   switch (predicate) {
   case llvm::CmpInst::ICMP_EQ:
   case llvm::CmpInst::ICMP_UGE:
@@ -371,12 +373,14 @@ Relation equalityConstraintForOperands(const llvm::Value *lhs,
 
   int64_t constant = 0;
   if (D::isTrackedValue(lhs) && getConstantIntValue(rhs, constant)) {
-    return D::addStateConstraint(
-        D::identity(), wrapToBitWidth(constant, D::bitWidthOf(lhs)), {{lhs, 1}});
+    return D::addStateConstraint(D::identity(),
+                                 wrapToBitWidth(constant, D::bitWidthOf(lhs)),
+                                 {{lhs, 1}});
   }
   if (D::isTrackedValue(rhs) && getConstantIntValue(lhs, constant)) {
-    return D::addStateConstraint(
-        D::identity(), wrapToBitWidth(constant, D::bitWidthOf(rhs)), {{rhs, 1}});
+    return D::addStateConstraint(D::identity(),
+                                 wrapToBitWidth(constant, D::bitWidthOf(rhs)),
+                                 {{rhs, 1}});
   }
   if (D::isTrackedValue(lhs) && D::isTrackedValue(rhs)) {
     return D::addStateConstraint(D::identity(), 0, {{lhs, 1}, {rhs, -1}});
@@ -386,18 +390,19 @@ Relation equalityConstraintForOperands(const llvm::Value *lhs,
 
 std::optional<bool> evaluateConditionConstant(const llvm::Value *condition);
 
-std::optional<Relation>
-singletonComparisonRefinement(const llvm::ICmpInst &Cmp, bool expectedValue) {
+std::optional<Relation> singletonComparisonRefinement(const llvm::ICmpInst &Cmp,
+                                                      bool expectedValue) {
   auto width = integerBitWidth(Cmp.getOperand(0));
   if (!width)
     return std::nullopt;
 
-  auto refineEqual = [&](const llvm::Value *value, const llvm::APInt &constant) {
+  auto refineEqual = [&](const llvm::Value *value,
+                         const llvm::APInt &constant) {
     auto expr = affineExprForValue(value);
     if (!expr)
       return D::identity();
-    return equalityConstraintForExprs(
-        *expr, constExpr(constant.getSExtValue()), *width);
+    return equalityConstraintForExprs(*expr, constExpr(constant.getSExtValue()),
+                                      *width);
   };
 
   llvm::CmpInst::Predicate predicate = Cmp.getPredicate();
@@ -555,14 +560,14 @@ Relation conditionRefinement(const llvm::Value *condition, bool expectedValue) {
   switch (Cmp->getPredicate()) {
   case llvm::CmpInst::ICMP_EQ:
     if (expectedValue) {
-      operandRefinement = equalityConstraintForOperands(Cmp->getOperand(0),
-                                                        Cmp->getOperand(1));
+      operandRefinement =
+          equalityConstraintForOperands(Cmp->getOperand(0), Cmp->getOperand(1));
     }
     break;
   case llvm::CmpInst::ICMP_NE:
     if (!expectedValue) {
-      operandRefinement = equalityConstraintForOperands(Cmp->getOperand(0),
-                                                        Cmp->getOperand(1));
+      operandRefinement =
+          equalityConstraintForOperands(Cmp->getOperand(0), Cmp->getOperand(1));
     }
     break;
   default:
@@ -710,24 +715,22 @@ bool isAssumeLikeCall(const llvm::CallBase &call) {
   if (callee->getName() == "llvm.assume")
     return true;
   return callee->getName() == "__VERIFIER_assume" ||
-         callee->getName() == "__SEA_assume" ||
-         callee->getName() == "assume";
+         callee->getName() == "__SEA_assume" || callee->getName() == "assume";
 }
 
 Relation switchCaseRefinement(const llvm::Value *condition, int64_t caseValue) {
-  Relation relation = D::isTrackedValue(condition)
-                          ? D::addPrecondition(D::identity(), condition, caseValue)
-                          : D::identity();
+  Relation relation =
+      D::isTrackedValue(condition)
+          ? D::addPrecondition(D::identity(), condition, caseValue)
+          : D::identity();
 
   auto width = integerBitWidth(condition);
   auto expr = affineExprForValue(condition);
   if (!width || !expr)
     return relation;
 
-  Relation operandRefinement =
-      equalityConstraintForExprs(*expr,
-                                 constExpr(wrapToBitWidth(caseValue, *width)),
-                                 *width);
+  Relation operandRefinement = equalityConstraintForExprs(
+      *expr, constExpr(wrapToBitWidth(caseValue, *width)), *width);
   return D::extend(operandRefinement, relation);
 }
 
@@ -1020,12 +1023,14 @@ AffineState materializeAffineExpressionsImpl(const Relation &state) {
 
       llvm::APInt inv = oddInverse(coeff);
       AffineExpr expr = constExpr(
-          (llvm::APInt(width, static_cast<uint64_t>(equality.constant), true) * inv)
+          (llvm::APInt(width, static_cast<uint64_t>(equality.constant), true) *
+           inv)
               .getSExtValue());
       for (const auto &other : equality.terms) {
         if (other.first == term.first)
           continue;
-        llvm::APInt otherCoeff(width, static_cast<uint64_t>(other.second), true);
+        llvm::APInt otherCoeff(width, static_cast<uint64_t>(other.second),
+                               true);
         expr.terms[other.first] += (-(otherCoeff * inv)).getSExtValue();
       }
       out.values[term.first] = normalizeExpr(std::move(expr), width);
@@ -1055,8 +1060,12 @@ public:
   using transfer_t = typename AffineInterAnalysisTypes::transfer_t;
 
   explicit InterAffineEqualitiesProblem(
-      llvm::Module &M, const dataflow::controlflow::InterCFG *ICF = nullptr)
-      : LLVMInterEliminationProblem<AffineInterAnalysisTypes>(findEntryPoints(M), ICF) {
+      llvm::Module &M, InterAffineEqualities::VocabularyMode VocabularyMode,
+      std::size_t MaxTrackedValues,
+      const dataflow::controlflow::InterCFG *ICF = nullptr)
+      : LLVMInterEliminationProblem<AffineInterAnalysisTypes>(
+            findEntryPoints(M), ICF),
+        VocabularyMode(VocabularyMode), MaxTrackedValues(MaxTrackedValues) {
     buildVocabulary(M);
     D::configure(&Vocabulary);
   }
@@ -1070,12 +1079,12 @@ public:
       return In;
 
     Relation out = In;
-    if (!llvm::isa<llvm::PHINode>(T.inst))
+    if (!llvm::isa<llvm::PHINode>(T.inst) && instructionHasEffect(*T.inst))
       out = D::extend(instructionTransfer(*T.inst), out);
 
-    if (auto *Succ = T.succ)
+    if (auto *Succ = T.succ; Succ != nullptr && edgeHasCondition(*T.inst))
       out = D::extend(edgeTransferRelation(*T.inst, *Succ), out);
-    if (auto *Succ = T.succ)
+    if (auto *Succ = T.succ; Succ != nullptr && edgeEntersPhi(*T.inst, *Succ))
       out = D::extend(phiTransferForEdge(*T.inst, *Succ), out);
     return out;
   }
@@ -1116,13 +1125,15 @@ public:
     return D::mergePreservingLocals(CallerFact, returned, locals);
   }
 
-  fact_t callToRetFlow(n_t CallSite, n_t RetSite, const std::vector<f_t> &Callees,
+  fact_t callToRetFlow(n_t CallSite, n_t RetSite,
+                       const std::vector<f_t> &Callees,
                        const fact_t &In) override {
     (void)RetSite;
     if (CallSite == nullptr)
       return In;
     auto *Call = llvm::dyn_cast<llvm::CallBase>(CallSite);
-    if (Call == nullptr || Call->getType()->isVoidTy() || !isTrackedScalar(Call))
+    if (Call == nullptr || Call->getType()->isVoidTy() ||
+        !D::isTrackedValue(Call))
       return In;
     if (Callees.empty())
       return D::extend(D::makeForget(Call), In);
@@ -1139,11 +1150,15 @@ public:
     return Seeds;
   }
 
+  std::size_t vocabularySize() const { return Vocabulary.values.size(); }
+
 private:
   AffineRelationVocabulary Vocabulary;
   std::unordered_map<const llvm::Function *, std::vector<const llvm::Value *>>
       FunctionLocals;
   std::vector<const llvm::Value *> EmptyLocals;
+  InterAffineEqualities::VocabularyMode VocabularyMode;
+  std::size_t MaxTrackedValues = 0;
 
   static std::vector<llvm::Function *> findEntryPoints(llvm::Module &M) {
     std::vector<llvm::Function *> Entries;
@@ -1157,7 +1172,8 @@ private:
         for (auto &BB : F) {
           for (auto &I : BB) {
             auto *Call = llvm::dyn_cast<llvm::CallBase>(&I);
-            auto *Callee = Call != nullptr ? Call->getCalledFunction() : nullptr;
+            auto *Callee =
+                Call != nullptr ? Call->getCalledFunction() : nullptr;
             if (Callee != nullptr && !Callee->isDeclaration())
               Called.insert(Callee);
           }
@@ -1179,26 +1195,136 @@ private:
   }
 
   void buildVocabulary(llvm::Module &M) {
-    std::unordered_set<const llvm::Value *> seen;
-    auto record = [&](const llvm::Value *value) {
-      if (seen.insert(value).second)
-        Vocabulary.values.push_back(value);
-    };
-    for (const auto &F : M) {
-      if (F.isDeclaration())
+    std::unordered_set<const llvm::Function *> Reachable;
+    const auto EntryPoints = findEntryPoints(M);
+    std::unordered_set<const llvm::Function *> EntryFunctions(
+        EntryPoints.begin(), EntryPoints.end());
+    std::vector<llvm::Function *> Worklist = EntryPoints;
+    while (!Worklist.empty()) {
+      auto *F = Worklist.back();
+      Worklist.pop_back();
+      if (F == nullptr || F->isDeclaration() || !Reachable.insert(F).second)
         continue;
-      for (const auto &Arg : F.args()) {
-        if (isTrackedScalar(&Arg))
-          record(&Arg);
+      for (auto &BB : *F) {
+        for (auto &I : BB) {
+          auto *Call = llvm::dyn_cast<llvm::CallBase>(&I);
+          auto *Callee = Call != nullptr ? Call->getCalledFunction() : nullptr;
+          if (Callee != nullptr && !Callee->isDeclaration())
+            Worklist.push_back(Callee);
+        }
       }
-      for (const auto &BB : F) {
-        for (const auto &I : BB) {
-          if (isTrackedScalar(&I)) {
-            record(&I);
+    }
+
+    if (VocabularyMode == InterAffineEqualities::VocabularyMode::AllScalars) {
+      for (const auto &F : M) {
+        if (F.isDeclaration() || !Reachable.count(&F))
+          continue;
+        for (const auto &Arg : F.args())
+          if (isTrackedScalar(&Arg))
+            Vocabulary.values.push_back(&Arg);
+        for (const auto &BB : F) {
+          for (const auto &I : BB) {
+            if (!isTrackedScalar(&I))
+              continue;
+            Vocabulary.values.push_back(&I);
             Vocabulary.localValues.push_back(&I);
             FunctionLocals[&F].push_back(&I);
           }
         }
+      }
+      finalizeVocabulary();
+      return;
+    }
+
+    std::unordered_set<const llvm::Value *> Relevant;
+    std::vector<const llvm::Value *> SliceWorklist;
+    auto seed = [&](const llvm::Value *Value) {
+      if (Value == nullptr || !isTrackedScalar(Value))
+        return;
+      if (!llvm::isa<llvm::Instruction>(Value) &&
+          !llvm::isa<llvm::Argument>(Value))
+        return;
+      SliceWorklist.push_back(Value);
+    };
+
+    for (const auto &F : M) {
+      if (F.isDeclaration() || !Reachable.count(&F))
+        continue;
+      if (EntryFunctions.count(&F))
+        for (const auto &Arg : F.args())
+          seed(&Arg);
+      for (const auto &BB : F) {
+        for (const auto &I : BB) {
+          if (I.isTerminator())
+            for (const auto &Op : I.operands())
+              seed(Op.get());
+          if (const auto *Call = llvm::dyn_cast<llvm::CallBase>(&I)) {
+            if (isAssumeLikeCall(*Call) && !Call->arg_empty())
+              seed(Call->getArgOperand(0));
+            auto *Callee = Call->getCalledFunction();
+            if (Callee == nullptr || Callee->isDeclaration())
+              continue;
+            auto Formal = Callee->arg_begin();
+            for (unsigned Index = 0;
+                 Index < Call->arg_size() && Formal != Callee->arg_end();
+                 ++Index, ++Formal) {
+              if (!isTrackedScalar(&*Formal))
+                continue;
+              seed(&*Formal);
+              seed(Call->getArgOperand(Index));
+            }
+          }
+        }
+      }
+    }
+
+    while (!SliceWorklist.empty()) {
+      const auto *Value = SliceWorklist.back();
+      SliceWorklist.pop_back();
+      if (!Relevant.insert(Value).second)
+        continue;
+      if (const auto *Inst = llvm::dyn_cast<llvm::Instruction>(Value))
+        for (const auto &Op : Inst->operands())
+          seed(Op.get());
+    }
+
+    // Assign stable indices in module order after computing the slice.
+    for (const auto &F : M) {
+      if (F.isDeclaration() || !Reachable.count(&F))
+        continue;
+      for (const auto &Arg : F.args())
+        if (Relevant.count(&Arg))
+          Vocabulary.values.push_back(&Arg);
+      for (const auto &BB : F) {
+        for (const auto &I : BB) {
+          if (!Relevant.count(&I))
+            continue;
+          Vocabulary.values.push_back(&I);
+          Vocabulary.localValues.push_back(&I);
+          FunctionLocals[&F].push_back(&I);
+        }
+      }
+    }
+    finalizeVocabulary();
+  }
+
+  void finalizeVocabulary() {
+    if (MaxTrackedValues != 0 && Vocabulary.values.size() > MaxTrackedValues) {
+      Vocabulary.values.resize(MaxTrackedValues);
+      std::unordered_set<const llvm::Value *> Kept(Vocabulary.values.begin(),
+                                                   Vocabulary.values.end());
+      Vocabulary.localValues.erase(
+          std::remove_if(
+              Vocabulary.localValues.begin(), Vocabulary.localValues.end(),
+              [&](const llvm::Value *Value) { return !Kept.count(Value); }),
+          Vocabulary.localValues.end());
+      for (auto &[Function, Locals] : FunctionLocals) {
+        (void)Function;
+        Locals.erase(std::remove_if(Locals.begin(), Locals.end(),
+                                    [&](const llvm::Value *Value) {
+                                      return !Kept.count(Value);
+                                    }),
+                     Locals.end());
       }
     }
     for (unsigned i = 0; i < Vocabulary.values.size(); ++i) {
@@ -1208,10 +1334,30 @@ private:
     }
   }
 
-  Relation relationForValue(const llvm::Value *dest, const llvm::Value *src) const {
+  Relation relationForValue(const llvm::Value *dest,
+                            const llvm::Value *src) const {
     if (auto expr = affineExprForValue(src))
       return assignmentForExpr(dest, *expr);
     return D::makeForget(dest);
+  }
+
+  static bool instructionHasEffect(const llvm::Instruction &I) {
+    if (auto *Call = llvm::dyn_cast<llvm::CallBase>(&I))
+      return isAssumeLikeCall(*Call) && Call->arg_size() >= 1;
+    return !I.getType()->isVoidTy() && D::isTrackedValue(&I);
+  }
+
+  static bool edgeHasCondition(const llvm::Instruction &I) {
+    if (auto *Branch = llvm::dyn_cast<llvm::BranchInst>(&I))
+      return Branch->isConditional();
+    return llvm::isa<llvm::SwitchInst>(&I);
+  }
+
+  static bool edgeEntersPhi(const llvm::Instruction &Pred,
+                            const llvm::Instruction &Succ) {
+    return Pred.getParent() != Succ.getParent() &&
+           &Succ.getParent()->front() == &Succ &&
+           llvm::isa<llvm::PHINode>(Succ);
   }
 
   Relation instructionTransfer(llvm::Instruction &I) const {
@@ -1220,7 +1366,7 @@ private:
         return conditionRefinement(Call->getArgOperand(0), true);
       return D::identity();
     }
-    if (I.getType()->isVoidTy() || !isTrackedScalar(&I))
+    if (I.getType()->isVoidTy() || !D::isTrackedValue(&I))
       return D::identity();
     if (auto *Cast = llvm::dyn_cast<llvm::CastInst>(&I))
       return buildCastRelation(*Cast);
@@ -1252,9 +1398,11 @@ private:
       if (auto constant = evaluateSwitchConstant(Switch->getCondition())) {
         for (const auto &Case : Switch->cases()) {
           if (Case.getCaseValue()->getSExtValue() == *constant)
-            return Case.getCaseSuccessor() == SuccBlock ? D::identity() : D::zero();
+            return Case.getCaseSuccessor() == SuccBlock ? D::identity()
+                                                        : D::zero();
         }
-        return Switch->getDefaultDest() == SuccBlock ? D::identity() : D::zero();
+        return Switch->getDefaultDest() == SuccBlock ? D::identity()
+                                                     : D::zero();
       }
       if (!D::isTrackedValue(Switch->getCondition()))
         return D::identity();
@@ -1283,27 +1431,29 @@ private:
       auto *Phi = llvm::dyn_cast<llvm::PHINode>(&Inst);
       if (!Phi)
         break;
-      if (!isTrackedScalar(Phi))
+      if (!D::isTrackedValue(Phi))
         continue;
       if (auto modeled = booleanPhiRelation(*Phi)) {
         relation = D::extend(*modeled, relation);
         continue;
       }
       relation = D::extend(
-          relationForValue(Phi, Phi->getIncomingValueForBlock(PredBlock)), relation);
+          relationForValue(Phi, Phi->getIncomingValueForBlock(PredBlock)),
+          relation);
     }
     return relation;
   }
 
   std::optional<Relation> booleanPhiRelation(const llvm::PHINode &Phi) const {
-    if (Phi.getNumIncomingValues() != 2 || !isTrackedScalar(&Phi))
+    if (Phi.getNumIncomingValues() != 2 || !D::isTrackedValue(&Phi))
       return std::nullopt;
 
     auto *Pred0 = Phi.getIncomingBlock(0);
     auto *Pred1 = Phi.getIncomingBlock(1);
     auto *Const0 = llvm::dyn_cast<llvm::ConstantInt>(Phi.getIncomingValue(0));
     auto *Const1 = llvm::dyn_cast<llvm::ConstantInt>(Phi.getIncomingValue(1));
-    if (Pred0 == nullptr || Pred1 == nullptr || Const0 == nullptr || Const1 == nullptr)
+    if (Pred0 == nullptr || Pred1 == nullptr || Const0 == nullptr ||
+        Const1 == nullptr)
       return std::nullopt;
 
     auto *CommonPred0 = Pred0->getSinglePredecessor();
@@ -1315,10 +1465,11 @@ private:
         llvm::dyn_cast_or_null<llvm::BranchInst>(CommonPred0->getTerminator());
     if (Branch == nullptr || !Branch->isConditional())
       return std::nullopt;
-    if (!isTrackedScalar(Branch->getCondition()))
+    if (!D::isTrackedValue(Branch->getCondition()))
       return std::nullopt;
 
-    auto valueFor = [&](const llvm::BasicBlock *BB) -> const llvm::ConstantInt * {
+    auto valueFor =
+        [&](const llvm::BasicBlock *BB) -> const llvm::ConstantInt * {
       for (unsigned i = 0; i < Phi.getNumIncomingValues(); ++i) {
         if (Phi.getIncomingBlock(i) == BB)
           return llvm::dyn_cast<llvm::ConstantInt>(Phi.getIncomingValue(i));
@@ -1333,8 +1484,8 @@ private:
 
     unsigned width = D::bitWidthOf(&Phi);
     int64_t falseValue = wrapToBitWidth(FalseConst->getSExtValue(), width);
-    int64_t delta =
-        wrapToBitWidth(TrueConst->getSExtValue() - FalseConst->getSExtValue(), width);
+    int64_t delta = wrapToBitWidth(
+        TrueConst->getSExtValue() - FalseConst->getSExtValue(), width);
     return D::makeAffineAssignment(&Phi, falseValue,
                                    {{Branch->getCondition(), delta}});
   }
@@ -1345,19 +1496,21 @@ private:
     llvm_inter::forEachActualFormalPair(
         &Call, const_cast<llvm::Function *>(&Callee),
         [&](llvm::Value *Actual, llvm::Argument *Formal, unsigned) {
-          if (!isTrackedScalar(Formal))
+          if (!D::isTrackedValue(Formal))
             return;
           relation = D::extend(relationForValue(Formal, Actual), relation);
         });
     return relation;
   }
 
-  Relation callReturnTransfer(const llvm::CallBase &Call, const llvm::Function &Callee,
+  Relation callReturnTransfer(const llvm::CallBase &Call,
+                              const llvm::Function &Callee,
                               llvm::Instruction *ExitStmt) const {
-    if (Call.getType()->isVoidTy() || !isTrackedScalar(&Call))
+    if (Call.getType()->isVoidTy() || !D::isTrackedValue(&Call))
       return D::identity();
     auto *Ret = llvm::dyn_cast_or_null<llvm::ReturnInst>(ExitStmt);
-    if (Ret == nullptr || Ret->getFunction() != &Callee || Ret->getReturnValue() == nullptr)
+    if (Ret == nullptr || Ret->getFunction() != &Callee ||
+        Ret->getReturnValue() == nullptr)
       return D::makeForget(&Call);
     return relationForValue(&Call, Ret->getReturnValue());
   }
@@ -1394,9 +1547,8 @@ private:
         if (auto result = compareEquivalentAffineExprs(Cmp.getPredicate()))
           return D::makeAffineAssignment(&Cmp, *result ? 1 : 0, {});
       }
-      if (auto result =
-              evaluateAffineComparison(*lhsExpr, *rhsExpr, Cmp.getPredicate(),
-                                       *width)) {
+      if (auto result = evaluateAffineComparison(*lhsExpr, *rhsExpr,
+                                                 Cmp.getPredicate(), *width)) {
         return D::makeAffineAssignment(&Cmp, *result ? 1 : 0, {});
       }
     }
@@ -1486,8 +1638,8 @@ private:
       if (trailingOnes > 0) {
         llvm::APInt lowOnes(width, 0);
         lowOnes.setLowBits(trailingOnes);
-        return D::makeAffineCongruenceAssignment(
-            &BinOp, trailingOnes, lowOnes.getSExtValue(), {});
+        return D::makeAffineCongruenceAssignment(&BinOp, trailingOnes,
+                                                 lowOnes.getSExtValue(), {});
       }
       if (trailingZeros > 0)
         return congruenceAssignmentForExpr(&BinOp, trailingZeros, *expr);
@@ -1499,9 +1651,8 @@ private:
         return assignmentForExpr(&BinOp, *expr);
       unsigned trailingOnes = countTrailingOnes(mask);
       if (trailingOnes >= width)
-        return assignmentForExpr(&BinOp,
-                                 scaleExpr(addExpr(*expr, constExpr(1), width),
-                                           -1, width));
+        return assignmentForExpr(
+            &BinOp, scaleExpr(addExpr(*expr, constExpr(1), width), -1, width));
       if (trailingZeros > 0)
         return congruenceAssignmentForExpr(&BinOp, trailingZeros, *expr);
       if (trailingOnes > 0) {
@@ -1517,7 +1668,8 @@ private:
     return buildBitwisePartialRelation(BinOp);
   }
 
-  Relation buildBitwisePartialRelation(const llvm::BinaryOperator &BinOp) const {
+  Relation
+  buildBitwisePartialRelation(const llvm::BinaryOperator &BinOp) const {
     auto lhsExpr = affineExprForValue(BinOp.getOperand(0));
     auto rhsExpr = affineExprForValue(BinOp.getOperand(1));
     if (!lhsExpr || !rhsExpr)
@@ -1554,13 +1706,11 @@ private:
         return std::nullopt;
 
       unsigned extraBits = more.bits - knownBits;
-      llvm::APInt middle =
-          more.value.lshr(knownBits) &
-          llvm::APInt::getLowBitsSet(width, extraBits);
+      llvm::APInt middle = more.value.lshr(knownBits) &
+                           llvm::APInt::getLowBitsSet(width, extraBits);
       bool lowMiddleBitIsOne = middle[0];
-      unsigned runBits =
-          lowMiddleBitIsOne ? countTrailingOnes(middle)
-                            : middle.countTrailingZeros();
+      unsigned runBits = lowMiddleBitIsOne ? countTrailingOnes(middle)
+                                           : middle.countTrailingZeros();
       runBits = std::min(runBits, extraBits);
       if (runBits == 0)
         return std::nullopt;
@@ -1569,7 +1719,8 @@ private:
       llvm::APInt lowResult = lowBitsValue(knownValue, knownBits);
       if (opcode == llvm::Instruction::And) {
         if (!lowMiddleBitIsOne)
-          return congruenceAssignmentForConstant(&BinOp, modulusBits, lowResult);
+          return congruenceAssignmentForConstant(&BinOp, modulusBits,
+                                                 lowResult);
         llvm::APInt lessLow = lowBitsValue(less.value, knownBits);
         AffineExpr expr = addConstant(
             lessExpr, lowResult.getSExtValue() - lessLow.getSExtValue(), width);
@@ -1597,11 +1748,11 @@ private:
           return congruenceAssignmentForExpr(&BinOp, modulusBits, expr);
         }
         llvm::APInt lessLow = lowBitsValue(less.value, knownBits);
-        AffineExpr expr = addConstant(
-            scaleExpr(lessExpr, -1, width),
-            lessLow.getSExtValue() + lowResult.getSExtValue() -
-                llvm::APInt(width, 1).shl(knownBits).getSExtValue(),
-            width);
+        AffineExpr expr =
+            addConstant(scaleExpr(lessExpr, -1, width),
+                        lessLow.getSExtValue() + lowResult.getSExtValue() -
+                            llvm::APInt(width, 1).shl(knownBits).getSExtValue(),
+                        width);
         return congruenceAssignmentForExpr(&BinOp, modulusBits, expr);
       }
       return std::nullopt;
@@ -1653,20 +1804,22 @@ private:
       llvm::APInt rhsValue = RC->getValue();
       switch (BinOp.getOpcode()) {
       case llvm::Instruction::And:
-        return D::makeAffineAssignment(&BinOp, (lhsValue & rhsValue).getSExtValue(),
-                                       {});
+        return D::makeAffineAssignment(
+            &BinOp, (lhsValue & rhsValue).getSExtValue(), {});
       case llvm::Instruction::Or:
-        return D::makeAffineAssignment(&BinOp, (lhsValue | rhsValue).getSExtValue(),
-                                       {});
+        return D::makeAffineAssignment(
+            &BinOp, (lhsValue | rhsValue).getSExtValue(), {});
       case llvm::Instruction::Xor:
         return D::makeAffineAssignment(
             &BinOp, (lhsValue ^ rhsValue).getSExtValue(), {});
       case llvm::Instruction::LShr:
         return D::makeAffineAssignment(
-            &BinOp, lhsValue.lshr(rhsValue.getLimitedValue()).getSExtValue(), {});
+            &BinOp, lhsValue.lshr(rhsValue.getLimitedValue()).getSExtValue(),
+            {});
       case llvm::Instruction::AShr:
         return D::makeAffineAssignment(
-            &BinOp, lhsValue.ashr(rhsValue.getLimitedValue()).getSExtValue(), {});
+            &BinOp, lhsValue.ashr(rhsValue.getLimitedValue()).getSExtValue(),
+            {});
       case llvm::Instruction::UDiv:
         if (!rhsValue.isZero())
           return D::makeAffineAssignment(
@@ -1720,8 +1873,8 @@ private:
         auto lhsExpr = affineExprForValue(L);
         if (!lhsExpr || Shift->getValue().uge(width))
           return D::makeForget(&BinOp);
-        if (auto quotient = exactQuotientByPowerOfTwo(
-                *lhsExpr, width, Shift->getZExtValue())) {
+        if (auto quotient = exactQuotientByPowerOfTwo(*lhsExpr, width,
+                                                      Shift->getZExtValue())) {
           return assignmentForExpr(&BinOp, *quotient);
         }
       }
@@ -1794,9 +1947,9 @@ materializeAffineExpressions(const AffineRelationDomain::value_type &relation) {
   return materializeAffineExpressionsImpl(relation);
 }
 
-InterAffineEqualities::Result
-InterAffineEqualities::run(llvm::Module &M, bool verbose) {
-  (void)verbose;
+InterAffineEqualities::Result InterAffineEqualities::run(llvm::Module &M,
+                                                         Options options) {
+  (void)options.verbose;
   using Solver =
       InterEliminationSolver<AffineInterAnalysisTypes,
                              kDefaultInterAffineEqualitiesCallStringLength>;
@@ -1805,10 +1958,15 @@ InterAffineEqualities::run(llvm::Module &M, bool verbose) {
 
   std::unique_ptr<dataflow::controlflow::LLVMInterCFG> ICF =
       std::make_unique<dataflow::controlflow::LLVMInterCFG>(&M);
-  InterAffineEqualitiesProblem Problem(M, ICF.get());
+  InterAffineEqualitiesProblem Problem(M, options.vocabulary,
+                                       options.maxTrackedValues, ICF.get());
+  if (options.verbose)
+    llvm::errs() << "[inter-affine] tracked-values=" << Problem.vocabularySize()
+                 << "\n";
   Solver SolverInstance(Problem);
 
   Result Out;
+  Out.trackedValues = Problem.vocabularySize();
   auto Status = SolverInstance.solve();
   Out.status = Status;
 
@@ -1850,10 +2008,10 @@ InterAffineEqualities::run(llvm::Module &M, bool verbose) {
           const auto *Fact = Result->tryOUT(Key);
           if (Fact == nullptr)
             continue;
-          Relation EdgeRelation =
-              Problem.applyTransfer(Problem.edgeTransfer(PredTerm, EntryInst), *Fact);
-          BlockRelation =
-              HaveBlock ? D::combine(BlockRelation, EdgeRelation) : EdgeRelation;
+          Relation EdgeRelation = Problem.applyTransfer(
+              Problem.edgeTransfer(PredTerm, EntryInst), *Fact);
+          BlockRelation = HaveBlock ? D::combine(BlockRelation, EdgeRelation)
+                                    : EdgeRelation;
           HaveBlock = true;
         }
       }

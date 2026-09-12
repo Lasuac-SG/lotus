@@ -9,6 +9,7 @@
 #include "Dataflow/Mono/Core/CallStringContext.h"
 
 #include <deque>
+#include <functional>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -28,19 +29,35 @@ public:
   using result_t = InterDataFlowResultT<K, fact_t, transfer_t, n_t>;
   using Context = mono::CallStringCTX<n_t, K>;
 
-  struct ContextKey final {
-    n_t Inst{};
+  struct ProcedureContextKey final {
+    f_t Function{};
     Context Ctx;
 
-    bool operator<(const ContextKey &Other) const {
-      if (Inst != Other.Inst) {
-        return Inst < Other.Inst;
+    bool operator<(const ProcedureContextKey &Other) const {
+      if (Function != Other.Function) {
+        return std::less<f_t>{}(Function, Other.Function);
       }
       return Ctx < Other.Ctx;
     }
   };
 
-  explicit InterEliminationSolver(ProblemTy &Problem) : Problem(Problem) {}
+  struct CallLink final {
+    ProcedureContextKey Caller;
+    n_t CallSite{};
+
+    bool operator<(const CallLink &Other) const {
+      if (Caller < Other.Caller)
+        return true;
+      if (Other.Caller < Caller)
+        return false;
+      return std::less<n_t>{}(CallSite, Other.CallSite);
+    }
+  };
+
+  explicit InterEliminationSolver(
+      ProblemTy &Problem,
+      EliminationOptions ProcedureOptions = defaultProcedureOptions())
+      : Problem(Problem), ProcedureOptions(ProcedureOptions) {}
 
   SolveStatus solve() {
     loadSeedFacts();
@@ -54,10 +71,14 @@ public:
     Result.setMissingFactFallback(Problem.bottom());
     HaveResult = true;
 
-    std::deque<ContextKey> Worklist;
-    std::set<ContextKey> InQueue;
+    IncomingCalls.clear();
+    LastBoundaries.clear();
+    ActiveCalls.clear();
+    SolvedContexts.clear();
+    std::deque<ProcedureContextKey> Worklist;
+    std::set<ProcedureContextKey> InQueue;
 
-    auto Enqueue = [&](ContextKey Key) {
+    auto Enqueue = [&](ProcedureContextKey Key) {
       if (InQueue.insert(Key).second) {
         Worklist.push_back(std::move(Key));
       }
@@ -66,7 +87,9 @@ public:
     Context EmptyCtx;
     for (const auto &Seed : SeedFacts) {
       Result.IN(Seed.first, EmptyCtx) = Seed.second;
-      Enqueue({Seed.first, EmptyCtx});
+      auto Function = ICF->getFunctionOf(Seed.first);
+      if (Function != f_t{})
+        Enqueue({Function, EmptyCtx});
     }
 
     if (SeedFacts.empty()) {
@@ -76,16 +99,12 @@ public:
         }
         if (Problem.direction() ==
             ::dataflow::controlflow::FlowDirection::Backward) {
-          for (auto Exit : ICF->getExitPointsOf(Entry)) {
-            if (Exit != n_t{}) {
-              Enqueue({Exit, EmptyCtx});
-            }
-          }
+          if (!ICF->getExitPointsOf(Entry).empty())
+            Enqueue({Entry, EmptyCtx});
         } else {
           auto Starts = ICF->getStartPointsOf(Entry);
-          if (!Starts.empty() && Starts.front() != n_t{}) {
-            Enqueue({Starts.front(), EmptyCtx});
-          }
+          if (!Starts.empty() && Starts.front() != n_t{})
+            Enqueue({Entry, EmptyCtx});
         }
       }
     }
@@ -95,14 +114,10 @@ public:
       Worklist.pop_front();
       InQueue.erase(Key);
 
-      std::vector<ContextKey> Frontier;
-      if (!solveProcedureForContext(Key, *ICF, Frontier)) {
-        continue;
-      }
-
-      for (const auto &Succ : Frontier) {
-        Enqueue(Succ);
-      }
+      const bool FirstSolve = SolvedContexts.insert(Key).second;
+      const bool Changed = solveProcedureForContext(Key, *ICF);
+      if (Changed || FirstSolve)
+        scheduleAdjacentProcedures(Key, *ICF, Enqueue);
     }
 
     Result.setSolveStatus(SolveStatus::Ok);
@@ -152,7 +167,7 @@ private:
 
     fact_t applyTransfer(const transfer_t &T, const fact_t &In) const override {
       InterSummaryTransferEvaluator<AnalysisTypesT, K> Evaluator(Problem, ICF,
-                                                                   Result, Ctx);
+                                                                 Result, Ctx);
       return Evaluator.applyNormalEdge(T, In);
     }
 
@@ -178,17 +193,18 @@ private:
 
   void loadSeedFacts() { SeedFacts = Problem.initialSeeds(); }
 
-  bool solveProcedureForContext(const ContextKey &Key, const i_t &ICF,
-                                std::vector<ContextKey> &Frontier) {
-    auto Function = Key.Inst != n_t{} ? ICF.getFunctionOf(Key.Inst) : f_t{};
+  bool solveProcedureForContext(const ProcedureContextKey &Key,
+                                const i_t &ICF) {
+    auto Function = Key.Function;
     if (Function == f_t{} || ICF.getStartPointsOf(Function).empty()) {
       return false;
     }
 
     auto EntryFact = boundaryFactForContext(Function, Key.Ctx, ICF);
+    LastBoundaries[Key] = EntryFact;
     ProcedureProblemAdapter Adapter(Problem, Function, Key.Ctx, Result, ICF,
                                     EntryFact);
-    IntraEliminationSolver<AnalysisTypesT> Solver(Adapter);
+    IntraEliminationSolver<AnalysisTypesT> Solver(Adapter, ProcedureOptions);
     auto Status = Solver.solve();
     if (Status == SolveStatus::InvalidProblem) {
       return false;
@@ -197,7 +213,13 @@ private:
     bool Changed = false;
     const auto &ProcRes = Solver.getResults();
     const auto Nodes = Adapter.nodes();
+    auto &Calls = ActiveCalls[Key];
+    Calls.clear();
     for (auto Inst : Nodes) {
+      auto Expr = ProcRes.ExprTo(Inst);
+      if (ICF.isCallSite(Inst) && Expr &&
+          !PathExprFactory<transfer_t>::isZero(Expr))
+        Calls.insert(Inst);
       const auto *In = ProcRes.tryIN(Inst);
       if (In == nullptr) {
         continue;
@@ -220,197 +242,129 @@ private:
       }
     }
 
-    if (Changed) {
-      for (auto Inst : Nodes) {
-        ContextKey ProcKey{Inst, Key.Ctx};
-        auto Succs = successors(ProcKey, ICF);
-        Frontier.insert(Frontier.end(), Succs.begin(), Succs.end());
-      }
-    }
     return Changed;
   }
 
   fact_t boundaryFactForContext(f_t Function, const Context &Ctx,
                                 const i_t &ICF) {
-    if (Function == f_t{}) {
+    if (Function == f_t{})
       return Problem.bottom();
-    }
 
     auto Starts = ICF.getStartPointsOf(Function);
     auto Exits = ICF.getExitPointsOf(Function);
-    if (Starts.empty() && Exits.empty()) {
+    if (Starts.empty() && Exits.empty())
       return Problem.bottom();
-    }
 
+    fact_t Boundary = Problem.bottom();
+    bool HaveBoundary = false;
+    auto MergeBoundary = [&](fact_t Fact) {
+      if (!HaveBoundary) {
+        Boundary = std::move(Fact);
+        HaveBoundary = true;
+      } else {
+        Boundary = Problem.join(Boundary, Fact);
+      }
+    };
+
+    const ProcedureContextKey CalleeKey{Function, Ctx};
+    auto LinksIt = IncomingCalls.find(CalleeKey);
     auto EntryInst = Starts.empty() ? n_t{} : Starts.front();
     if (Problem.direction() ==
         ::dataflow::controlflow::FlowDirection::Backward) {
-      fact_t Boundary = Problem.bottom();
-      bool First = true;
-
       if (Ctx.empty()) {
         for (auto Exit : Exits) {
           auto It = SeedFacts.find(Exit);
-          if (Exit == n_t{} || It == SeedFacts.end()) {
-            continue;
-          }
-          if (First) {
-            Boundary = It->second;
-            First = false;
-          } else {
-            Boundary = Problem.join(Boundary, It->second);
-          }
+          if (Exit != n_t{} && It != SeedFacts.end())
+            MergeBoundary(It->second);
         }
-        return First ? Problem.bottom() : Boundary;
       }
 
-      auto CallerCtx = Ctx;
-      auto CallSite = CallerCtx.pop_back();
-      if (CallSite == n_t{}) {
-        return Problem.bottom();
-      }
-      for (auto RetSite : ICF.getReturnSitesOfCallAt(CallSite)) {
-        if (RetSite == n_t{}) {
-          continue;
-        }
-        auto *RetFacts = Result.tryOUT(RetSite, CallerCtx);
-        if (RetFacts == nullptr) {
-          continue;
-        }
-        for (auto Exit : Exits) {
-          if (Exit == n_t{}) {
-            continue;
-          }
-          auto Flow =
-              Problem.returnFlow(CallSite, Function, Exit, RetSite, *RetFacts);
-          if (First) {
-            Boundary = Flow;
-            First = false;
-          } else {
-            Boundary = Problem.join(Boundary, Flow);
+      if (LinksIt != IncomingCalls.end()) {
+        for (const auto &Link : LinksIt->second) {
+          for (auto RetSite : ICF.getReturnSitesOfCallAt(Link.CallSite)) {
+            if (RetSite == n_t{})
+              continue;
+            auto *RetFacts = Result.tryOUT(RetSite, Link.Caller.Ctx);
+            if (RetFacts == nullptr)
+              continue;
+            for (auto Exit : Exits) {
+              if (Exit == n_t{})
+                continue;
+              MergeBoundary(Problem.returnFlow(Link.CallSite, Function, Exit,
+                                               RetSite, *RetFacts));
+            }
           }
         }
       }
-      return First ? Problem.bottom() : Boundary;
+      return HaveBoundary ? Boundary : Problem.bottom();
     }
 
     if (Ctx.empty()) {
       auto It = SeedFacts.find(EntryInst);
-      return It != SeedFacts.end() ? It->second : Problem.bottom();
+      if (It != SeedFacts.end())
+        MergeBoundary(It->second);
     }
 
-    auto CallerCtx = Ctx;
-    auto CallSite = CallerCtx.pop_back();
-    if (CallSite == n_t{}) {
-      return Problem.bottom();
+    if (LinksIt != IncomingCalls.end()) {
+      for (const auto &Link : LinksIt->second) {
+        auto *CallerFacts = Result.tryOUT(Link.CallSite, Link.Caller.Ctx);
+        if (CallerFacts == nullptr)
+          continue;
+        InterSummaryTransferEvaluator<AnalysisTypesT, K> Evaluator(
+            Problem, ICF, Result, Link.Caller.Ctx);
+        MergeBoundary(
+            Evaluator.applyCallEntry(Link.CallSite, Function, *CallerFacts));
+      }
     }
-    auto *CallerFacts = Result.tryOUT(CallSite, CallerCtx);
-    if (CallerFacts == nullptr) {
-      return Problem.bottom();
-    }
-    InterSummaryTransferEvaluator<AnalysisTypesT, K> Evaluator(
-        Problem, ICF, Result, CallerCtx);
-    return Evaluator.applyCallEntry(CallSite, Function, *CallerFacts);
+    return HaveBoundary ? Boundary : Problem.bottom();
   }
 
-  std::vector<ContextKey> successors(const ContextKey &Key, const i_t &ICF) {
-    std::vector<ContextKey> Next;
-    auto Inst = Key.Inst;
-    if (Inst == n_t{}) {
-      return Next;
-    }
-
-    if (Problem.direction() ==
-        ::dataflow::controlflow::FlowDirection::Backward) {
-      for (auto Pred : ICF.getSuccsOf(
-               Inst, dataflow::controlflow::FlowDirection::Forward)) {
-        if (Pred != n_t{}) {
-          Next.push_back({Pred, Key.Ctx});
-        }
-      }
-
-      for (auto Pred : ICF.getPredsOf(
-               Inst, dataflow::controlflow::FlowDirection::Forward)) {
-        if (Pred == n_t{} || !ICF.isCallSite(Pred)) {
-          continue;
-        }
-        for (auto RetSite : ICF.getReturnSitesOfCallAt(Pred)) {
-          if (RetSite != Inst) {
+  template <typename EnqueueT>
+  void scheduleAdjacentProcedures(const ProcedureContextKey &Key,
+                                  const i_t &ICF, EnqueueT &&Enqueue) {
+    auto CallsIt = ActiveCalls.find(Key);
+    if (CallsIt != ActiveCalls.end()) {
+      for (auto Inst : CallsIt->second) {
+        Context CalleeCtx = Key.Ctx;
+        CalleeCtx.push_back(Inst);
+        for (auto Callee : ICF.getCalleesOfCallAt(Inst)) {
+          if (Callee == f_t{} || ICF.getStartPointsOf(Callee).empty() ||
+              ICF.getExitPointsOf(Callee).empty())
             continue;
-          }
-          Context CalleeCtx = Key.Ctx;
-          CalleeCtx.push_back(Pred);
-          for (auto Callee : ICF.getCalleesOfCallAt(Pred)) {
-            auto Starts = ICF.getStartPointsOf(Callee);
-            auto Exits = ICF.getExitPointsOf(Callee);
-            if (Starts.empty() || Exits.empty()) {
-              continue;
-            }
-            Next.push_back({Starts.front(), CalleeCtx});
-          }
-          break;
-        }
-      }
-      return Next;
-    }
-
-    for (auto Succ :
-         ICF.getSuccsOf(Inst, dataflow::controlflow::FlowDirection::Forward)) {
-      if (Succ != n_t{}) {
-        Next.push_back({Succ, Key.Ctx});
-      }
-    }
-
-    if (ICF.isExitInst(Inst)) {
-      if (!Key.Ctx.empty()) {
-        auto CallerCtx = Key.Ctx;
-        auto CallSite = CallerCtx.pop_back();
-        if (CallSite != n_t{}) {
-          Next.push_back({CallSite, CallerCtx});
-        }
-        for (auto RetSite : ICF.getReturnSitesOfCallAt(CallSite)) {
-          if (RetSite != n_t{}) {
-            Next.push_back({RetSite, CallerCtx});
-          }
-        }
-      } else if (K == 0) {
-        auto Function = ICF.getFunctionOf(Inst);
-        for (auto CallSite : ICF.getCallersOf(Function)) {
-          for (auto RetSite : ICF.getReturnSitesOfCallAt(CallSite)) {
-            if (RetSite != n_t{}) {
-              Next.push_back({RetSite, Key.Ctx});
-            }
-          }
+          ProcedureContextKey CalleeKey{Callee, CalleeCtx};
+          IncomingCalls[CalleeKey].insert(CallLink{Key, Inst});
+          auto Boundary = boundaryFactForContext(Callee, CalleeCtx, ICF);
+          auto LastIt = LastBoundaries.find(CalleeKey);
+          if (LastIt == LastBoundaries.end() ||
+              !Problem.equal(LastIt->second, Boundary))
+            Enqueue(CalleeKey);
         }
       }
     }
 
-    if (ICF.isCallSite(Inst)) {
-      Context CalleeCtx = Key.Ctx;
-      CalleeCtx.push_back(Inst);
-      auto Callees = ICF.getCalleesOfCallAt(Inst);
-      for (auto Callee : Callees) {
-        auto Starts = ICF.getStartPointsOf(Callee);
-        auto Exits = ICF.getExitPointsOf(Callee);
-        if (Starts.empty() || Exits.empty()) {
-          continue;
-        }
-        Next.push_back({Starts.front(), CalleeCtx});
-      }
-      for (auto RetSite : ICF.getReturnSitesOfCallAt(Inst)) {
-        if (RetSite != n_t{}) {
-          Next.push_back({RetSite, Key.Ctx});
-        }
-      }
+    auto LinksIt = IncomingCalls.find(Key);
+    if (LinksIt != IncomingCalls.end()) {
+      for (const auto &Link : LinksIt->second)
+        Enqueue(Link.Caller);
     }
-    return Next;
   }
 
   ProblemTy &Problem;
+  EliminationOptions ProcedureOptions;
   result_t Result;
   bool HaveResult = false;
   SolveStatus LastStatus = SolveStatus::Ok;
   std::unordered_map<n_t, fact_t> SeedFacts;
+  std::map<ProcedureContextKey, std::set<CallLink>> IncomingCalls;
+  std::map<ProcedureContextKey, fact_t> LastBoundaries;
+  std::map<ProcedureContextKey, std::set<n_t>> ActiveCalls;
+  std::set<ProcedureContextKey> SolvedContexts;
+
+  static EliminationOptions defaultProcedureOptions() {
+    EliminationOptions Options;
+    Options.Method = EliminationMethod::ADTSimple;
+    return Options;
+  }
 };
 
 } // namespace elimination

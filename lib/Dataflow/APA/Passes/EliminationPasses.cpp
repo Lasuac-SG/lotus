@@ -104,7 +104,14 @@ void printConstMap(raw_ostream &OS, const ConstantPropagationMap &Map) {
     First = false;
     printValueShort(OS, Entry.first);
     OS << "=";
-    OS << Entry.second;
+    if (Entry.second.isUnknown())
+      OS << "unknown";
+    else if (Entry.second.isUndef())
+      OS << "undef";
+    else if (Entry.second.isOverdefined())
+      OS << "overdefined";
+    else if (auto *C = Entry.second.getConstant())
+      C->printAsOperand(OS, false);
   }
   OS << "}";
 }
@@ -126,7 +133,8 @@ void printUninitSet(raw_ostream &OS, const UninitVariablesFact &Set) {
   OS << "}";
 }
 
-void printValueSet(raw_ostream &OS, const std::set<const Value *> &Set) {
+template <typename SetT>
+void printValueSet(raw_ostream &OS, const SetT &Set) {
   if (Set.empty()) {
     OS << "{}";
     return;
@@ -202,7 +210,8 @@ void printSignMap(raw_ostream &OS, const SignMap &Map) {
   OS << "}";
 }
 
-void printExprSet(raw_ostream &OS, const std::set<ExpressionKey> &Set) {
+template <typename SetT>
+void printExprSet(raw_ostream &OS, const SetT &Set) {
   if (Set.empty()) {
     OS << "{}";
     return;

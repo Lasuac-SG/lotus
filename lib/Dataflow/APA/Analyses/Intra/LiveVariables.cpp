@@ -8,6 +8,7 @@
 #include "Dataflow/ControlFlow/IntraCFG.h"
 
 #include <unordered_set>
+#include <unordered_map>
 
 namespace elimination {
 namespace {
@@ -19,34 +20,46 @@ class ReverseLiveVariablesProblem
 public:
   explicit ReverseLiveVariablesProblem(llvm::Function *F,
                                        llvm::Instruction *Exit)
-      : LLVMReverseIntraEliminationProblem<LiveVariablesFact, LiveVariablesDomain>(F, Exit) {}
-
-  fact_t applyTransfer(const transfer_t &T, const fact_t &In) const override {
-    auto *Inst = T;
-    fact_t Out = In;
-    if (Inst == nullptr) {
-      return Out;
-    }
-
-    if (llvm::isa<llvm::DbgInfoIntrinsic>(Inst)) {
-      return Out;
-    }
-
-    if (!Inst->getType()->isVoidTy()) {
-      Out.erase(Inst);
-    }
-
-    for (auto &Op : Inst->operands()) {
-      auto *V = Op.get();
-      if (llvm::isa<llvm::Instruction>(V) || llvm::isa<llvm::Argument>(V)) {
-        Out.insert(V);
+      : LLVMReverseIntraEliminationProblem<LiveVariablesFact, LiveVariablesDomain>(F, Exit) {
+    if (F == nullptr)
+      return;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        auto &Info = Transfers[&I];
+        Info.Gen = this->bottom();
+        Info.Kill = this->bottom();
+        if (llvm::isa<llvm::DbgInfoIntrinsic>(&I))
+          continue;
+        if (!I.getType()->isVoidTy())
+          Info.Kill.insert(&I);
+        for (auto &Op : I.operands()) {
+          auto *V = Op.get();
+          if (llvm::isa<llvm::Instruction>(V) || llvm::isa<llvm::Argument>(V))
+            Info.Gen.insert(V);
+        }
       }
     }
+  }
 
+  fact_t applyTransfer(const transfer_t &T, const fact_t &In) const override {
+    fact_t Out = In;
+    auto It = Transfers.find(T);
+    if (It == Transfers.end()) {
+      return Out;
+    }
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
-  fact_t initialFact() const override { return fact_t{}; }
+  fact_t initialFact() const override { return this->bottom(); }
+
+private:
+  struct TransferInfo {
+    fact_t Gen;
+    fact_t Kill;
+  };
+  std::unordered_map<llvm::Instruction *, TransferInfo> Transfers;
 };
 
 // Return the set of "real" exit instructions for backward analysis.
@@ -123,12 +136,18 @@ LiveVariablesResult runIntraElimLiveVariables(llvm::Function *F,
     for (auto &BB : *F) {
       for (auto &I : BB) {
         auto *Inst = &I;
-        auto &Out = Combined.IN(Inst);
         const auto *InFacts = Res.tryIN(Inst);
         if (InFacts == nullptr) {
           continue;
         }
-        Out.insert(InFacts->begin(), InFacts->end());
+        const auto *Old = Combined.tryIN(Inst);
+        if (Old == nullptr)
+          Combined.IN(Inst) = *InFacts;
+        else {
+          auto Merged = *Old;
+          Merged.unionWith(*InFacts);
+          Combined.IN(Inst) = std::move(Merged);
+        }
       }
     }
   }

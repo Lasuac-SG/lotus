@@ -1,7 +1,8 @@
 #pragma once
 
+#include "Dataflow/APA/Domains/CopyOnWriteMap.h"
+
 #include <cstdint>
-#include <unordered_map>
 
 namespace llvm {
 class Value;
@@ -41,17 +42,22 @@ private:
   std::uint8_t Mask = None;
 };
 
-using SignMap = std::unordered_map<const llvm::Value *, SignValue>;
+using SignMap = CopyOnWriteMap<const llvm::Value *, SignValue>;
 
 struct SignDomain {
   using value_type = SignMap;
+  SignDomain() : U(value_type::makeUniverse()) {}
 
-  value_type bottom() const { return {}; }
+  value_type bottom() const { return value_type(U); }
 
   value_type join(const value_type &Lhs, const value_type &Rhs) const {
     value_type Out = Lhs;
-    for (const auto &Entry : Rhs)
-      Out[Entry.first].mergeIn(Entry.second);
+    for (const auto &Entry : Rhs) {
+      auto It = Out.find(Entry.first);
+      auto Value = It == Out.end() ? SignValue::bottom() : It->second;
+      Value.mergeIn(Entry.second);
+      Out.set(Entry.first, Value);
+    }
     return Out;
   }
 
@@ -73,6 +79,9 @@ struct SignDomain {
     }
     return true;
   }
+
+private:
+  typename value_type::universe_ptr U;
 };
 
 } // namespace elimination

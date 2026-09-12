@@ -15,7 +15,6 @@ add_library(CanaryCSIndexFLARE STATIC
     FLARE/Tabulation/Sequential.cpp
 )
 
-target_compile_features(CanaryCSIndexFLARE PUBLIC cxx_std_17)
 target_link_libraries(CanaryCSIndexFLARE
     PUBLIC
         CanaryParallel
@@ -26,6 +25,4 @@ add_library(CanaryCSIndexSCS STATIC
     SCS/Index.cpp
     SCS/PolicyAutomaton.cpp
 )
-
-target_compile_features(CanaryCSIndexSCS PUBLIC cxx_std_17)
 target_link_libraries(CanaryCSIndexSCS PUBLIC CanaryCSIndexFLARE)

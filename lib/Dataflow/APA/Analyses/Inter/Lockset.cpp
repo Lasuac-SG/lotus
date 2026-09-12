@@ -7,6 +7,8 @@
 #include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Solver/ForwardInterSummarySolver.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -71,22 +73,35 @@ public:
   explicit InterElimLocksetProblem(llvm::Function *Entry,
                                    const dataflow::controlflow::InterCFG *ICF)
       : LLVMInterEliminationProblem<InterLocksetAnalysisTypes>(
-            std::vector<llvm::Function *>{Entry}, ICF) {}
+            std::vector<llvm::Function *>{Entry}, ICF) {
+    auto *M = Entry != nullptr ? Entry->getParent() : nullptr;
+    if (M == nullptr)
+      return;
+    for (auto &F : *M) {
+      if (F.isDeclaration())
+        continue;
+      for (auto &BB : F) {
+        for (auto &I : BB) {
+          auto *Call = llvm::dyn_cast<llvm::CallBase>(&I);
+          Transfers[&I] = {classifyCall(Call), lockOperand(Call)};
+        }
+      }
+    }
+  }
 
   fact_t normalFlow(n_t Inst, const fact_t &In) override {
     fact_t Out = In;
-    const auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(Inst);
-    const auto Action = classifyCall(Call);
-    if (Action == LockAction::None) {
+    auto It = Transfers.find(Inst);
+    if (It == Transfers.end() || It->second.Action == LockAction::None) {
       return Out;
     }
 
-    const auto *Key = lockOperand(Call);
+    const auto *Key = It->second.Key;
     if (Key == nullptr) {
       return Out;
     }
 
-    if (Action == LockAction::Lock) {
+    if (It->second.Action == LockAction::Lock) {
       Out.insert(Key);
     } else {
       Out.erase(Key);
@@ -95,7 +110,7 @@ public:
   }
 
   fact_t callFlow(n_t CallSite, f_t Callee, const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     const auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(CallSite);
     if (Call == nullptr || Callee == nullptr) {
       return Out;
@@ -114,7 +129,7 @@ public:
 
   fact_t returnFlow(n_t CallSite, f_t Callee, n_t /*ExitStmt*/, n_t /*RetSite*/,
                     const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     const auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(CallSite);
     if (Call == nullptr) {
       return Out;
@@ -145,9 +160,16 @@ public:
     if (Entry == nullptr || Entry->empty()) {
       return Seeds;
     }
-    Seeds[&*Entry->getEntryBlock().begin()] = fact_t{};
+    Seeds[&*Entry->getEntryBlock().begin()] = this->bottom();
     return Seeds;
   }
+
+private:
+  struct TransferInfo {
+    LockAction Action = LockAction::None;
+    const llvm::Value *Key = nullptr;
+  };
+  std::unordered_map<n_t, TransferInfo> Transfers;
 };
 
 } // namespace

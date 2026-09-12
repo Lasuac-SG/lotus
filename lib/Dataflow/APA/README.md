@@ -130,6 +130,33 @@ APA is therefore a generic elimination framework, not a complete
 "analysis generator." Each client analysis combines a reusable domain with
 LLVM-specific modeling.
 
+## Client cost model
+
+The standard clients keep representation and LLVM-query overhead small so
+solver measurements primarily reflect path-expression construction and
+evaluation:
+
+- finite set domains use a shared value-to-ID universe and copy-on-write
+  bitmaps;
+- constant propagation and sign analysis use indexed, copy-on-write pages;
+- gen/kill analyses precompute their transfer masks once per instruction;
+- alias, MemorySSA, value-tracking, and instruction-simplification queries that
+  do not depend on the incoming fact are cached before solving; and
+- constant propagation uses the finite lattice `unknown / constant /
+  overdefined`, without gradually expanding `ConstantRange` values in `Star`.
+
+Affine equalities exposes two vocabulary modes. `AllScalars` retains every
+reachable integer SSA value for precision-oriented checks. `ObservableSlice`
+tracks the backward slice of entry arguments, control conditions, returns, and
+defined-callee argument mappings, and can impose a sound tracking budget by
+havocing values outside the slice. `lotus-dfa-apa --analysis=inter_affine` uses
+the sliced mode with `--affine-max-tracked=32` by default; pass `0` for an
+unlimited slice.
+
+These choices are deliberate for APA experiments: replaying an atom should be
+a small abstract-domain operation rather than a fresh interpretation of the
+LLVM instruction.
+
 ## Current gaps / non-goals
 
 - **Interprocedural support is deliberately lightweight**: the current solver is
@@ -244,9 +271,16 @@ The solver proceeds by:
 - maintaining `IN` / `OUT` facts keyed by `(instruction, call-string context)`,
 - computing a boundary fact for one procedure/context from `callFlow` or
   `returnFlow`,
-- solving that single procedure with the existing `IntraEliminationSolver`,
-- propagating changes across normal, call, return, and call-to-return edges in
-  the ICFG worklist.
+- scheduling work at `(procedure, call-string context)` granularity,
+- solving that procedure with ADT-simple elimination, with state elimination as
+  the fallback for rejected CFGs, and
+- propagating changes between dependent caller and callee procedure contexts.
+
+The solver records explicit call links from each limited callee context back to
+the caller contexts that produced it. This is required once the call string is
+full: dropping the oldest call site during `push_back` makes the caller context
+impossible to reconstruct with `pop_back`. The same links implement `K = 0` by
+merging all callers into the empty context without treating callees as roots.
 
 Clients provide four interprocedural hooks on top of the normal-flow lattice:
 

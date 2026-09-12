@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Dataflow/APA/Core/AbstractDomain.h"
-
-#include <set>
+#include "Dataflow/APA/Domains/IndexedSet.h"
 
 namespace llvm {
 class Value;
@@ -10,8 +8,8 @@ class Value;
 
 namespace elimination {
 
-struct NonNullDomain : IntersectionDomain<std::set<const llvm::Value *>> {
-  using IntersectionDomain::IntersectionDomain;
+struct NonNullDomain : IndexedIntersectionDomain<const llvm::Value *> {
+  using IndexedIntersectionDomain::IndexedIntersectionDomain;
 };
 
 using NonNullFact = NonNullDomain::value_type;

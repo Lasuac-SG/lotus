@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <unordered_map>
 
 namespace elimination {
 namespace {
@@ -57,36 +58,24 @@ public:
         DT(DT), TLI(TLI), MSSA(MSSA) {
     buildUniverse(F);
     this->getAbstractDomain().setUniverse(AllExprs);
+    buildTransferCache(F);
   }
 
   AvailableExpressionsFact
   applyTransfer(const transfer_t &T,
                 const AvailableExpressionsFact &In) const override {
-    auto *Inst = T;
     AvailableExpressionsFact Out = In;
-    if (Inst == nullptr) {
+    auto It = Transfers.find(T);
+    if (It == Transfers.end()) {
       return Out;
     }
-
-    if (killsMemory(Inst)) {
-      if (MSSA != nullptr) {
-        killLoadsWithMemorySSA(Inst, Out);
-      } else if (AA == nullptr) {
-        killAllLoads(Out);
-      } else {
-        killAliasedLoads(Inst, Out);
-      }
-    }
-
-    if (isCandidateExpr(Inst, DT, TLI)) {
-      Out.insert(makeKeyWithMSSA(Inst, MSSA));
-    }
-
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
   AvailableExpressionsFact initialFact() const override {
-    return AvailableExpressionsFact{};
+    return this->getAbstractDomain().empty();
   }
 
 private:
@@ -96,6 +85,11 @@ private:
   llvm::MemorySSA *MSSA = nullptr;
   AvailableExpressionsFact AllExprs;
   std::set<ExpressionKey> LoadExprs;
+  struct TransferInfo {
+    AvailableExpressionsFact Gen;
+    AvailableExpressionsFact Kill;
+  };
+  std::unordered_map<llvm::Instruction *, TransferInfo> Transfers;
 
   void buildUniverse(llvm::Function *F) {
     AllExprs.clear();
@@ -113,6 +107,33 @@ private:
         if (llvm::isa<llvm::LoadInst>(&I)) {
           LoadExprs.insert(Key);
         }
+      }
+    }
+  }
+
+  void buildTransferCache(llvm::Function *F) {
+    if (F == nullptr || F->isDeclaration())
+      return;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        auto &Info = Transfers[&I];
+        Info.Gen = this->getAbstractDomain().empty();
+        Info.Kill = this->getAbstractDomain().empty();
+
+        if (killsMemory(&I)) {
+          auto Survivors = AllExprs;
+          if (MSSA != nullptr)
+            killLoadsWithMemorySSA(&I, Survivors);
+          else if (AA == nullptr)
+            killAllLoads(Survivors);
+          else
+            killAliasedLoads(&I, Survivors);
+          Info.Kill = AllExprs;
+          Info.Kill.subtract(Survivors);
+        }
+
+        if (isCandidateExpr(&I, DT, TLI))
+          Info.Gen.insert(makeKeyWithMSSA(&I, MSSA));
       }
     }
   }

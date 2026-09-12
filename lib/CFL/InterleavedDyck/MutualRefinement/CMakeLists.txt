@@ -11,6 +11,3 @@ set(MUTUALREFINEMENT_LIB_SOURCES
 
 add_library(CanaryInterleavedDyckMutualRefinement STATIC
     ${MUTUALREFINEMENT_LIB_SOURCES})
-
-target_compile_features(CanaryInterleavedDyckMutualRefinement
-    PUBLIC cxx_std_17)

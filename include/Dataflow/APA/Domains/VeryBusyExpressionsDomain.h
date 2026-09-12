@@ -1,14 +1,12 @@
 #pragma once
 
-#include "Dataflow/APA/Core/AbstractDomain.h"
 #include "Dataflow/APA/Domains/ExpressionKey.h"
-
-#include <set>
+#include "Dataflow/APA/Domains/IndexedSet.h"
 
 namespace elimination {
 
-struct VeryBusyExpressionsDomain : IntersectionDomain<std::set<ExpressionKey>> {
-  using IntersectionDomain::IntersectionDomain;
+struct VeryBusyExpressionsDomain : IndexedIntersectionDomain<ExpressionKey> {
+  using IndexedIntersectionDomain::IndexedIntersectionDomain;
 };
 
 using VeryBusyExpressionsFact = VeryBusyExpressionsDomain::value_type;

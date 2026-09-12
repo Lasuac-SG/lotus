@@ -4,6 +4,8 @@
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/IR/Instructions.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -14,50 +16,25 @@ public:
                                           llvm::AAResults *AA = nullptr,
                                           llvm::MemorySSA *MSSA = nullptr)
       : LLVMIntraEliminationProblem<ReachingDefinitionsFact, ReachingDefinitionsDomain>(F), AA(AA),
-        MSSA(MSSA) {}
+        MSSA(MSSA) {
+    buildTransferCache(F);
+  }
 
   ReachingDefinitionsFact
   applyTransfer(const transfer_t &T,
                 const ReachingDefinitionsFact &In) const override {
-    auto *Inst = T;
     ReachingDefinitionsFact Out = In;
-    if (Inst == nullptr) {
+    auto It = Transfers.find(T);
+    if (It == Transfers.end()) {
       return Out;
     }
-
-    if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(Inst)) {
-      if (MSSA != nullptr) {
-        killStoresWithMemorySSA(Store, Out);
-      } else if (AA == nullptr) {
-        killAllStores(Out);
-      } else {
-        killAliasedStores(Store, Out);
-      }
-      Out.insert(Store);
-      return Out;
-    }
-
-    if (auto *Call = llvm::dyn_cast<llvm::CallBase>(Inst)) {
-      if (Call->mayWriteToMemory()) {
-        if (MSSA != nullptr) {
-          killStoresWithMemorySSA(Call, Out);
-        } else if (AA == nullptr) {
-          killAllStores(Out);
-        } else {
-          killStoresModdedByCall(Call, Out);
-        }
-      }
-    }
-
-    if (!Inst->getType()->isVoidTy()) {
-      Out.insert(Inst);
-    }
-
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
   ReachingDefinitionsFact initialFact() const override {
-    ReachingDefinitionsFact Out;
+    ReachingDefinitionsFact Out = this->bottom();
     auto *F = this->entry() != nullptr ? this->entry()->getFunction() : nullptr;
     if (F == nullptr) {
       return Out;
@@ -71,6 +48,62 @@ public:
 private:
   llvm::AAResults *AA = nullptr;
   llvm::MemorySSA *MSSA = nullptr;
+  struct TransferInfo {
+    ReachingDefinitionsFact Gen;
+    ReachingDefinitionsFact Kill;
+  };
+  std::unordered_map<llvm::Instruction *, TransferInfo> Transfers;
+
+  void buildTransferCache(llvm::Function *F) {
+    if (F == nullptr || F->isDeclaration())
+      return;
+
+    auto AllFacts = this->bottom();
+    for (auto &Arg : F->args())
+      AllFacts.insert(&Arg);
+    for (auto &BB : *F)
+      for (auto &I : BB)
+        if (llvm::isa<llvm::StoreInst>(&I) || !I.getType()->isVoidTy())
+          AllFacts.insert(&I);
+
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        auto &Info = Transfers[&I];
+        Info.Gen = this->bottom();
+        Info.Kill = this->bottom();
+        auto Survivors = AllFacts;
+        bool HasKill = false;
+
+        if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I)) {
+          HasKill = true;
+          if (MSSA != nullptr)
+            killStoresWithMemorySSA(Store, Survivors);
+          else if (AA == nullptr)
+            killAllStores(Survivors);
+          else
+            killAliasedStores(Store, Survivors);
+          Info.Gen.insert(Store);
+        } else if (auto *Call = llvm::dyn_cast<llvm::CallBase>(&I)) {
+          if (Call->mayWriteToMemory()) {
+            HasKill = true;
+            if (MSSA != nullptr)
+              killStoresWithMemorySSA(Call, Survivors);
+            else if (AA == nullptr)
+              killAllStores(Survivors);
+            else
+              killStoresModdedByCall(Call, Survivors);
+          }
+        }
+
+        if (!I.getType()->isVoidTy())
+          Info.Gen.insert(&I);
+        if (HasKill) {
+          Info.Kill = AllFacts;
+          Info.Kill.subtract(Survivors);
+        }
+      }
+    }
+  }
 
   static void killAllStores(ReachingDefinitionsFact &Out) {
     for (auto It = Out.begin(); It != Out.end();) {

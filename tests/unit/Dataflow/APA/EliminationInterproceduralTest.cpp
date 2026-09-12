@@ -1,4 +1,67 @@
+#include "Dataflow/APA/LLVM/InterProblem.h"
+#include "Dataflow/APA/Solver/InterSolver.h"
 #include "EliminationTestSupport.h"
+
+namespace {
+
+struct KLimitedReachabilityTypes {
+  using n_t = llvm::Instruction *;
+  using fact_t = bool;
+  using transfer_t = llvm::Instruction *;
+  using f_t = llvm::Function *;
+  using i_t = dataflow::controlflow::InterCFG;
+  using abstract_domain_t = elimination::ReachabilityDomain;
+};
+
+class KLimitedReachabilityProblem final
+    : public elimination::LLVMInterEliminationProblem<
+          KLimitedReachabilityTypes> {
+public:
+  KLimitedReachabilityProblem(llvm::Function *Entry,
+                              const dataflow::controlflow::InterCFG *ICF)
+      : LLVMInterEliminationProblem(std::vector<llvm::Function *>{Entry}, ICF) {
+  }
+
+  bool normalFlow(llvm::Instruction *, const bool &In) override { return In; }
+  bool callFlow(llvm::Instruction *, llvm::Function *,
+                const bool &In) override {
+    return In;
+  }
+  bool returnFlow(llvm::Instruction *, llvm::Function *, llvm::Instruction *,
+                  llvm::Instruction *, const bool &In) override {
+    return In;
+  }
+  bool callToRetFlow(llvm::Instruction *, llvm::Instruction *,
+                     const std::vector<llvm::Function *> &,
+                     const bool &In) override {
+    return In;
+  }
+
+  std::unordered_map<llvm::Instruction *, bool> initialSeeds() override {
+    auto *Entry = getEntryPoints().front();
+    return {{&Entry->getEntryBlock().front(), true}};
+  }
+};
+
+template <unsigned K> auto runKLimitedReachability(llvm::Function *Entry) {
+  dataflow::controlflow::LLVMInterCFG ICF(Entry->getParent());
+  KLimitedReachabilityProblem Problem(Entry, &ICF);
+  elimination::InterEliminationSolver<KLimitedReachabilityTypes, K> Solver(
+      Problem);
+  EXPECT_EQ(Solver.solve(), elimination::SolveStatus::Ok);
+  EXPECT_NE(Solver.getResults(), nullptr);
+  return *Solver.getResults();
+}
+
+llvm::CallInst *firstCall(llvm::Function *F) {
+  for (auto &BB : *F)
+    for (auto &I : BB)
+      if (auto *Call = llvm::dyn_cast<llvm::CallInst>(&I))
+        return Call;
+  return nullptr;
+}
+
+} // namespace
 
 TEST_F(APATest, InterproceduralReachabilityDirectCallAndDeadFunction) {
   const char *Source = R"(
@@ -52,6 +115,122 @@ TEST_F(APATest, InterproceduralReachabilityDirectCallAndDeadFunction) {
   EXPECT_NE(Result.tryIN(CalleeRet, {Call}), nullptr);
   EXPECT_EQ(Result.tryIN(DeadInst, {}), nullptr);
 }
+
+TEST_F(APATest, KLimitedCallStringsDoNotCreateTruncatedCallerContexts) {
+  const char *Source = R"(
+    define void @f3() {
+    entry:
+      ret void
+    }
+    define void @f2() {
+    entry:
+      call void @f3()
+      ret void
+    }
+    define void @f1() {
+    entry:
+      call void @f2()
+      ret void
+    }
+    define void @main() {
+    entry:
+      call void @f1()
+      ret void
+    }
+  )";
+
+  auto Module = lotus::unittest::parseModule(Context, Source, "APATest");
+  ASSERT_NE(Module, nullptr);
+  auto *Main = Module->getFunction("main");
+  auto *F1 = Module->getFunction("f1");
+  auto *F2 = Module->getFunction("f2");
+  auto *F3 = Module->getFunction("f3");
+  ASSERT_NE(Main, nullptr);
+  ASSERT_NE(F1, nullptr);
+  ASSERT_NE(F2, nullptr);
+  ASSERT_NE(F3, nullptr);
+
+  auto *Call0 = firstCall(Main);
+  auto *Call1 = firstCall(F1);
+  auto *Call2 = firstCall(F2);
+  ASSERT_NE(Call0, nullptr);
+  ASSERT_NE(Call1, nullptr);
+  ASSERT_NE(Call2, nullptr);
+
+  auto Result = runKLimitedReachability<2>(Main);
+  auto *F2Entry = &F2->getEntryBlock().front();
+  auto *F3Entry = &F3->getEntryBlock().front();
+  ASSERT_NE(Result.tryIN(F2Entry, {Call0, Call1}), nullptr);
+  EXPECT_TRUE(*Result.tryIN(F2Entry, {Call0, Call1}));
+  ASSERT_NE(Result.tryIN(F3Entry, {Call1, Call2}), nullptr);
+  EXPECT_TRUE(*Result.tryIN(F3Entry, {Call1, Call2}));
+
+  // Returning from [Call1, Call2] must wake the actual f2 caller context
+  // [Call0, Call1], rather than fabricating the shortened context [Call1].
+  EXPECT_EQ(Result.tryIN(F2Entry, {Call1}), nullptr);
+}
+
+TEST_F(APATest, ZeroLengthCallStringsMergeCallersIntoEmptyContext) {
+  const char *Source = R"(
+    define void @callee() {
+    entry:
+      ret void
+    }
+    define void @main() {
+    entry:
+      call void @callee()
+      ret void
+    }
+  )";
+
+  auto Module = lotus::unittest::parseModule(Context, Source, "APATest");
+  ASSERT_NE(Module, nullptr);
+  auto *Main = Module->getFunction("main");
+  auto *Callee = Module->getFunction("callee");
+  ASSERT_NE(Main, nullptr);
+  ASSERT_NE(Callee, nullptr);
+
+  auto Result = runKLimitedReachability<0>(Main);
+  auto *CalleeEntry = &Callee->getEntryBlock().front();
+  ASSERT_NE(Result.tryIN(CalleeEntry, {}), nullptr);
+  EXPECT_TRUE(*Result.tryIN(CalleeEntry, {}));
+  EXPECT_EQ(Result.contextsForInstruction(CalleeEntry).size(), 1u);
+}
+
+TEST_F(APATest, RecursiveCallStringsStabilizeAtKLimit) {
+  const char *Source = R"(
+    define void @rec() {
+    entry:
+      call void @rec()
+      ret void
+    }
+    define void @main() {
+    entry:
+      call void @rec()
+      ret void
+    }
+  )";
+
+  auto Module = lotus::unittest::parseModule(Context, Source, "APATest");
+  ASSERT_NE(Module, nullptr);
+  auto *Main = Module->getFunction("main");
+  auto *Rec = Module->getFunction("rec");
+  ASSERT_NE(Main, nullptr);
+  ASSERT_NE(Rec, nullptr);
+  auto *MainCall = firstCall(Main);
+  auto *RecCall = firstCall(Rec);
+  ASSERT_NE(MainCall, nullptr);
+  ASSERT_NE(RecCall, nullptr);
+
+  auto Result = runKLimitedReachability<2>(Main);
+  auto *RecEntry = &Rec->getEntryBlock().front();
+  EXPECT_NE(Result.tryIN(RecEntry, {MainCall}), nullptr);
+  EXPECT_NE(Result.tryIN(RecEntry, {MainCall, RecCall}), nullptr);
+  EXPECT_NE(Result.tryIN(RecEntry, {RecCall, RecCall}), nullptr);
+  EXPECT_EQ(Result.tryIN(RecEntry, {RecCall}), nullptr);
+  EXPECT_EQ(Result.contextsForInstruction(RecEntry).size(), 3u);
+}
+
 TEST_F(APATest, ForwardSummaryReachabilityMatchesDirectCallWorklist) {
   const char *Source = R"(
     define i32 @id(i32 %x) {
@@ -614,6 +793,38 @@ TEST_F(APATest, InterproceduralUninitializedVariablesAcrossCall) {
   ASSERT_NE(LoadFacts, nullptr);
   EXPECT_NE(LoadFacts->find(Load), LoadFacts->end());
 }
+
+TEST_F(APATest, BottomValuedCallerStillDiscoversCalleeContext) {
+  const char *Source = R"(
+    define void @maker() {
+    entry:
+      %local = alloca i32
+      ret void
+    }
+    define void @main() {
+    entry:
+      call void @maker()
+      ret void
+    }
+  )";
+
+  auto Module = lotus::unittest::parseModule(Context, Source, "APATest");
+  ASSERT_NE(Module, nullptr);
+  auto *Main = Module->getFunction("main");
+  auto *Maker = Module->getFunction("maker");
+  ASSERT_NE(Main, nullptr);
+  ASSERT_NE(Maker, nullptr);
+  auto *Call = firstCall(Main);
+  auto *Alloca = findFirst<llvm::AllocaInst>(Maker);
+  ASSERT_NE(Call, nullptr);
+  ASSERT_NE(Alloca, nullptr);
+
+  auto Result = elimination::runInterElimUninitVariables(Main);
+  auto *Facts = Result.tryOUT(Alloca, {Call});
+  ASSERT_NE(Facts, nullptr);
+  EXPECT_NE(Facts->find(Alloca), Facts->end());
+}
+
 TEST_F(APATest, ForwardSummaryUninitializedVariablesMatchesWorklist) {
   const char *Source = R"(
     define i32 @loadit(i32* %p) {

@@ -1,8 +1,11 @@
 #pragma once
 
-#include "llvm/Analysis/ValueLattice.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/InstrTypes.h"
 
-#include <unordered_map>
+#include "Dataflow/APA/Domains/CopyOnWriteMap.h"
+
+#include <cstdint>
 
 namespace llvm {
 class Value;
@@ -10,25 +13,91 @@ class Value;
 
 namespace elimination {
 
-using ConstantPropagationValue = llvm::ValueLatticeElement;
+class ConstantPropagationValue {
+public:
+  enum class Kind : std::uint8_t { Unknown, Undef, Constant, Overdefined };
+
+  ConstantPropagationValue() = default;
+
+  static ConstantPropagationValue get(llvm::Constant *C) {
+    if (llvm::isa_and_nonnull<llvm::UndefValue>(C))
+      return getUndef();
+    ConstantPropagationValue Result;
+    Result.K = Kind::Constant;
+    Result.C = C;
+    return Result;
+  }
+
+  static ConstantPropagationValue getUndef() {
+    ConstantPropagationValue Result;
+    Result.K = Kind::Undef;
+    return Result;
+  }
+
+  static ConstantPropagationValue getOverdefined() {
+    ConstantPropagationValue Result;
+    Result.K = Kind::Overdefined;
+    return Result;
+  }
+
+  bool isUnknown() const { return K == Kind::Unknown; }
+  bool isUndef() const { return K == Kind::Undef; }
+  bool isConstant() const { return K == Kind::Constant; }
+  bool isOverdefined() const { return K == Kind::Overdefined; }
+  bool isNotConstant() const { return false; }
+  llvm::Constant *getConstant() const { return isConstant() ? C : nullptr; }
+  llvm::Constant *getNotConstant() const { return nullptr; }
+
+  const llvm::ConstantInt *asConstantInteger() const {
+    return llvm::dyn_cast_or_null<llvm::ConstantInt>(getConstant());
+  }
+
+  llvm::Constant *getCompare(llvm::CmpInst::Predicate Pred, llvm::Type *,
+                             const ConstantPropagationValue &Other) const {
+    if (!isConstant() || !Other.isConstant())
+      return nullptr;
+    return llvm::ConstantExpr::getCompare(Pred, getConstant(),
+                                          Other.getConstant());
+  }
+
+  bool mergeIn(const ConstantPropagationValue &Other) {
+    if (Other.isUnknown() || isOverdefined())
+      return false;
+    if (isUnknown()) {
+      *this = Other;
+      return true;
+    }
+    if (K == Other.K && C == Other.C)
+      return false;
+    *this = getOverdefined();
+    return true;
+  }
+
+  friend bool operator==(const ConstantPropagationValue &Lhs,
+                         const ConstantPropagationValue &Rhs) {
+    return Lhs.K == Rhs.K && Lhs.C == Rhs.C;
+  }
+
+private:
+  Kind K = Kind::Unknown;
+  llvm::Constant *C = nullptr;
+};
 using ConstantPropagationMap =
-    std::unordered_map<const llvm::Value *, ConstantPropagationValue>;
+    CopyOnWriteMap<const llvm::Value *, ConstantPropagationValue>;
 
 struct ConstantPropagationDomain {
   using value_type = ConstantPropagationMap;
-
-  value_type bottom() const { return {}; }
+  ConstantPropagationDomain() : U(value_type::makeUniverse()) {}
+  value_type bottom() const { return value_type(U); }
 
   value_type join(const value_type &Lhs, const value_type &Rhs) const {
     value_type Out = Lhs;
     for (const auto &Entry : Rhs) {
       auto It = Out.find(Entry.first);
       if (It == Out.end()) {
-        ConstantPropagationValue Value;
-        Value.mergeIn(Entry.second);
-        Out.insert({Entry.first, Value});
+        Out.insert({Entry.first, Entry.second});
       } else {
-        It->second.mergeIn(Entry.second);
+        Out.set(Entry.first, joinValue(It->second, Entry.second));
       }
     }
     return Out;
@@ -54,6 +123,19 @@ struct ConstantPropagationDomain {
   }
 
 private:
+  typename value_type::universe_ptr U;
+
+  static ConstantPropagationValue
+  joinValue(const ConstantPropagationValue &Lhs,
+            const ConstantPropagationValue &Rhs) {
+    if (valueEqual(Lhs, Rhs) || Rhs.isUnknown())
+      return Lhs;
+    if (Lhs.isUnknown())
+      return Rhs;
+
+    return ConstantPropagationValue::getOverdefined();
+  }
+
   static bool valueEqual(const ConstantPropagationValue &Lhs,
                          const ConstantPropagationValue &Rhs) {
     if (Lhs.isUnknown() || Rhs.isUnknown())
@@ -65,14 +147,6 @@ private:
     if (Lhs.isConstant() || Rhs.isConstant())
       return Lhs.isConstant() && Rhs.isConstant() &&
              Lhs.getConstant() == Rhs.getConstant();
-    if (Lhs.isNotConstant() || Rhs.isNotConstant())
-      return Lhs.isNotConstant() && Rhs.isNotConstant() &&
-             Lhs.getNotConstant() == Rhs.getNotConstant();
-    if (Lhs.isConstantRange() || Rhs.isConstantRange())
-      return Lhs.isConstantRange(true) && Rhs.isConstantRange(true) &&
-             Lhs.isConstantRangeIncludingUndef() ==
-                 Rhs.isConstantRangeIncludingUndef() &&
-             Lhs.getConstantRange(true) == Rhs.getConstantRange(true);
     return false;
   }
 };

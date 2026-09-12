@@ -6,6 +6,8 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -24,23 +26,40 @@ public:
   explicit InterElimLiveVariablesProblem(
       llvm::Function *Entry, const dataflow::controlflow::InterCFG *ICF)
       : LLVMInterEliminationProblem<InterLiveVariablesAnalysisTypes>(
-            std::vector<llvm::Function *>{Entry}, ICF) {}
+            std::vector<llvm::Function *>{Entry}, ICF) {
+    auto *M = Entry != nullptr ? Entry->getParent() : nullptr;
+    if (M == nullptr)
+      return;
+    for (auto &F : *M) {
+      if (F.isDeclaration())
+        continue;
+      for (auto &BB : F) {
+        for (auto &I : BB) {
+          auto &Info = Transfers[&I];
+          Info.Gen = this->bottom();
+          Info.Kill = this->bottom();
+          if (llvm::isa<llvm::DbgInfoIntrinsic>(&I))
+            continue;
+          if (!I.getType()->isVoidTy())
+            Info.Kill.insert(&I);
+          for (auto &Op : I.operands()) {
+            auto *V = Op.get();
+            if (llvm::isa<llvm::Instruction>(V) || llvm::isa<llvm::Argument>(V))
+              Info.Gen.insert(V);
+          }
+        }
+      }
+    }
+  }
 
   fact_t normalFlow(n_t Inst, const fact_t &In) override {
     fact_t Out = In;
-    if (Inst == nullptr || llvm::isa<llvm::DbgInfoIntrinsic>(Inst)) {
+    auto It = Transfers.find(Inst);
+    if (It == Transfers.end()) {
       return Out;
     }
-
-    if (!Inst->getType()->isVoidTy()) {
-      Out.erase(Inst);
-    }
-    for (auto &Op : Inst->operands()) {
-      auto *V = Op.get();
-      if (llvm::isa<llvm::Instruction>(V) || llvm::isa<llvm::Argument>(V)) {
-        Out.insert(V);
-      }
-    }
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
@@ -49,7 +68,7 @@ public:
   }
 
   fact_t callFlow(n_t CallSite, f_t Callee, const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(CallSite);
     if (Call == nullptr || Callee == nullptr) {
       return Out;
@@ -70,7 +89,7 @@ public:
 
   fact_t returnFlow(n_t CallSite, f_t /*Callee*/, n_t ExitStmt, n_t /*RetSite*/,
                     const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     llvm_inter::copyGlobalValueFacts(In, Out);
 
     auto *Ret = llvm::dyn_cast_or_null<llvm::ReturnInst>(ExitStmt);
@@ -90,17 +109,7 @@ public:
   fact_t callToRetFlow(n_t CallSite, n_t /*RetSite*/,
                        const std::vector<f_t> & /*Callees*/,
                        const fact_t &In) override {
-    fact_t Out = In;
-    if (CallSite != nullptr && !CallSite->getType()->isVoidTy()) {
-      Out.erase(CallSite);
-    }
-    for (auto &Op : CallSite->operands()) {
-      auto *V = Op.get();
-      if (llvm::isa<llvm::Instruction>(V) || llvm::isa<llvm::Argument>(V)) {
-        Out.insert(V);
-      }
-    }
-    return Out;
+    return normalFlow(CallSite, In);
   }
 
   std::unordered_map<n_t, fact_t> initialSeeds() override {
@@ -111,11 +120,18 @@ public:
     }
     for (auto &BB : *Entry) {
       if (auto *Ret = llvm::dyn_cast<llvm::ReturnInst>(BB.getTerminator())) {
-        Seeds[Ret] = {};
+        Seeds[Ret] = this->bottom();
       }
     }
     return Seeds;
   }
+
+private:
+  struct TransferInfo {
+    fact_t Gen;
+    fact_t Kill;
+  };
+  std::unordered_map<n_t, TransferInfo> Transfers;
 };
 
 } // namespace

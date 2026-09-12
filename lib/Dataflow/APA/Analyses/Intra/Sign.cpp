@@ -6,6 +6,8 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -180,17 +182,29 @@ void clobberMemoryByCall(const llvm::CallBase *Call, SignMap &Out) {
   if (Call == nullptr || !Call->mayWriteToMemory()) {
     return;
   }
-  for (auto &Entry : Out) {
-    if (Entry.first != nullptr && Entry.first->getType()->isPointerTy()) {
-      Entry.second = SignValue::top();
-    }
-  }
+  std::vector<const llvm::Value *> Keys;
+  for (const auto &Entry : Out)
+    if (Entry.first != nullptr && Entry.first->getType()->isPointerTy())
+      Keys.push_back(Entry.first);
+  for (auto *Key : Keys)
+    Out.set(Key, SignValue::top());
 }
 
 class ElimSignAnalysisProblem : public LLVMIntraEliminationProblem<SignMap, SignDomain> {
 public:
   explicit ElimSignAnalysisProblem(llvm::Function *F)
-      : LLVMIntraEliminationProblem<SignMap, SignDomain>(F) {}
+      : LLVMIntraEliminationProblem<SignMap, SignDomain>(F) {
+    if (F == nullptr)
+      return;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I))
+          MemoryKeys[&I] = getMemKey(Store->getPointerOperand());
+        else if (auto *Load = llvm::dyn_cast<llvm::LoadInst>(&I))
+          MemoryKeys[&I] = getMemKey(Load->getPointerOperand());
+      }
+    }
+  }
 
   SignMap applyTransfer(const transfer_t &T, const SignMap &In) const override {
     auto *Inst = T;
@@ -209,14 +223,15 @@ public:
     if (const auto *Store = llvm::dyn_cast<llvm::StoreInst>(Inst)) {
       auto *Ptr = Store->getPointerOperand();
       if (Ptr != nullptr && Store->getValueOperand()->getType()->isIntegerTy()) {
-        Out[getMemKey(Ptr)] = resolveValue(In, Store->getValueOperand());
+        Out[cachedMemKey(Store, Ptr)] =
+            resolveValue(In, Store->getValueOperand());
       }
       return Out;
     }
 
     if (const auto *Load = llvm::dyn_cast<llvm::LoadInst>(Inst)) {
       if (Load->getType()->isIntegerTy()) {
-        auto *Key = getMemKey(Load->getPointerOperand());
+        auto *Key = cachedMemKey(Load, Load->getPointerOperand());
         auto It = In.find(Key);
         Out[Load] = It != In.end() ? It->second : SignValue::top();
       }
@@ -278,7 +293,16 @@ public:
     return Out;
   }
 
-  SignMap initialFact() const override { return SignMap{}; }
+  SignMap initialFact() const override { return this->bottom(); }
+
+private:
+  const llvm::Value *cachedMemKey(const llvm::Instruction *Inst,
+                                  const llvm::Value *Ptr) const {
+    auto It = MemoryKeys.find(Inst);
+    return It != MemoryKeys.end() ? It->second : getMemKey(Ptr);
+  }
+
+  std::unordered_map<const llvm::Instruction *, const llvm::Value *> MemoryKeys;
 };
 
 } // namespace

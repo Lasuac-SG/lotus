@@ -9,6 +9,7 @@ namespace elimination {
 
 AffineRelationVocabulary AffineRelationDomain::Vocabulary{};
 bool AffineRelationDomain::HasVocabulary = false;
+unsigned AffineRelationDomain::ConfiguredBitWidth = 64;
 
 namespace {
 
@@ -713,9 +714,19 @@ void AffineRelationDomain::configure(
   if (vocabulary) {
     Vocabulary = *vocabulary;
     HasVocabulary = true;
+    ConfiguredBitWidth = 64;
+    if (!Vocabulary.actualBitWidths.empty()) {
+      auto It = Vocabulary.actualBitWidths.begin();
+      const unsigned Width = It->second;
+      bool Uniform = true;
+      for (++It; It != Vocabulary.actualBitWidths.end(); ++It)
+        Uniform = Uniform && It->second == Width;
+      ConfiguredBitWidth = Uniform ? std::max(1u, Width) : 64u;
+    }
   } else {
     Vocabulary = {};
     HasVocabulary = false;
+    ConfiguredBitWidth = 64;
   }
 }
 
@@ -733,15 +744,7 @@ unsigned AffineRelationDomain::bitWidthOf(const llvm::Value *value) {
 }
 
 unsigned AffineRelationDomain::componentBitWidth() {
-  if (!HasVocabulary || Vocabulary.actualBitWidths.empty())
-    return 64;
-  auto it = Vocabulary.actualBitWidths.begin();
-  unsigned width = it->second;
-  for (++it; it != Vocabulary.actualBitWidths.end(); ++it) {
-    if (it->second != width)
-      return 64;
-  }
-  return std::max(1u, width);
+  return ConfiguredBitWidth;
 }
 
 unsigned AffineRelationDomain::indexOf(const llvm::Value *value) {
@@ -777,6 +780,7 @@ AffineRelationDomain::value_type AffineRelationDomain::identity() {
   value_type relation;
   if (!HasVocabulary)
     return relation;
+  relation.identity = true;
   relation.components.emplace(componentBitWidth(),
                               makeIdentityComponent(componentBitWidth()));
   return relation;
@@ -805,6 +809,7 @@ AffineRelationDomain::value_type AffineRelationDomain::addStateConstraint(
   out.components[bitWidth].constraints.push_back(std::move(postRow));
   out.components[bitWidth] =
       normalizeComponent(std::move(out.components[bitWidth]));
+  out.identity = false;
   return out;
 }
 
@@ -854,6 +859,8 @@ AffineRelationDomain::combine(const value_type &lhs, const value_type &rhs) {
     return rhs;
   if (rhs.bottom)
     return lhs;
+  if (lhs.identity && rhs.identity)
+    return lhs;
   value_type out;
   unsigned width = componentBitWidth();
   out.components.emplace(
@@ -877,6 +884,10 @@ AffineRelationDomain::value_type
 AffineRelationDomain::extend(const value_type &outer, const value_type &inner) {
   if (outer.bottom || inner.bottom)
     return zero();
+  if (outer.identity)
+    return inner;
+  if (inner.identity)
+    return outer;
   value_type out;
   unsigned width = componentBitWidth();
   out.components.emplace(width, composeComponent(outer.components.at(width),
@@ -956,6 +967,7 @@ AffineRelationDomain::makeForget(const llvm::Value *dest) {
       rows.end());
   relation.components[bitWidth] =
       normalizeComponent(std::move(relation.components[bitWidth]));
+  relation.identity = false;
   return relation;
 }
 
@@ -985,6 +997,7 @@ AffineRelationDomain::havoc(const value_type &relation,
     return relation;
 
   value_type out = relation;
+  out.identity = false;
   out.components[bitWidth] =
       projectAwayColumns(out.components.at(bitWidth), dropCols, 2 * vars + 1);
   out.components[bitWidth] =
@@ -1016,6 +1029,7 @@ AffineRelationDomain::value_type AffineRelationDomain::projectOnto(
     return relation;
 
   value_type out = relation;
+  out.identity = false;
   out.components[bitWidth] =
       projectAwayColumns(out.components.at(bitWidth), dropCols, 2 * vars + 1);
   out.components[bitWidth] =
@@ -1039,6 +1053,7 @@ AffineRelationDomain::value_type AffineRelationDomain::mergePreservingLocals(
   }
 
   value_type adjusted = calleeExit;
+  adjusted.identity = false;
   if (!postLocalCols.empty()) {
     adjusted.components[bitWidth] = projectAwayColumns(
         adjusted.components.at(bitWidth), postLocalCols, 2 * vars + 1);

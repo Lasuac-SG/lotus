@@ -29,49 +29,25 @@ public:
       llvm::Function *Entry, llvm::AAResults *AA = nullptr,
       llvm::MemorySSA *MSSA = nullptr,
       const dataflow::controlflow::InterCFG *ICF = nullptr)
-      : LLVMInterEliminationProblem<InterReachingDefinitionsAnalysisTypes>(
+        : LLVMInterEliminationProblem<InterReachingDefinitionsAnalysisTypes>(
             std::vector<llvm::Function *>{Entry}, ICF),
-        AA(AA), MSSA(MSSA) {}
+        AA(AA), MSSA(MSSA) {
+    buildTransferCache(Entry != nullptr ? Entry->getParent() : nullptr);
+  }
 
   fact_t normalFlow(n_t Inst, const fact_t &In) override {
     fact_t Out = In;
-    if (Inst == nullptr) {
+    auto It = Transfers.find(Inst);
+    if (It == Transfers.end()) {
       return Out;
     }
-
-    if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(Inst)) {
-      if (MSSA != nullptr) {
-        killStoresWithMemorySSA(Store, Out);
-      } else if (AA == nullptr) {
-        killAllStores(Out);
-      } else {
-        killAliasedStores(Store, Out);
-      }
-      Out.insert(Store);
-      return Out;
-    }
-
-    if (auto *Call = llvm::dyn_cast<llvm::CallBase>(Inst)) {
-      if (Call->mayWriteToMemory()) {
-        if (MSSA != nullptr) {
-          killStoresWithMemorySSA(Call, Out);
-        } else if (AA == nullptr) {
-          killAllStores(Out);
-        } else {
-          killStoresModdedByCall(Call, Out);
-        }
-      }
-    }
-
-    if (!Inst->getType()->isVoidTy()) {
-      Out.insert(Inst);
-    }
-
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
   fact_t callFlow(n_t /*CallSite*/, f_t Callee, const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     if (Callee == nullptr) {
       return Out;
     }
@@ -86,7 +62,7 @@ public:
 
   fact_t returnFlow(n_t CallSite, f_t Callee, n_t ExitStmt, n_t /*RetSite*/,
                     const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     llvm_inter::copyGlobalValueFacts(In, Out);
     llvm_inter::copyStoreFacts(In, Out);
 
@@ -140,7 +116,7 @@ public:
       return Seeds;
     }
 
-    fact_t Init;
+    fact_t Init = this->bottom();
     for (auto &Arg : Entry->args()) {
       Init.insert(&Arg);
     }
@@ -151,6 +127,67 @@ public:
 private:
   llvm::AAResults *AA = nullptr;
   llvm::MemorySSA *MSSA = nullptr;
+  struct TransferInfo {
+    fact_t Gen;
+    fact_t Kill;
+  };
+  std::unordered_map<n_t, TransferInfo> Transfers;
+
+  void buildTransferCache(llvm::Module *M) {
+    if (M == nullptr)
+      return;
+    auto AllFacts = this->bottom();
+    for (auto &F : *M) {
+      if (F.isDeclaration())
+        continue;
+      for (auto &Arg : F.args())
+        AllFacts.insert(&Arg);
+      for (auto &BB : F)
+        for (auto &I : BB)
+          if (llvm::isa<llvm::StoreInst>(&I) || !I.getType()->isVoidTy())
+            AllFacts.insert(&I);
+    }
+
+    for (auto &F : *M) {
+      if (F.isDeclaration())
+        continue;
+      for (auto &BB : F) {
+        for (auto &I : BB) {
+          auto &Info = Transfers[&I];
+          Info.Gen = this->bottom();
+          Info.Kill = this->bottom();
+          auto Survivors = AllFacts;
+          bool HasKill = false;
+          if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I)) {
+            HasKill = true;
+            if (MSSA != nullptr)
+              killStoresWithMemorySSA(Store, Survivors);
+            else if (AA == nullptr)
+              killAllStores(Survivors);
+            else
+              killAliasedStores(Store, Survivors);
+            Info.Gen.insert(Store);
+          } else if (auto *Call = llvm::dyn_cast<llvm::CallBase>(&I)) {
+            if (Call->mayWriteToMemory()) {
+              HasKill = true;
+              if (MSSA != nullptr)
+                killStoresWithMemorySSA(Call, Survivors);
+              else if (AA == nullptr)
+                killAllStores(Survivors);
+              else
+                killStoresModdedByCall(Call, Survivors);
+            }
+          }
+          if (!I.getType()->isVoidTy())
+            Info.Gen.insert(&I);
+          if (HasKill) {
+            Info.Kill = AllFacts;
+            Info.Kill.subtract(Survivors);
+          }
+        }
+      }
+    }
+  }
 
   static void killAllStores(fact_t &Out) {
     for (auto It = Out.begin(); It != Out.end();) {

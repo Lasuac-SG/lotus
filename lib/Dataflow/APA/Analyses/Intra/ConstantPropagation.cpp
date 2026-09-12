@@ -15,6 +15,8 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -38,10 +40,6 @@ bool isOverdefined(const ConstantPropagationValue &V) {
 }
 
 bool isConst(const ConstantPropagationValue &V) { return V.isConstant(); }
-
-bool isConstRange(const ConstantPropagationValue &V) {
-  return V.isConstantRange();
-}
 
 const llvm::Value *getMemKey(const llvm::Value *Ptr) {
   auto *Base = llvm::getUnderlyingObject(Ptr);
@@ -77,15 +75,17 @@ void clobberMemoryByCall(const llvm::CallBase *Call,
     return;
   }
   if (AA == nullptr) {
-    for (auto &Entry : Out) {
-      if (isMemoryKey(Entry.first)) {
-        Entry.second = makeOverdefined();
-      }
-    }
+    std::vector<const llvm::Value *> Keys;
+    for (const auto &Entry : Out)
+      if (isMemoryKey(Entry.first))
+        Keys.push_back(Entry.first);
+    for (auto *Key : Keys)
+      Out.set(Key, makeOverdefined());
     return;
   }
 
-  for (auto &Entry : Out) {
+  std::vector<const llvm::Value *> Keys;
+  for (const auto &Entry : Out) {
     const auto *Key = Entry.first;
     if (!isMemoryKey(Key)) {
       continue;
@@ -93,9 +93,11 @@ void clobberMemoryByCall(const llvm::CallBase *Call,
     llvm::MemoryLocation Loc(Key, llvm::LocationSize::beforeOrAfterPointer(),
                              llvm::AAMDNodes());
     if (llvm::isModSet(AA->getModRefInfo(Call, Loc))) {
-      Entry.second = makeOverdefined();
+      Keys.push_back(Key);
     }
   }
+  for (auto *Key : Keys)
+    Out.set(Key, makeOverdefined());
 }
 
 ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
@@ -104,31 +106,6 @@ ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
   if (isUnknown(Lhs) || isUnknown(Rhs) || isOverdefined(Lhs) ||
       isOverdefined(Rhs)) {
     return makeOverdefined();
-  }
-
-  if (isConstRange(Lhs) && isConstRange(Rhs) && Inst != nullptr &&
-      Inst->getType()->isIntegerTy()) {
-    const auto &LR = Lhs.getConstantRange(true);
-    const auto &RR = Rhs.getConstantRange(true);
-    auto Op = static_cast<llvm::Instruction::BinaryOps>(Inst->getOpcode());
-    llvm::ConstantRange Res =
-        llvm::isa<llvm::OverflowingBinaryOperator>(Inst)
-            ? LR.overflowingBinaryOp(
-                  Op, RR,
-                  (llvm::cast<llvm::OverflowingBinaryOperator>(Inst)
-                           ->hasNoUnsignedWrap()
-                       ? llvm::OverflowingBinaryOperator::NoUnsignedWrap
-                       : 0u) |
-                      (llvm::cast<llvm::OverflowingBinaryOperator>(Inst)
-                               ->hasNoSignedWrap()
-                           ? llvm::OverflowingBinaryOperator::NoSignedWrap
-                           : 0u))
-            : LR.binaryOp(Op, RR);
-    if (Res.isSingleElement()) {
-      return makeConst(
-          llvm::ConstantInt::get(Inst->getType(), *Res.getSingleElement()));
-    }
-    return ConstantPropagationValue::getRange(Res, false);
   }
 
   if (!isConst(Lhs) || !isConst(Rhs)) {
@@ -140,6 +117,9 @@ ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
   if (Inst->getType()->isVoidTy()) {
     return makeOverdefined();
   }
+  if (L->getType() != Inst->getOperand(0)->getType() ||
+      R->getType() != Inst->getOperand(1)->getType())
+    return makeOverdefined();
   if (auto *Folded = llvm::ConstantFoldBinaryOpOperands(
           Inst->getOpcode(), L, R, Inst->getModule()->getDataLayout())) {
     return makeConst(Folded);
@@ -189,18 +169,6 @@ ConstantPropagationValue evalSelect(const llvm::SelectInst *Select,
   if (auto C = Cond.asConstantInteger()) {
     return C->isZero() ? FVal : TVal;
   }
-  if (Cond.isConstantRange(true) &&
-      Select->getCondition()->getType()->isIntegerTy(1)) {
-    const auto &CR = Cond.getConstantRange(true);
-    llvm::APInt Zero(1, 0);
-    llvm::APInt One(1, 1);
-    if (!CR.contains(Zero)) {
-      return TVal;
-    }
-    if (!CR.contains(One)) {
-      return FVal;
-    }
-  }
   ConstantPropagationValue Out = TVal;
   Out.mergeIn(FVal);
   return Out;
@@ -228,7 +196,9 @@ public:
       llvm::TargetLibraryInfo *TLI = nullptr)
       : LLVMIntraEliminationProblem<ConstantPropagationMap, ConstantPropagationDomain>(F),
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr), AA(AA),
-        AC(AC), DT(DT), TLI(TLI) {}
+        AC(AC), DT(DT), TLI(TLI) {
+    buildTransferCache(F);
+  }
 
   ConstantPropagationMap
   applyTransfer(const transfer_t &T,
@@ -252,15 +222,16 @@ public:
         return Out;
       }
       auto Val = resolveValue(In, Store->getValueOperand());
-      auto *Key = getMemKey(Ptr);
-      if (Val.isConstant() || Val.isConstantRange()) {
+      auto *Key = cachedMemKey(Store, Ptr);
+      if (Val.isConstant()) {
         Out[Key] = Val;
       } else {
         Out[Key] = makeOverdefined();
       }
       if (AA != nullptr) {
         llvm::MemoryLocation StoreLoc = llvm::MemoryLocation::get(Store);
-        for (auto &Entry : Out) {
+        std::vector<const llvm::Value *> Keys;
+        for (const auto &Entry : Out) {
           const auto *Cand = Entry.first;
           if (Cand == Key || Cand == nullptr ||
               !Cand->getType()->isPointerTy()) {
@@ -270,15 +241,17 @@ public:
               Cand, llvm::LocationSize::beforeOrAfterPointer(),
               llvm::AAMDNodes());
           if (AA->alias(StoreLoc, CandLoc) != llvm::AliasResult::NoAlias) {
-            Entry.second = makeOverdefined();
+            Keys.push_back(Cand);
           }
         }
+        for (auto *Cand : Keys)
+          Out.set(Cand, makeOverdefined());
       }
       return Out;
     }
 
     if (const auto *Load = llvm::dyn_cast<llvm::LoadInst>(Inst)) {
-      auto *Key = getMemKey(Load->getPointerOperand());
+      auto *Key = cachedMemKey(Load, Load->getPointerOperand());
       auto It = In.find(Key);
       if (It != In.end()) {
         Out[Load] = It->second;
@@ -297,34 +270,6 @@ public:
 
     if (const auto *Cast = llvm::dyn_cast<llvm::CastInst>(Inst)) {
       auto Src = resolveValue(In, Cast->getOperand(0));
-      if (Src.isConstantRange() && Cast->getType()->isIntegerTy()) {
-        const auto &CR = Src.getConstantRange(true);
-        const auto *DstTy = llvm::dyn_cast<llvm::IntegerType>(Cast->getType());
-        if (DstTy != nullptr) {
-          llvm::ConstantRange Res = CR;
-          switch (Cast->getOpcode()) {
-          case llvm::Instruction::ZExt:
-            Res = CR.zextOrTrunc(DstTy->getBitWidth());
-            break;
-          case llvm::Instruction::SExt:
-            Res = CR.sextOrTrunc(DstTy->getBitWidth());
-            break;
-          case llvm::Instruction::Trunc:
-            Res = CR.truncate(DstTy->getBitWidth());
-            break;
-          default:
-            Res = llvm::ConstantRange::getFull(DstTy->getBitWidth());
-            break;
-          }
-          if (Res.isSingleElement()) {
-            Out[Cast] = makeConst(llvm::ConstantInt::get(
-                Cast->getType(), *Res.getSingleElement()));
-          } else {
-            Out[Cast] = ConstantPropagationValue::getRange(Res, false);
-          }
-          return Out;
-        }
-      }
       if (!isConst(Src)) {
         Out[Cast] = makeOverdefined();
         return Out;
@@ -334,8 +279,9 @@ public:
         Out[Cast] = makeOverdefined();
         return Out;
       }
-      if (auto *Folded =
-              llvm::ConstantFoldUnaryOpOperand(Cast->getOpcode(), C, *DL)) {
+      if (llvm::CastInst::castIsValid(Cast->getOpcode(), C, Cast->getType())) {
+        auto *Folded = llvm::ConstantFoldCastOperand(
+            Cast->getOpcode(), C, Cast->getType(), *DL);
         Out[Cast] = makeConst(Folded);
         return Out;
       }
@@ -367,7 +313,7 @@ public:
     if (const auto *Freeze = llvm::dyn_cast<llvm::FreezeInst>(Inst)) {
       auto Val = resolveValue(In, Freeze->getOperand(0));
       Out[Freeze] =
-          (Val.isConstant() || Val.isConstantRange()) ? Val : makeOverdefined();
+          Val.isConstant() ? Val : makeOverdefined();
       return Out;
     }
 
@@ -389,7 +335,7 @@ public:
           break;
         }
         auto *C = CV.getConstant();
-        if (C == nullptr) {
+        if (C == nullptr || C->getType() != OpV->getType()) {
           AllConst = false;
           break;
         }
@@ -403,14 +349,10 @@ public:
           return Out;
         }
       }
-      llvm::SimplifyQuery SQ(*DL, TLI, DT, AC, nullptr, true);
-      SQ.CxtI = const_cast<llvm::Instruction *>(Inst);
-      if (auto *Simplified = llvm::SimplifyInstruction(
-              const_cast<llvm::Instruction *>(Inst), SQ)) {
-        if (auto *C = llvm::dyn_cast<llvm::Constant>(Simplified)) {
-          Out[Inst] = makeConst(C);
-          return Out;
-        }
+      auto It = StaticConstants.find(Inst);
+      if (It != StaticConstants.end()) {
+        Out[Inst] = makeConst(It->second);
+        return Out;
       }
     }
 
@@ -422,7 +364,7 @@ public:
   // (bottom), so mergeIn(Unknown) leaves the other side unchanged — but we
   // must also handle keys present only in Lhs symmetrically.
   ConstantPropagationMap initialFact() const override {
-    return ConstantPropagationMap{};
+    return this->bottom();
   }
 
 private:
@@ -431,6 +373,40 @@ private:
   llvm::AssumptionCache *AC = nullptr;
   llvm::DominatorTree *DT = nullptr;
   llvm::TargetLibraryInfo *TLI = nullptr;
+  std::unordered_map<const llvm::Instruction *, const llvm::Value *> MemoryKeys;
+  std::unordered_map<const llvm::Instruction *, llvm::Constant *>
+      StaticConstants;
+
+  const llvm::Value *cachedMemKey(const llvm::Instruction *Inst,
+                                  const llvm::Value *Ptr) const {
+    auto It = MemoryKeys.find(Inst);
+    return It != MemoryKeys.end() ? It->second : getMemKey(Ptr);
+  }
+
+  void buildTransferCache(llvm::Function *F) {
+    if (F == nullptr || F->isDeclaration())
+      return;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I))
+          MemoryKeys[&I] = getMemKey(Store->getPointerOperand());
+        else if (auto *Load = llvm::dyn_cast<llvm::LoadInst>(&I))
+          MemoryKeys[&I] = getMemKey(Load->getPointerOperand());
+
+        if (DL == nullptr || I.getType()->isVoidTy() ||
+            llvm::isa<llvm::AllocaInst>(I) || llvm::isa<llvm::LoadInst>(I) ||
+            llvm::isa<llvm::BinaryOperator>(I) || llvm::isa<llvm::CastInst>(I) ||
+            llvm::isa<llvm::ICmpInst>(I) || llvm::isa<llvm::SelectInst>(I) ||
+            llvm::isa<llvm::PHINode>(I) || llvm::isa<llvm::FreezeInst>(I))
+          continue;
+        llvm::SimplifyQuery SQ(*DL, TLI, DT, AC, nullptr, true);
+        SQ.CxtI = &I;
+        if (auto *Simplified = llvm::SimplifyInstruction(&I, SQ))
+          if (auto *C = llvm::dyn_cast<llvm::Constant>(Simplified))
+            StaticConstants[&I] = C;
+      }
+    }
+  }
 };
 
 } // namespace

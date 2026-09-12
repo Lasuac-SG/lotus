@@ -3,6 +3,8 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Instructions.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -55,23 +57,31 @@ const llvm::Value *lockOperand(const llvm::CallBase *Call) {
 class ElimLocksetProblem : public LLVMIntraEliminationProblem<LocksetFact, LocksetDomain> {
 public:
   explicit ElimLocksetProblem(llvm::Function *F)
-      : LLVMIntraEliminationProblem<LocksetFact, LocksetDomain>(F) {}
+      : LLVMIntraEliminationProblem<LocksetFact, LocksetDomain>(F) {
+    if (F == nullptr)
+      return;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        auto *Call = llvm::dyn_cast<llvm::CallBase>(&I);
+        Transfers[&I] = {classifyCall(Call), lockOperand(Call)};
+      }
+    }
+  }
 
   LocksetFact applyTransfer(const transfer_t &T,
                             const LocksetFact &In) const override {
     LocksetFact Out = In;
-    const auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(T);
-    const auto Action = classifyCall(Call);
-    if (Action == LockAction::None) {
+    auto It = Transfers.find(T);
+    if (It == Transfers.end() || It->second.Action == LockAction::None) {
       return Out;
     }
 
-    const auto *Key = lockOperand(Call);
+    const auto *Key = It->second.Key;
     if (Key == nullptr) {
       return Out;
     }
 
-    if (Action == LockAction::Lock) {
+    if (It->second.Action == LockAction::Lock) {
       Out.insert(Key);
     } else {
       Out.erase(Key);
@@ -79,7 +89,14 @@ public:
     return Out;
   }
 
-  LocksetFact initialFact() const override { return LocksetFact{}; }
+  LocksetFact initialFact() const override { return this->bottom(); }
+
+private:
+  struct TransferInfo {
+    LockAction Action = LockAction::None;
+    const llvm::Value *Key = nullptr;
+  };
+  std::unordered_map<llvm::Instruction *, TransferInfo> Transfers;
 };
 
 } // namespace

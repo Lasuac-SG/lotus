@@ -12,6 +12,7 @@
 #include "Dataflow/ControlFlow/IntraCFG.h"
 
 #include <deque>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -33,6 +34,7 @@ public:
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr) {
     buildUniverse();
     this->getAbstractDomain().setUniverse(Universe);
+    buildTransferCache();
   }
 
   std::vector<n_t> nodes() const override {
@@ -63,16 +65,16 @@ public:
       return Out;
     }
 
-    addNonNullFromInstruction(Src, In, Out);
-    addNonNullFromAssume(Src, Out);
-    addNonNullFromAssumeBundles(Src, Out);
-    addNonNullFromBranch(Src, Dst, Out);
+    auto It = StaticTransfers.find({Src, Dst});
+    if (It != StaticTransfers.end())
+      Out.unionWith(It->second);
+    addStateDependentFacts(Src, In, Out);
 
     return Out;
   }
 
   fact_t initialFact() const override {
-    fact_t Out;
+    fact_t Out = this->getAbstractDomain().empty();
     if (F == nullptr || F->isDeclaration()) {
       return Out;
     }
@@ -209,6 +211,7 @@ private:
   mutable bool Prepared = false;
   mutable std::vector<n_t> Nodes;
   fact_t Universe;
+  std::map<std::pair<n_t, n_t>, fact_t> StaticTransfers;
 
   void buildUniverse() {
     Universe.clear();
@@ -225,7 +228,58 @@ private:
         if (I.getType()->isPointerTy()) {
           Universe.insert(&I);
         }
+        for (auto &Op : I.operands()) {
+          auto *V = Op.get();
+          if (V != nullptr && V->getType()->isPointerTy())
+            Universe.insert(V);
+        }
       }
+    }
+  }
+
+  void buildTransferCache() {
+    if (F == nullptr || F->isDeclaration())
+      return;
+    const auto Empty = this->getAbstractDomain().empty();
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        auto Succs = CFG.getSuccsOf(
+            &I, dataflow::controlflow::FlowDirection::Forward);
+        for (auto *Dst : Succs) {
+          auto Static = Empty;
+          addNonNullFromInstruction(&I, Empty, Static);
+          addNonNullFromAssume(&I, Static);
+          addNonNullFromAssumeBundles(&I, Static);
+          addNonNullFromBranch(&I, Dst, Static);
+          StaticTransfers.emplace(std::make_pair(&I, Dst), std::move(Static));
+        }
+      }
+    }
+  }
+
+  static void addStateDependentFacts(llvm::Instruction *Inst,
+                                     const fact_t &In, fact_t &Out) {
+    if (Inst == nullptr || !Inst->getType()->isPointerTy())
+      return;
+    if (auto *Cast = llvm::dyn_cast<llvm::CastInst>(Inst)) {
+      if (In.count(Cast->getOperand(0)))
+        Out.insert(Cast);
+    }
+    if (auto *GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(Inst)) {
+      if (In.count(GEP->getPointerOperand()))
+        Out.insert(GEP);
+    }
+    if (auto *Select = llvm::dyn_cast<llvm::SelectInst>(Inst)) {
+      if (In.count(Select->getTrueValue()) &&
+          In.count(Select->getFalseValue()))
+        Out.insert(Select);
+    }
+    if (auto *Phi = llvm::dyn_cast<llvm::PHINode>(Inst)) {
+      bool AllNonNull = Phi->getNumIncomingValues() != 0;
+      for (auto &Incoming : Phi->incoming_values())
+        AllNonNull = AllNonNull && In.count(Incoming.get());
+      if (AllNonNull)
+        Out.insert(Phi);
     }
   }
 

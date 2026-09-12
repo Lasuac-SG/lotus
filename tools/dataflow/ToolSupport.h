@@ -58,8 +58,8 @@ parseEliminationOptions(llvm::StringRef MethodName);
 
 void emitFunctionHeader(llvm::raw_ostream &OS, const llvm::Function &F);
 
-template <typename T>
-void formatValueSet(llvm::raw_ostream &OS, const std::set<T> &Values,
+template <typename SetT>
+void formatValueSet(llvm::raw_ostream &OS, const SetT &Values,
                     const ValueIdMap &ValueToId) {
   std::vector<std::string> ids;
   for (const llvm::Value *V : Values) {

@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <iterator>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace elimination {
 namespace {
@@ -20,13 +22,17 @@ class ElimUninitVariablesProblem
 public:
   explicit ElimUninitVariablesProblem(llvm::Function *F)
       : LLVMIntraEliminationProblem<UninitVariablesFact, UninitializedVariablesDomain>(F),
-        DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr) {}
+        DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr) {
+    buildTransferCache(F);
+  }
 
   ElimUninitVariablesProblem(llvm::Function *F, llvm::AAResults *AA,
                              llvm::AssumptionCache *AC, llvm::DominatorTree *DT)
       : LLVMIntraEliminationProblem<UninitVariablesFact, UninitializedVariablesDomain>(F),
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr), AA(AA),
-        AC(AC), DT(DT) {}
+        AC(AC), DT(DT) {
+    buildTransferCache(F);
+  }
 
   UninitVariablesFact
   applyTransfer(const transfer_t &T,
@@ -53,7 +59,7 @@ public:
         markAliasUninit(Out, Ptr);
         return Out;
       }
-      if (llvm::isGuaranteedNotToBeUndefOrPoison(Val, AC, Store, DT)) {
+      if (GuaranteedInitialized.count(Store)) {
         clearAliasUninit(Out, Ptr);
         clearAliasSetUninit(Out, Ptr);
         return Out;
@@ -132,7 +138,7 @@ public:
   }
 
   UninitVariablesFact initialFact() const override {
-    return UninitVariablesFact{};
+    return this->bottom();
   }
 
 private:
@@ -140,9 +146,87 @@ private:
   llvm::AAResults *AA = nullptr;
   llvm::AssumptionCache *AC = nullptr;
   llvm::DominatorTree *DT = nullptr;
+  std::unordered_map<const llvm::Value *, const llvm::Value *> BaseCache;
+  std::unordered_map<const llvm::Value *, UninitVariablesFact> BaseClear;
+  std::unordered_map<const llvm::Value *, UninitVariablesFact> AliasClear;
+  std::unordered_set<const llvm::StoreInst *> GuaranteedInitialized;
+
+  void buildTransferCache(llvm::Function *F) {
+    if (F == nullptr || F->isDeclaration())
+      return;
+
+    std::vector<llvm::Value *> Values;
+    std::unordered_set<llvm::Value *> Seen;
+    auto Record = [&](llvm::Value *V) {
+      if (V != nullptr && Seen.insert(V).second)
+        Values.push_back(V);
+    };
+    for (auto &Arg : F->args())
+      Record(&Arg);
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        Record(&I);
+        for (auto &Op : I.operands())
+          Record(Op.get());
+        if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I)) {
+          if (llvm::isGuaranteedNotToBeUndefOrPoison(
+                  Store->getValueOperand(), AC, Store, DT))
+            GuaranteedInitialized.insert(Store);
+        }
+      }
+    }
+
+    auto Universe = this->bottom();
+    for (auto *V : Values) {
+      if (V == nullptr)
+        continue;
+      Universe.insert(V);
+      if (!V->getType()->isPointerTy())
+        continue;
+      const auto *Base = llvm::getUnderlyingObject(V);
+      BaseCache[V] = Base;
+      if (Base != nullptr)
+        Universe.insert(const_cast<llvm::Value *>(Base));
+    }
+
+    for (auto *Candidate : Values) {
+      if (Candidate == nullptr || !Candidate->getType()->isPointerTy())
+        continue;
+      const auto *Base = getBaseObject(Candidate);
+      const auto *Norm = Base != nullptr ? Base : Candidate;
+      auto It = BaseClear.find(Norm);
+      if (It == BaseClear.end())
+        It = BaseClear.emplace(Norm, this->bottom()).first;
+      It->second.insert(Candidate);
+      It->second.insert(const_cast<llvm::Value *>(Norm));
+    }
+
+    if (AA == nullptr)
+      return;
+    for (auto *Ptr : Values) {
+      if (Ptr == nullptr || !Ptr->getType()->isPointerTy())
+        continue;
+      auto Kill = this->bottom();
+      llvm::MemoryLocation StoreLoc(
+          Ptr, llvm::LocationSize::beforeOrAfterPointer(), llvm::AAMDNodes());
+      for (auto *Candidate : Values) {
+        if (Candidate == nullptr || !Candidate->getType()->isPointerTy())
+          continue;
+        llvm::MemoryLocation CandLoc(
+            Candidate, llvm::LocationSize::beforeOrAfterPointer(),
+            llvm::AAMDNodes());
+        if (AA->alias(StoreLoc, CandLoc) != llvm::AliasResult::NoAlias)
+          Kill.insert(Candidate);
+      }
+      AliasClear.emplace(Ptr, std::move(Kill));
+    }
+  }
 
   const llvm::Value *getBaseObject(const llvm::Value *V) const {
     (void)DL;
+    auto It = BaseCache.find(V);
+    if (It != BaseCache.end())
+      return It->second;
     return llvm::getUnderlyingObject(V);
   }
 
@@ -162,19 +246,11 @@ private:
                         const llvm::Value *Ptr) const {
     auto *Base = getBaseObject(Ptr);
     auto *Norm = Base != nullptr ? Base : Ptr;
-    for (auto It = Out.begin(); It != Out.end();) {
-      auto *Candidate = *It;
-      if (Candidate == Norm) {
-        It = Out.erase(It);
-        continue;
-      }
-      if (Candidate->getType()->isPointerTy() &&
-          getBaseObject(Candidate) == Base) {
-        It = Out.erase(It);
-        continue;
-      }
-      ++It;
-    }
+    auto It = BaseClear.find(Norm);
+    if (It != BaseClear.end())
+      Out.subtract(It->second);
+    else
+      Out.erase(const_cast<llvm::Value *>(Norm));
   }
 
   void markAliasUninit(UninitVariablesFact &Out, llvm::Value *Ptr) const {
@@ -186,23 +262,9 @@ private:
     if (AA == nullptr || Ptr == nullptr) {
       return;
     }
-    llvm::MemoryLocation StoreLoc(
-        Ptr, llvm::LocationSize::beforeOrAfterPointer(), llvm::AAMDNodes());
-    for (auto It = Out.begin(); It != Out.end();) {
-      auto *Candidate = *It;
-      if (Candidate == nullptr || !Candidate->getType()->isPointerTy()) {
-        ++It;
-        continue;
-      }
-      llvm::MemoryLocation CandLoc(Candidate,
-                                   llvm::LocationSize::beforeOrAfterPointer(),
-                                   llvm::AAMDNodes());
-      if (AA->alias(StoreLoc, CandLoc) != llvm::AliasResult::NoAlias) {
-        It = Out.erase(It);
-        continue;
-      }
-      ++It;
-    }
+    auto It = AliasClear.find(Ptr);
+    if (It != AliasClear.end())
+      Out.subtract(It->second);
   }
 
   static bool isMemIntrinsic(llvm::Function *Callee, llvm::Intrinsic::ID ID) {

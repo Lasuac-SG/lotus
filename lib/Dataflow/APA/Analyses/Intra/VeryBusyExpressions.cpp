@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace elimination {
@@ -66,6 +67,7 @@ public:
       : F(F), Entry(Entry), AA(AA), DT(DT), TLI(TLI), MSSA(MSSA) {
     buildUniverse(F);
     this->getAbstractDomain().setUniverse(AllExprs);
+    buildTransferCache(F);
   }
 
   std::vector<n_t> nodes() const override {
@@ -82,30 +84,19 @@ public:
   transfer_t edgeTransfer(n_t /*Src*/, n_t Dst) const override { return Dst; }
 
   fact_t applyTransfer(const transfer_t &T, const fact_t &In) const override {
-    auto *Inst = T;
     fact_t Out = In;
-    if (Inst == nullptr) {
+    auto It = Transfers.find(T);
+    if (It == Transfers.end()) {
       return Out;
     }
-
-    if (killsMemory(Inst)) {
-      if (MSSA != nullptr) {
-        killLoadsWithMemorySSA(Inst, Out);
-      } else if (AA == nullptr) {
-        killAllLoads(Out);
-      } else {
-        killAliasedLoads(Inst, Out);
-      }
-    }
-
-    if (isCandidateExpr(Inst, DT, TLI)) {
-      Out.insert(makeKeyWithMSSA(Inst, MSSA));
-    }
-
+    Out.subtract(It->second.Kill);
+    Out.unionWith(It->second.Gen);
     return Out;
   }
 
-  fact_t initialFact() const override { return fact_t{}; }
+  fact_t initialFact() const override {
+    return this->getAbstractDomain().empty();
+  }
 
   const fact_t &allExprs() const { return AllExprs; }
 
@@ -121,6 +112,11 @@ private:
   mutable std::vector<n_t> Nodes;
   fact_t AllExprs;
   std::set<ExpressionKey> LoadExprs;
+  struct TransferInfo {
+    fact_t Gen;
+    fact_t Kill;
+  };
+  std::unordered_map<llvm::Instruction *, TransferInfo> Transfers;
 
   void buildUniverse(llvm::Function *Func) {
     AllExprs.clear();
@@ -138,6 +134,33 @@ private:
         if (llvm::isa<llvm::LoadInst>(&I)) {
           LoadExprs.insert(Key);
         }
+      }
+    }
+  }
+
+  void buildTransferCache(llvm::Function *Func) {
+    if (Func == nullptr || Func->isDeclaration())
+      return;
+    for (auto &BB : *Func) {
+      for (auto &I : BB) {
+        auto &Info = Transfers[&I];
+        Info.Gen = this->getAbstractDomain().empty();
+        Info.Kill = this->getAbstractDomain().empty();
+
+        if (killsMemory(&I)) {
+          auto Survivors = AllExprs;
+          if (MSSA != nullptr)
+            killLoadsWithMemorySSA(&I, Survivors);
+          else if (AA == nullptr)
+            killAllLoads(Survivors);
+          else
+            killAliasedLoads(&I, Survivors);
+          Info.Kill = AllExprs;
+          Info.Kill.subtract(Survivors);
+        }
+
+        if (isCandidateExpr(&I, DT, TLI))
+          Info.Gen.insert(makeKeyWithMSSA(&I, MSSA));
       }
     }
   }
@@ -388,11 +411,7 @@ VeryBusyExpressionsResult runIntraElimVeryBusyExpressions(
         if (!Initialized) {
           Out = Problem.allExprs();
         }
-        VeryBusyExpressionsFact Intersected;
-        std::set_intersection(Out.begin(), Out.end(), InFacts->begin(),
-                              InFacts->end(),
-                              std::inserter(Intersected, Intersected.begin()));
-        Out.swap(Intersected);
+        Out.intersectWith(*InFacts);
       }
     }
     Initialized = true;

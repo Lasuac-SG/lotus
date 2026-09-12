@@ -308,3 +308,24 @@ TEST(InterAffineEqualities, SwitchOnAffineConstantRoutesToTakenCase) {
   ASSERT_EQ(defaultRelations.size(), 1u);
   EXPECT_TRUE(defaultRelations.front()->bottom);
 }
+
+TEST(InterAffineEqualities, ObservableVocabularyHonorsTrackingBudget) {
+  llvm::LLVMContext ctx;
+  auto module = parseModule(ctx, R"(
+    define i32 @main(i32 %a, i32 %b, i32 %c) {
+    entry:
+      %x = add i32 %a, %b
+      %y = add i32 %x, %c
+      %z = mul i32 %y, 2
+      ret i32 %z
+    }
+  )");
+  ASSERT_NE(module, nullptr);
+
+  elimination::InterAffineEqualities::Options options(
+      elimination::InterAffineEqualities::VocabularyMode::ObservableSlice,
+      false, 2);
+  auto result = elimination::InterAffineEqualities::run(*module, options);
+  EXPECT_EQ(result.status, elimination::SolveStatus::Ok);
+  EXPECT_EQ(result.trackedValues, 2u);
+}

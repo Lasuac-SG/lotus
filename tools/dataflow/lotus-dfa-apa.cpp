@@ -10,6 +10,7 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Dataflow/APA/Analyses/Inter/AffineEqualities.h"
 #include "Dataflow/APA/Analyses/Inter/ConstantPropagation.h"
 #include "Dataflow/APA/Analyses/Inter/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
@@ -18,9 +19,13 @@
 #include "Dataflow/APA/Analyses/Intra/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
 #include "Dataflow/APA/Analyses/Intra/LiveVariables.h"
+#include "Dataflow/APA/Analyses/Intra/Lockset.h"
+#include "Dataflow/APA/Analyses/Intra/NonNull.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
+#include "Dataflow/APA/Analyses/Intra/Sign.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
+#include "Dataflow/APA/Analyses/Intra/VeryBusyExpressions.h"
 #include "ToolSupport.h"
 
 #include <algorithm>
@@ -46,9 +51,10 @@ static cl::opt<bool> StdoutOpt(
 static cl::opt<std::string> AnalysisOpt(
     "analysis",
     cl::desc("Analysis: liveness (default), reaching_defs, uninitialized, "
-             "constant_prop, available_exprs, reachable, inter_liveness, "
-             "inter_reaching_defs, inter_uninitialized, inter_constant_prop, "
-             "inter_reachable"),
+             "constant_prop, available_exprs, very_busy_exprs, reachable, "
+             "lockset, nonnull, sign, inter_liveness, inter_reaching_defs, "
+             "inter_uninitialized, inter_constant_prop, inter_reachable, "
+             "inter_affine"),
     cl::init("liveness"));
 static cl::opt<std::string>
     EntryFunctionOpt("entry-function",
@@ -66,6 +72,11 @@ static cl::opt<bool>
     DumpExprsOpt("dump-exprs",
                  cl::desc("Dump per-instruction path-expression summaries"),
                  cl::init(false));
+static cl::opt<unsigned> AffineMaxTrackedOpt(
+    "affine-max-tracked",
+    cl::desc("Maximum values in the inter-affine observable slice (0 = no "
+             "limit)"),
+    cl::init(32));
 
 namespace {
 
@@ -156,7 +167,8 @@ std::string formatExpressionKey(const elimination::ExpressionKey &Key) {
   return ss.str();
 }
 
-std::string formatValueLatticeElement(const ValueLatticeElement &Val) {
+std::string
+formatValueLatticeElement(const elimination::ConstantPropagationValue &Val) {
   std::ostringstream ss;
   if (Val.isUndef())
     ss << "undef";
@@ -174,6 +186,23 @@ std::string formatValueLatticeElement(const ValueLatticeElement &Val) {
   } else
     ss << "lattice";
   return ss.str();
+}
+
+std::string formatSignValue(elimination::SignValue Val) {
+  if (Val.isBottom())
+    return "bottom";
+  std::string Result;
+  auto Add = [&](bool Enabled, llvm::StringRef Name) {
+    if (!Enabled)
+      return;
+    if (!Result.empty())
+      Result += "|";
+    Result += Name.str();
+  };
+  Add(Val.mayBeNegative(), "neg");
+  Add(Val.mayBeZero(), "zero");
+  Add(Val.mayBePositive(), "pos");
+  return Result;
 }
 
 struct CFGStats final {
@@ -226,7 +255,8 @@ struct ExprProfile final {
   size_t StarNodes = 0;
 };
 
-void collectExprProfileImpl(const InstructionExprRef &Expr, size_t Depth,
+template <typename ExprRefT>
+void collectExprProfileImpl(const ExprRefT &Expr, size_t Depth,
                             std::unordered_set<const void *> &Visited,
                             ExprProfile &Profile) {
   if (!Expr)
@@ -239,34 +269,36 @@ void collectExprProfileImpl(const InstructionExprRef &Expr, size_t Depth,
   }
 
   ++Profile.UniqueNodes;
+  using Kind = decltype(Expr->K);
   switch (Expr->K) {
-  case InstructionExprFactory::Kind::Zero:
+  case Kind::Zero:
     ++Profile.ZeroNodes;
     return;
-  case InstructionExprFactory::Kind::One:
+  case Kind::One:
     ++Profile.OneNodes;
     return;
-  case InstructionExprFactory::Kind::Atom:
+  case Kind::Atom:
     ++Profile.AtomNodes;
     return;
-  case InstructionExprFactory::Kind::Union:
+  case Kind::Union:
     ++Profile.UnionNodes;
     collectExprProfileImpl(Expr->L, Depth + 1, Visited, Profile);
     collectExprProfileImpl(Expr->R, Depth + 1, Visited, Profile);
     return;
-  case InstructionExprFactory::Kind::Concat:
+  case Kind::Concat:
     ++Profile.ConcatNodes;
     collectExprProfileImpl(Expr->L, Depth + 1, Visited, Profile);
     collectExprProfileImpl(Expr->R, Depth + 1, Visited, Profile);
     return;
-  case InstructionExprFactory::Kind::Star:
+  case Kind::Star:
     ++Profile.StarNodes;
     collectExprProfileImpl(Expr->L, Depth + 1, Visited, Profile);
     return;
   }
 }
 
-ExprProfile collectExprProfile(const InstructionExprRef &Expr) {
+template <typename ExprRefT>
+ExprProfile collectExprProfile(const ExprRefT &Expr) {
   ExprProfile Profile;
   std::unordered_set<const void *> Visited;
   collectExprProfileImpl(Expr, 1, Visited, Profile);
@@ -280,40 +312,51 @@ std::string formatTransfer(const Instruction *I, const ValueIdMap &ValueToId) {
   return It != ValueToId.end() ? It->second : "inst";
 }
 
-void formatPathExpr(raw_ostream &OS, const InstructionExprRef &Expr,
+std::string formatTransfer(const elimination::NonNullEdgeTransfer &Transfer,
+                           const ValueIdMap &ValueToId) {
+  return formatTransfer(Transfer.Src, ValueToId) + "->" +
+         formatTransfer(Transfer.Dst, ValueToId);
+}
+
+template <typename ExprRefT>
+void formatPathExpr(raw_ostream &OS, const ExprRefT &Expr,
                     const ValueIdMap &ValueToId) {
   if (!Expr) {
     OS << "null";
     return;
   }
 
+  using Kind = decltype(Expr->K);
   switch (Expr->K) {
-  case InstructionExprFactory::Kind::Zero:
+  case Kind::Zero:
     OS << "zero";
     return;
-  case InstructionExprFactory::Kind::One:
+  case Kind::One:
     OS << "one";
     return;
-  case InstructionExprFactory::Kind::Atom:
-    OS << "atom("
-       << formatTransfer(Expr->Transfer ? *Expr->Transfer : nullptr, ValueToId)
-       << ")";
+  case Kind::Atom:
+    OS << "atom(";
+    if (Expr->Transfer)
+      OS << formatTransfer(*Expr->Transfer, ValueToId);
+    else
+      OS << "null";
+    OS << ")";
     return;
-  case InstructionExprFactory::Kind::Union:
+  case Kind::Union:
     OS << "union(";
     formatPathExpr(OS, Expr->L, ValueToId);
     OS << ",";
     formatPathExpr(OS, Expr->R, ValueToId);
     OS << ")";
     return;
-  case InstructionExprFactory::Kind::Concat:
+  case Kind::Concat:
     OS << "concat(";
     formatPathExpr(OS, Expr->L, ValueToId);
     OS << ",";
     formatPathExpr(OS, Expr->R, ValueToId);
     OS << ")";
     return;
-  case InstructionExprFactory::Kind::Star:
+  case Kind::Star:
     OS << "star(";
     formatPathExpr(OS, Expr->L, ValueToId);
     OS << ")";
@@ -578,7 +621,7 @@ void runConstantPropagation(raw_ostream &OS, const FunctionView &View,
       [&](Instruction *I, auto &Result) {
         lotus::dataflow_tool::formatValueMap(
             OS, Result.IN(I), View.ValueToId,
-            [&](const ValueLatticeElement &Value) {
+            [&](const elimination::ConstantPropagationValue &Value) {
               return formatValueLatticeElement(Value);
             });
       });
@@ -601,6 +644,59 @@ void runAvailableExpressions(raw_ostream &OS, const FunctionView &View,
             OS << ",";
           OS << Exprs[Index];
         }
+      });
+}
+
+void runVeryBusyExpressions(raw_ostream &OS, const FunctionView &View,
+                            const elimination::EliminationOptions &ElimOpts) {
+  runTimedAnalysis(
+      OS, View, ElimOpts,
+      [](Function &F, const elimination::EliminationOptions &Opts) {
+        return elimination::runIntraElimVeryBusyExpressions(&F, nullptr, Opts);
+      },
+      [&](Instruction *I, auto &Result) {
+        std::vector<std::string> Exprs;
+        for (const auto &Expr : Result.IN(I))
+          Exprs.push_back(formatExpressionKey(Expr));
+        std::sort(Exprs.begin(), Exprs.end());
+        for (size_t Index = 0; Index < Exprs.size(); ++Index) {
+          if (Index)
+            OS << ",";
+          OS << Exprs[Index];
+        }
+      });
+}
+
+void runLockset(raw_ostream &OS, const FunctionView &View,
+                const elimination::EliminationOptions &ElimOpts) {
+  runSetIntraAnalysis(
+      OS, View, ElimOpts,
+      [](Function &F, const elimination::EliminationOptions &Opts) {
+        return elimination::runIntraElimLockset(&F, Opts);
+      });
+}
+
+void runNonNull(raw_ostream &OS, const FunctionView &View,
+                const elimination::EliminationOptions &ElimOpts) {
+  runSetIntraAnalysis(
+      OS, View, ElimOpts,
+      [](Function &F, const elimination::EliminationOptions &Opts) {
+        return elimination::runIntraElimNonNull(&F, Opts);
+      });
+}
+
+void runSign(raw_ostream &OS, const FunctionView &View,
+             const elimination::EliminationOptions &ElimOpts) {
+  runTimedAnalysis(
+      OS, View, ElimOpts,
+      [](Function &F, const elimination::EliminationOptions &Opts) {
+        return elimination::runIntraElimSignAnalysis(&F, Opts);
+      },
+      [&](Instruction *I, auto &Result) {
+        lotus::dataflow_tool::formatValueMap(OS, Result.IN(I), View.ValueToId,
+                                             [](elimination::SignValue Value) {
+                                               return formatSignValue(Value);
+                                             });
       });
 }
 
@@ -637,7 +733,7 @@ void runInterConstantPropagation(raw_ostream &OS, Module &M, Function &Entry) {
       [](Function &F) {
         return elimination::runInterElimConstantPropagation(&F);
       },
-      [&](const ValueLatticeElement &Value) {
+      [&](const elimination::ConstantPropagationValue &Value) {
         return formatValueLatticeElement(Value);
       });
 }
@@ -646,6 +742,23 @@ void runInterReachable(raw_ostream &OS, Module &M, Function &Entry) {
   runBoolInterAnalysis(OS, M, Entry, [](Function &F) {
     return elimination::runInterElimReachable(&F);
   });
+}
+
+void runInterAffine(raw_ostream &OS, Module &M, Function & /*Entry*/) {
+  const auto Start = std::chrono::steady_clock::now();
+  elimination::InterAffineEqualities::Options Options;
+  Options.vocabulary =
+      elimination::InterAffineEqualities::VocabularyMode::ObservableSlice;
+  Options.verbose = false;
+  Options.maxTrackedValues = AffineMaxTrackedOpt;
+  auto Result = elimination::InterAffineEqualities::run(M, Options);
+  const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::steady_clock::now() - Start);
+  OS << "  [profile] elapsed_us=" << Elapsed.count()
+     << ", tracked_values=" << Result.trackedValues
+     << ", summaries=" << Result.summaries.size()
+     << ", block_relations=" << Result.blockRelations.size()
+     << ", status=" << toString(Result.status) << "\n";
 }
 
 struct AnalysisHandler final {
@@ -662,12 +775,17 @@ const AnalysisHandler Handlers[] = {
     {"uninitialized", false, &runUninitialized, nullptr},
     {"constant_prop", false, &runConstantPropagation, nullptr},
     {"available_exprs", false, &runAvailableExpressions, nullptr},
+    {"very_busy_exprs", false, &runVeryBusyExpressions, nullptr},
     {"reachable", false, &runReachable, nullptr},
+    {"lockset", false, &runLockset, nullptr},
+    {"nonnull", false, &runNonNull, nullptr},
+    {"sign", false, &runSign, nullptr},
     {"inter_liveness", true, nullptr, &runInterLiveness},
     {"inter_reaching_defs", true, nullptr, &runInterReachingDefinitions},
     {"inter_uninitialized", true, nullptr, &runInterUninitialized},
     {"inter_constant_prop", true, nullptr, &runInterConstantPropagation},
     {"inter_reachable", true, nullptr, &runInterReachable},
+    {"inter_affine", true, nullptr, &runInterAffine},
 };
 
 } // namespace

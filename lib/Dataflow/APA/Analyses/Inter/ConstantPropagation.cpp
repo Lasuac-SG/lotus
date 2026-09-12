@@ -13,6 +13,8 @@
 #include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Solver/ForwardInterSummarySolver.h"
 
+#include <unordered_map>
+
 namespace elimination {
 namespace {
 
@@ -67,15 +69,17 @@ void clobberMemoryByCall(const llvm::CallBase *Call,
     return;
   }
   if (AA == nullptr) {
-    for (auto &Entry : Out) {
-      if (Entry.first != nullptr && Entry.first->getType()->isPointerTy()) {
-        Entry.second = makeOverdefined();
-      }
-    }
+    std::vector<const llvm::Value *> Keys;
+    for (const auto &Entry : Out)
+      if (Entry.first != nullptr && Entry.first->getType()->isPointerTy())
+        Keys.push_back(Entry.first);
+    for (auto *Key : Keys)
+      Out.set(Key, makeOverdefined());
     return;
   }
 
-  for (auto &Entry : Out) {
+  std::vector<const llvm::Value *> Keys;
+  for (const auto &Entry : Out) {
     const auto *Key = Entry.first;
     if (Key == nullptr || !Key->getType()->isPointerTy()) {
       continue;
@@ -83,9 +87,11 @@ void clobberMemoryByCall(const llvm::CallBase *Call,
     llvm::MemoryLocation Loc(Key, llvm::LocationSize::beforeOrAfterPointer(),
                              llvm::AAMDNodes());
     if (llvm::isModSet(AA->getModRefInfo(Call, Loc))) {
-      Entry.second = makeOverdefined();
+      Keys.push_back(Key);
     }
   }
+  for (auto *Key : Keys)
+    Out.set(Key, makeOverdefined());
 }
 
 ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
@@ -98,6 +104,9 @@ ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
   if (!Lhs.isConstant() || !Rhs.isConstant()) {
     return makeOverdefined();
   }
+  if (Lhs.getConstant()->getType() != Inst->getOperand(0)->getType() ||
+      Rhs.getConstant()->getType() != Inst->getOperand(1)->getType())
+    return makeOverdefined();
 
   if (auto *LCI = llvm::dyn_cast<llvm::ConstantInt>(Lhs.getConstant())) {
     if (auto *RCI = llvm::dyn_cast<llvm::ConstantInt>(Rhs.getConstant())) {
@@ -151,7 +160,9 @@ public:
       : LLVMInterEliminationProblem<InterConstantPropagationAnalysisTypes>(
             std::vector<llvm::Function *>{Entry}, ICF),
         DL(Entry != nullptr ? &Entry->getParent()->getDataLayout() : nullptr),
-        AA(AA), AC(AC), DT(DT), TLI(TLI) {}
+        AA(AA), AC(AC), DT(DT), TLI(TLI) {
+    buildTransferCache(Entry != nullptr ? Entry->getParent() : nullptr);
+  }
 
   fact_t normalFlow(n_t Inst, const fact_t &In) override {
     fact_t Out = In;
@@ -172,14 +183,13 @@ public:
         return Out;
       }
       auto Val = resolveValue(In, Store->getValueOperand());
-      auto *Key = getMemKey(Ptr);
-      Out[Key] =
-          (Val.isConstant() || Val.isConstantRange()) ? Val : makeOverdefined();
+      auto *Key = cachedMemKey(Store, Ptr);
+      Out[Key] = Val.isConstant() ? Val : makeOverdefined();
       return Out;
     }
 
     if (const auto *Load = llvm::dyn_cast<llvm::LoadInst>(Inst)) {
-      auto *Key = getMemKey(Load->getPointerOperand());
+      auto *Key = cachedMemKey(Load, Load->getPointerOperand());
       auto It = In.find(Key);
       if (It != In.end()) {
         Out[Load] = It->second;
@@ -192,6 +202,21 @@ public:
     if (const auto *Op = llvm::dyn_cast<llvm::BinaryOperator>(Inst)) {
       Out[Op] = evalBinaryOp(Op, resolveValue(In, Op->getOperand(0)),
                              resolveValue(In, Op->getOperand(1)));
+      return Out;
+    }
+
+    if (const auto *ICmp = llvm::dyn_cast<llvm::ICmpInst>(Inst)) {
+      auto Lhs = resolveValue(In, ICmp->getOperand(0));
+      auto Rhs = resolveValue(In, ICmp->getOperand(1));
+      if (!Lhs.isConstant() || !Rhs.isConstant() ||
+          Lhs.getConstant()->getType() != ICmp->getOperand(0)->getType() ||
+          Rhs.getConstant()->getType() != ICmp->getOperand(1)->getType()) {
+        Out[ICmp] = makeOverdefined();
+        return Out;
+      }
+      auto *Folded = llvm::ConstantFoldCompareInstOperands(
+          ICmp->getPredicate(), Lhs.getConstant(), Rhs.getConstant(), *DL);
+      Out[ICmp] = makeConst(llvm::dyn_cast_or_null<llvm::Constant>(Folded));
       return Out;
     }
 
@@ -210,7 +235,12 @@ public:
           AllConst = false;
           break;
         }
-        Ops.push_back(CV.getConstant());
+        auto *C = CV.getConstant();
+        if (C == nullptr || C->getType() != Inst->getOperand(I)->getType()) {
+          AllConst = false;
+          break;
+        }
+        Ops.push_back(C);
       }
       if (AllConst) {
         auto *Folded = llvm::ConstantFoldInstOperands(
@@ -221,14 +251,10 @@ public:
         }
       }
 
-      llvm::SimplifyQuery SQ(*DL, TLI, DT, AC, nullptr, true);
-      SQ.CxtI = const_cast<llvm::Instruction *>(Inst);
-      if (auto *Simplified = llvm::SimplifyInstruction(
-              const_cast<llvm::Instruction *>(Inst), SQ)) {
-        if (auto *C = llvm::dyn_cast<llvm::Constant>(Simplified)) {
-          Out[Inst] = makeConst(C);
-          return Out;
-        }
+      auto It = StaticConstants.find(Inst);
+      if (It != StaticConstants.end()) {
+        Out[Inst] = makeConst(It->second);
+        return Out;
       }
     }
 
@@ -236,7 +262,7 @@ public:
   }
 
   fact_t callFlow(n_t CallSite, f_t Callee, const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     auto *Call = llvm::dyn_cast_or_null<llvm::CallBase>(CallSite);
     if (Call == nullptr || Callee == nullptr) {
       return Out;
@@ -261,7 +287,7 @@ public:
 
   fact_t returnFlow(n_t CallSite, f_t /*Callee*/, n_t ExitStmt, n_t /*RetSite*/,
                     const fact_t &In) override {
-    fact_t Out;
+    fact_t Out = this->bottom();
     llvm_inter::copyGlobalValueFacts(In, Out);
 
     auto *Ret = llvm::dyn_cast_or_null<llvm::ReturnInst>(ExitStmt);
@@ -329,7 +355,7 @@ public:
     if (Entry == nullptr || Entry->empty()) {
       return Seeds;
     }
-    Seeds[&*Entry->getEntryBlock().begin()] = fact_t{};
+    Seeds[&*Entry->getEntryBlock().begin()] = this->bottom();
     return Seeds;
   }
 
@@ -339,6 +365,43 @@ private:
   llvm::AssumptionCache *AC = nullptr;
   llvm::DominatorTree *DT = nullptr;
   llvm::TargetLibraryInfo *TLI = nullptr;
+  std::unordered_map<const llvm::Instruction *, const llvm::Value *> MemoryKeys;
+  std::unordered_map<const llvm::Instruction *, llvm::Constant *>
+      StaticConstants;
+
+  const llvm::Value *cachedMemKey(const llvm::Instruction *Inst,
+                                  const llvm::Value *Ptr) const {
+    auto It = MemoryKeys.find(Inst);
+    return It != MemoryKeys.end() ? It->second : getMemKey(Ptr);
+  }
+
+  void buildTransferCache(llvm::Module *M) {
+    if (M == nullptr)
+      return;
+    for (auto &F : *M) {
+      if (F.isDeclaration())
+        continue;
+      for (auto &BB : F) {
+        for (auto &I : BB) {
+          if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I))
+            MemoryKeys[&I] = getMemKey(Store->getPointerOperand());
+          else if (auto *Load = llvm::dyn_cast<llvm::LoadInst>(&I))
+            MemoryKeys[&I] = getMemKey(Load->getPointerOperand());
+
+          if (DL == nullptr || I.getType()->isVoidTy() ||
+              llvm::isa<llvm::AllocaInst>(I) || llvm::isa<llvm::LoadInst>(I) ||
+              llvm::isa<llvm::BinaryOperator>(I) ||
+              llvm::isa<llvm::CastInst>(I))
+            continue;
+          llvm::SimplifyQuery SQ(*DL, TLI, DT, AC, nullptr, true);
+          SQ.CxtI = &I;
+          if (auto *Simplified = llvm::SimplifyInstruction(&I, SQ))
+            if (auto *C = llvm::dyn_cast<llvm::Constant>(Simplified))
+              StaticConstants[&I] = C;
+        }
+      }
+    }
+  }
 };
 
 } // namespace

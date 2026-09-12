@@ -71,7 +71,7 @@ TEST(APADomain, ConstantPropagationTreatsMissingUnknownAsBottom) {
   auto *Key = reinterpret_cast<const llvm::Value *>(std::uintptr_t{1});
   elimination::ConstantPropagationMap Unknown;
   elimination::ConstantPropagationMap Overdefined{
-      {Key, llvm::ValueLatticeElement::getOverdefined()}};
+      {Key, elimination::ConstantPropagationValue::getOverdefined()}};
 
   EXPECT_TRUE(
       Domain.equal(Domain.join(Domain.bottom(), Overdefined), Overdefined));
@@ -96,6 +96,30 @@ TEST(APADomain, UninitializedVariablesIsAMayUnionDomain) {
   X.insert(A);
   Y.insert(B);
   expectJoinSemilatticeLaws(Domain, X, Y, Domain.join(X, Y));
+}
+
+TEST(APADomain, IndexedFactsKeepCopiesIndependentAfterMutation) {
+  elimination::LiveVariablesFact Original;
+  for (std::uintptr_t I = 1; I <= 70; ++I)
+    Original.insert(reinterpret_cast<const llvm::Value *>(I));
+
+  auto Copy = Original;
+  auto *First = reinterpret_cast<const llvm::Value *>(std::uintptr_t{1});
+  auto *Extra = reinterpret_cast<const llvm::Value *>(std::uintptr_t{71});
+  Copy.erase(First);
+  Copy.insert(Extra);
+
+  EXPECT_EQ(Original.count(First), 1u);
+  EXPECT_EQ(Original.count(Extra), 0u);
+  EXPECT_EQ(Copy.count(First), 0u);
+  EXPECT_EQ(Copy.count(Extra), 1u);
+
+  elimination::ConstantPropagationMap Constants;
+  Constants.set(First, elimination::ConstantPropagationValue::getOverdefined());
+  auto ConstantsCopy = Constants;
+  ConstantsCopy.erase(First);
+  EXPECT_EQ(Constants.count(First), 1u);
+  EXPECT_EQ(ConstantsCopy.count(First), 0u);
 }
 
 static_assert(
