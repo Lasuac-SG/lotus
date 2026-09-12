@@ -132,3 +132,29 @@ TEST(InterSummaryTransferEvaluator, EvaluatesSummaryTransferExpressions) {
   // returnExit: 17 + 10 + 2 + 30 + 11 = 70.
   EXPECT_EQ(Evaluator.evaluateExpr(Expr, 5), 70);
 }
+
+TEST(InterSummaryTransferAtom, SummaryCallEqualityAndHashConsing) {
+  using Atom = elimination::InterSummaryTransferAtom<FakeDomain>;
+  using Factory = elimination::PathExprFactory<Atom>;
+
+  const auto A = Atom::summaryCall(/*CallSite=*/10, /*Callee=*/2,
+                                   /*RetSite=*/11);
+  const auto ASame = Atom::summaryCall(10, 2, 11);
+  const auto BDiff = Atom::summaryCall(10, 3, 11); // different callee
+
+  // Value equality over the discriminant fields.
+  EXPECT_TRUE(A == ASame);
+  EXPECT_FALSE(A == BDiff);
+  EXPECT_TRUE(A != BDiff);
+
+  // A SummaryCall never equals another kind sharing the same numeric fields.
+  EXPECT_FALSE(A == Atom::callToRet(10, 11, {2}));
+
+  // std::hash agrees with operator== on equal atoms.
+  EXPECT_EQ((std::hash<Atom>{}(A)), (std::hash<Atom>{}(ASame)));
+
+  // Factory hash-conses equal atoms to the same node, distinct atoms apart.
+  Factory Exprs;
+  EXPECT_EQ(Exprs.atom(A), Exprs.atom(ASame));
+  EXPECT_NE(Exprs.atom(A), Exprs.atom(BDiff));
+}

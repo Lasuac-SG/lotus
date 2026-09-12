@@ -21,6 +21,7 @@
 
 #include "Dataflow/APA/EAN/DagStats.h"
 #include "Dataflow/APA/EAN/EAN.h"
+#include "Dataflow/APA/EAN/Greedy.h"
 
 #include "BoolKleene.h"
 
@@ -275,6 +276,9 @@ TEST(EanEvalExport, WriteAllTables) {
   GeoMean gmNodes, gmEdges, gmTree, gmSeq, gmStars;
   double shareBeforeSum = 0.0, shareAfterSum = 0.0;
   std::size_t shareN = 0;
+  // Greedy-row geo-means (deterministic one-pass simplification, reuseIters=0).
+  GeoMean gmGNodes, gmGEdges, gmGTree, gmGSeq, gmGStars;
+  double shareGAfterSum = 0.0;
 
   // ---- RQ1 correctness counters --------------------------------------------
   std::size_t comparisons = 0, unequal = 0, missingRoots = 0;
@@ -321,6 +325,21 @@ TEST(EanEvalExport, WriteAllTables) {
     shareBeforeSum += before.sharing();
     shareAfterSum += after.sharing();
     ++shareN;
+
+    // Greedy row: deterministic one-pass simplification (safe laws, uniform
+    // cost, reuseIters=0, monotone). Semantics-preserving — assert parity.
+    Factory Gg;
+    auto gout = elimination::greedySimplify<int>(s.roots, Gg);
+    ASSERT_EQ(gout.size(), s.roots.size()) << s.family << "/" << s.label;
+    for (std::size_t i = 0; i < gout.size() && i < want.size(); ++i)
+      EXPECT_TRUE(evalRef(gout[i]) == want[i]) << "greedy " << s.family;
+    DagStats gafter = ean::computeDagStats<int>(gout);
+    gmGNodes.add(before.uniqueNodes, gafter.uniqueNodes);
+    gmGEdges.add(before.uniqueEdges, gafter.uniqueEdges);
+    gmGTree.add(before.expandedTree, gafter.expandedTree);
+    gmGSeq.add(before.concats, gafter.concats);
+    gmGStars.add(before.stars, gafter.stars);
+    shareGAfterSum += gafter.sharing();
   }
 
   // Additional randomized differential over random law subsets (RQ1 "we also
@@ -385,9 +404,12 @@ TEST(EanEvalExport, WriteAllTables) {
        << gmTree.value() << "," << gmSeq.value() << "," << gmStars.value() << ","
        << (shareN ? shareBeforeSum / shareN : 0.0) << ","
        << (shareN ? shareAfterSum / shareN : 0.0) << "\n";
-    os << "Greedy,TBD,TBD,TBD,TBD,TBD,TBD,TBD\n";
-    os << "Order,TBD,TBD,TBD,TBD,TBD,TBD,TBD\n";
-    os << "Order+EAN,TBD,TBD,TBD,TBD,TBD,TBD,TBD\n";
+    os << "Greedy," << gmGNodes.value() << "," << gmGEdges.value() << ","
+       << gmGTree.value() << "," << gmGSeq.value() << "," << gmGStars.value()
+       << "," << (shareN ? shareBeforeSum / shareN : 0.0) << ","
+       << (shareN ? shareGAfterSum / shareN : 0.0) << "\n";
+    os << "Order,see table6_order_rows.csv,,,,,,\n";
+    os << "Order+EAN,see table6_order_rows.csv,,,,,,\n";
   }
 
   // ===================== write RQ1 correctness ==============================

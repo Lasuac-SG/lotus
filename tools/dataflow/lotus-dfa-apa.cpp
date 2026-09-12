@@ -153,6 +153,11 @@ static cl::opt<bool> InterSummaryOpt(
     cl::desc("Route interprocedural clients to the path-summary solver "
              "(ForwardInterSummarySolver) so EAN/Greedy apply to summaries"),
     cl::init(false));
+static cl::opt<bool> ModularInterOpt(
+    "modular-inter",
+    cl::desc("Route interprocedural reachable to the modular per-procedure "
+             "summary solver (E6, functional/context-insensitive)"),
+    cl::init(false));
 static cl::opt<bool> MemoInterpOpt(
     "memo-interp",
     cl::desc("Affine client only: memoizing transformer interpreter "
@@ -1071,6 +1076,18 @@ void runInterConstantPropagation(raw_ostream &OS, Module &M, Function &Entry) {
 }
 
 void runInterReachable(raw_ostream &OS, Module &M, Function &Entry) {
+  if (ModularInterOpt) {
+    auto Opts = buildInterSummaryOpts();
+    runInterSummaryAnalysis(
+        OS, M, Entry,
+        [&](Function &F) {
+          return elimination::runModularInterReachable(&F, nullptr, Opts);
+        },
+        [&](const auto &Key, const auto &Result, const auto &) {
+          OS << (Result.IN(Key) ? "true" : "false");
+        });
+    return;
+  }
   if (InterSummaryOpt) {
     runInterSummaryReachable(OS, M, Entry);
     return;

@@ -6,6 +6,9 @@ add_lotus_test_suite(apa_tests
     AffineRelationDomainTest.cpp
     InterAffineEqualitiesTest.cpp
     InterSummaryTransferTest.cpp
+    CallGraphSCCTest.cpp
+    ModularInterSummarySolverTest.cpp
+    ModularInterSummaryDriverTest.cpp
     PathSummaryEquationSolverTest.cpp
     OrderTest.cpp
     EAN/RoundtripTest.cpp

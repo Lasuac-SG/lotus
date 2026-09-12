@@ -28,9 +28,7 @@
 // representation.
 
 #include <cstdint>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -42,7 +40,6 @@ namespace elimination {
 namespace ean {
 
 using Id = ::lotus::egraph::Id;
-using Symbol = ::lotus::egraph::Symbol;
 
 enum class PathKind : std::uint8_t { Zero, One, Atom, Seq, Join, Star };
 
@@ -81,10 +78,6 @@ public:
   }
   static PathNode star(Id body) {
     return PathNode(PathKind::Star, 0, std::vector<Id>{body});
-  }
-  // Generic raw constructor, used by JSON decode (LanguageOps::fromOp).
-  static PathNode make(PathKind kind, std::uint32_t atom, std::vector<Id> children) {
-    return PathNode(kind, atom, std::move(children));
   }
 
   PathKind kind() const { return kind_; }
@@ -149,15 +142,6 @@ private:
 // The e-graph language EAN operates on.
 using PathLang = PathNode;
 
-namespace ops {
-inline constexpr std::string_view kZero = "zero";
-inline constexpr std::string_view kOne = "one";
-inline constexpr std::string_view kJoin = "join";
-inline constexpr std::string_view kSeq = "seq";
-inline constexpr std::string_view kStar = "star";
-inline constexpr std::string_view kAtomPrefix = "atom#";
-} // namespace ops
-
 // ---- node kind classification ----------------------------------------------
 
 inline bool isZero(const PathLang &n) { return n.kind() == PathKind::Zero; }
@@ -186,55 +170,22 @@ inline PathLang makeStar(Id body) { return PathLang::star(body); }
 } // namespace ean
 } // namespace elimination
 
-// ---- Language concept plumbing (JSON display/decode + hashing) --------------
+// ---- Language concept: node display (the e-graph instantiates displayNode<L>
+// for its dot/debug path). JSON decode (LanguageOps::fromOp) is not used by EAN,
+// so only the display half is provided. --------------------------------------
 
 namespace lotus::egraph {
 
 template <> struct LanguageOps<::elimination::ean::PathNode> {
-  using Node = ::elimination::ean::PathNode;
-  using Kind = ::elimination::ean::PathKind;
-
-  static std::optional<Node> fromOp(std::string_view op,
-                                    const std::vector<Id> &children) {
-    namespace ops = ::elimination::ean::ops;
-    if (op == ops::kZero) {
-      return Node::zero();
-    }
-    if (op == ops::kOne) {
-      return Node::one();
-    }
-    if (op == ops::kJoin) {
-      return Node::join(children);
-    }
-    if (op == ops::kSeq) {
-      return Node::seq(children);
-    }
-    if (op == ops::kStar) {
-      return Node::make(Kind::Star, 0, children);
-    }
-    if (op.size() > ops::kAtomPrefix.size() &&
-        op.substr(0, ops::kAtomPrefix.size()) == ops::kAtomPrefix) {
-      std::uint32_t id = 0;
-      for (char c : op.substr(ops::kAtomPrefix.size())) {
-        if (c < '0' || c > '9') {
-          return std::nullopt;
-        }
-        id = id * 10u + static_cast<std::uint32_t>(c - '0');
-      }
-      return Node::atom(id);
-    }
-    return std::nullopt;
-  }
-
-  static std::string display(const Node &node) {
+  static std::string display(const ::elimination::ean::PathNode &node) {
+    using Kind = ::elimination::ean::PathKind;
     switch (node.kind()) {
     case Kind::Zero:
       return "zero";
     case Kind::One:
       return "one";
     case Kind::Atom:
-      return std::string(::elimination::ean::ops::kAtomPrefix) +
-             std::to_string(node.atomId());
+      return "atom#" + std::to_string(node.atomId());
     case Kind::Seq:
       return "seq";
     case Kind::Join:
@@ -247,6 +198,8 @@ template <> struct LanguageOps<::elimination::ean::PathNode> {
 };
 
 } // namespace lotus::egraph
+
+// ---- hashing (required by the e-graph's unordered_map memo/index) -----------
 
 template <> struct std::hash<::elimination::ean::PathDiscriminant> {
   size_t operator()(
