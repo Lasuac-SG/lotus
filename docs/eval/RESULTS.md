@@ -37,7 +37,8 @@
 | **0.857** | **0.727** | **0.679** | **0.517** | 1.00 | **1.589 → 1.193** |
 
 解读（可写入正文）：EAN 几何均值把唯一节点降到 **0.857×**（≈少 14%），其中 **Sequence（concat）节点降到 0.517×** 是主贡献——因为因式分解把共享前/后缀合并；Stars=1.00 是因为滑动只重结合、不改节点数。Sharing 由 1.589 降到 1.193，印证论文那句"tree size 单独会误判表示"。
-- Greedy / Order / Order+EAN 三行 **[TBD]**：需先实现 Greedy 一遍化简器与 Order 代价感知消除次序（Phase 3）。
+- **Greedy 行已填**（`table6_ir_quality.csv`）：Unique **0.952** / edges 0.892 / tree 0.800 / seq 0.772 / sharing 1.589→1.267。Greedy(0.952) > EAN(0.857) 的差距量化了"保留竞争形做 reuse-aware 抽取"的价值（合成语料有跨根重用，故差距显现）。
+- Order / Order+EAN 行见 `table6_order_rows.csv`（CFG 合成语料，需真实求解器）。
 
 ### 3. RQ1 正文数字 → `rq1_correctness.csv`
 - 「Across **6210** comparisons, EAN produces **0** unequal facts, **0** missing roots, **0** semantic timeouts.」
@@ -187,6 +188,16 @@
 - Order 生成慢 1.35×（min-product 排序 + 略增 fill），但无 EAN 后处理。
 - **Greedy 与 EAN 计时同量级**：同一 e-graph 饱和主导开销,`reuseIters=0` 省下的仅是抽取阶段的极小部分。即 Greedy 相对 EAN **不是更快的近似**,而是**同等开销、同等 IR、缺少 reuse-aware 抽取**的消融点。
 
+### 第二客户端 Table VII（reaching_defs, coreutils, 13,237 函数）→ `real_table7_reaching_defs.csv`
+| Config | Generation | Normalization | Interpretation | End-to-end | Peak RSS | Timeouts |
+|---|---|---|---|---|---|---|
+| Greedy | 1.088 | 5.31 | 1.055 | 3.394 | 1.194 | 22 |
+| Order | 1.378 | — | 1.015 | 1.172 | 1.085 | 16 |
+| EAN | 1.106 | 6.32 | 1.069 | 3.833 | 1.199 | 22 |
+| Order+EAN | 1.504 | 4.67 | 1.019 | 3.267 | 1.162 | 12 |
+
+- **跨客户端趋势(可写入 RQ2)**:reaching_defs 事实更丰富、Default 基线更贵,固定的 EAN 饱和开销占比更小,故 **EAN end-to-end 从 7.17×(reachable) 降到 3.83×(reaching_defs)**、Order+EAN 3.27×;interp 仍 ~1.0×(非记忆化)。这条趋势在**记忆化的昂贵客户端 affine 上翻转为净赚**(interp 0.454×、break-even K=0)。即"客户端解释越贵 + 记忆化 → EAN 越划算"。
+
 ## RQ2 Break-even → `real_rq2_breakeven.csv`
 按 raw DAG 节点数分桶的 (Default vs EAN) end-to-end 中位数比：
 | raw nodes | n | Default µs | EAN µs | EAN/Default |
@@ -296,7 +307,9 @@
 
 # 过程间 EAN（M6b）— 接线、soundness、单调守卫必要性与可扩展性墙
 
-EAN/Greedy 已接入过程间 **path-summary 求解器** `ForwardInterSummarySolver`（把整个程序建成一张全局 path-summary 方程图，每个 `(指令,调用串上下文)` 求出闭式正则路径表达式再解释）。**EAN 引擎零改动**即复用：`ean<TransferT>` 对 transfer 类型完全泛型（原子按 `Expr*` 指针去重、对 EAN 不透明、导出原样搬回），故 `ean<atom_t>` / `greedySimplify<atom_t>` 直接跑在 summary 批上（`atom_t = InterSummaryTransferAtom`）。
+EAN/Greedy 已接入过程间 **path-summary 求解器** `ForwardInterSummarySolver`（把整个程序建成一张全局 path-summary 方程图，每个 `(指令,调用串上下文)` 求出闭式正则路径表达式再解释）。**EAN 引擎零改动**即复用：`ean<TransferT>` 对 transfer 类型完全泛型（原子对 EAN 不透明、导出原样搬回），故 `ean<atom_t>` / `greedySimplify<atom_t>` 直接跑在 summary 批上（`atom_t = InterSummaryTransferAtom`）。
+
+> **订正（2026-09-12）**：早期本节曾称"原子按 `Expr*` 指针去重"。这对 inter 侧**不成立**：`PathExprFactory::atom()` 的去重需 `TransferT` 满足 `is_equality_comparable`（现加 `is_std_hashable`），而 `InterSummaryTransferAtom` 原本**既无 `operator==` 也无 `std::hash`** → SFINAE 落到"不去重"分支，每次 `atom()` 都新建节点，inter DAG 的结构共享**完全失效**（根因 R4）。2026-09-12 的快赢包给该原子补了 `operator==`+`std::hash`（并给 `atom()` 加哈希索引），去重才真正生效；实测 coreutils `true.bc` inter summary 批 unique nodes **1175→1117（−4.9%）**、atoms 466→440，**facts 逐字节不变**。intra 侧原子是 `Instruction*`（指针可比）本就走线性扫描去重，此前描述对 intra 大致成立、对 inter 失实。
 
 ## Level 1（接线 + soundness）— 已完成并验证
 - 改动全 opt-in（默认 no-op → 零行为变化）：`InterEANOptions`（Options.h）；`InterSummarySolveDiagnostics` += gen/norm/interp 计时 + 优化前后完整 `DagStats`；`PathSummaryEquationOptions.EAN` 字段 + `PathSummaryEquationResult` 非 const `summaries()`；`ForwardInterSummarySolver::applySummaryPostPass`（求解与解释之间批量 EAN/Greedy）。
