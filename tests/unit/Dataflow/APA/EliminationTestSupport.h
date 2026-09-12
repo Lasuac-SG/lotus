@@ -7,13 +7,11 @@
 
 #include "Dataflow/APA/APA.h"
 #include "Dataflow/APA/Analyses/Inter/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Inter/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Inter/Lockset.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
 #include "Dataflow/APA/Analyses/Inter/ReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Intra/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "TestUtils/LLVMHelpers.h"
 

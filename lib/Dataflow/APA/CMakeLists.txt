@@ -11,14 +11,11 @@ set(APA_SOURCES
   Analyses/Intra/ReachingDefinitions.cpp
   Analyses/Intra/AvailableExpressions.cpp
   Analyses/Intra/UninitializedVariables.cpp
-  Analyses/Intra/LiveVariables.cpp
   Analyses/Intra/Lockset.cpp
-  Analyses/Intra/VeryBusyExpressions.cpp
   Analyses/Intra/NonNull.cpp
   Analyses/Intra/Sign.cpp
   Analyses/Inter/Reachability.cpp
   Analyses/Inter/ConstantPropagation.cpp
-  Analyses/Inter/LiveVariables.cpp
   Analyses/Inter/Lockset.cpp
   Analyses/Inter/ReachingDefinitions.cpp
   Analyses/Inter/UninitializedVariables.cpp

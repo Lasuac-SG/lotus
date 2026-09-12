@@ -2,14 +2,12 @@
 #include "Dataflow/APA/Domains/AffineRelationDomain.h"
 #include "Dataflow/APA/Domains/AvailableExpressionsDomain.h"
 #include "Dataflow/APA/Domains/ConstantPropagationDomain.h"
-#include "Dataflow/APA/Domains/LiveVariablesDomain.h"
 #include "Dataflow/APA/Domains/LocksetDomain.h"
 #include "Dataflow/APA/Domains/NonNullDomain.h"
 #include "Dataflow/APA/Domains/ReachabilityDomain.h"
 #include "Dataflow/APA/Domains/ReachingDefinitionsDomain.h"
 #include "Dataflow/APA/Domains/SignDomain.h"
 #include "Dataflow/APA/Domains/UninitializedVariablesDomain.h"
-#include "Dataflow/APA/Domains/VeryBusyExpressionsDomain.h"
 
 #include <cstdint>
 
@@ -37,10 +35,10 @@ TEST(APADomain, ReachabilitySatisfiesJoinSemilatticeLaws) {
 }
 
 TEST(APADomain, UnionSetSatisfiesJoinSemilatticeLaws) {
-  elimination::LiveVariablesDomain Domain;
-  elimination::LiveVariablesFact X;
-  elimination::LiveVariablesFact Y;
-  elimination::LiveVariablesFact Z;
+  elimination::ReachingDefinitionsDomain Domain;
+  elimination::ReachingDefinitionsFact X;
+  elimination::ReachingDefinitionsFact Y;
+  elimination::ReachingDefinitionsFact Z;
   auto *A = reinterpret_cast<const llvm::Value *>(std::uintptr_t{1});
   auto *B = reinterpret_cast<const llvm::Value *>(std::uintptr_t{2});
   X.insert(A);
@@ -99,7 +97,7 @@ TEST(APADomain, UninitializedVariablesIsAMayUnionDomain) {
 }
 
 TEST(APADomain, IndexedFactsKeepCopiesIndependentAfterMutation) {
-  elimination::LiveVariablesFact Original;
+  elimination::ReachingDefinitionsFact Original;
   for (std::uintptr_t I = 1; I <= 70; ++I)
     Original.insert(reinterpret_cast<const llvm::Value *>(I));
 
@@ -135,9 +133,6 @@ static_assert(
     elimination::IsAPAAbstractDomain<elimination::AffineRelationDomain>::value,
     "affine relations must satisfy the APA domain contract");
 static_assert(
-    elimination::IsAPAAbstractDomain<elimination::LiveVariablesDomain>::value,
-    "live variables must satisfy the APA domain contract");
-static_assert(
     elimination::IsAPAAbstractDomain<elimination::LocksetDomain>::value,
     "lockset must satisfy the APA domain contract");
 static_assert(
@@ -151,8 +146,4 @@ static_assert(elimination::IsAPAAbstractDomain<elimination::SignDomain>::value,
 static_assert(elimination::IsAPAAbstractDomain<
                   elimination::UninitializedVariablesDomain>::value,
               "uninitialized variables must satisfy the APA domain contract");
-static_assert(elimination::IsAPAAbstractDomain<
-                  elimination::VeryBusyExpressionsDomain>::value,
-              "very busy expressions must satisfy the APA domain contract");
-
 } // namespace

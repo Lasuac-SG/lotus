@@ -34,27 +34,25 @@ bitcode, run multiple engines, and compare their outputs to find discrepancies.
 
 | Analysis        | Elimination | Mono | WPDS |
 |----------------|-------------|------|------|
-| Liveness       | `-elim-live` | `runLiveVariablesAnalysis` | `runLivenessAnalysis` |
 | Reachable      | `-elim-reachable` | `runReachableAnalysis` | — |
 | Uninit vars    | `-elim-uninit` | `runUninitVariablesAnalysis` | `runUninitializedVariablesAnalysis` |
 | Reaching defs  | `-elim-rd`  | —    | —    |
 | Constant prop  | `-elim-constprop` | (Inter)Mono constant prop | WPDS constant prop |
 
-Currently only **liveness** is wired for diff (Elimination vs Mono, both
-intraprocedural). Other analyses can be added by extending the tool and the
-canonical dump format.
+The driver exposes the forward analyses implemented by APA and runs each
+selected engine that supports the requested analysis.
 
 ## Usage
 
 ```bash
-# Run both engines and write elim.txt / mono.txt into OUT_DIR
-lotus-dfa --analysis=liveness --engine=both --out-dir=/tmp/dfa /path/to/file.bc
+# Run available engines and write canonical results into OUT_DIR
+lotus-dfa --analysis=uninitialized --engine=all --out-dir=/tmp/dfa /path/to/file.bc
 
 # Run APA with a specific elimination backend
-lotus-dfa-apa --analysis=liveness --elim-method=adt-simple --stdout /path/to/file.bc
+lotus-dfa-apa --analysis=reachable --elim-method=adt-simple --stdout /path/to/file.bc
 
 # Run only one engine (for debugging)
-lotus-dfa --analysis=liveness --engine=elim --out-dir=/tmp/dfa /path/to/file.bc
+lotus-dfa --analysis=reachable --engine=elim --out-dir=/tmp/dfa /path/to/file.bc
 ```
 
 By default these tools stay quiet unless you provide `--out-dir`. Pass
@@ -64,7 +62,7 @@ By default these tools stay quiet unless you provide `--out-dir`. Pass
 
 ```bash
 # APA / elimination-based driver
-lotus-dfa-apa --analysis=liveness --elim-method=adt-simple --stdout /path/to/file.bc
+lotus-dfa-apa --analysis=reachable --elim-method=adt-simple --stdout /path/to/file.bc
 
 # Mono-based driver
 lotus-dfa-mono --analysis=liveness --stdout /path/to/file.bc

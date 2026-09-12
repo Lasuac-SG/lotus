@@ -70,6 +70,8 @@ TEST(EliminationTest, ADTFallsBackOnIrreducibleGraph) {
   EXPECT_FALSE(ADTSolver.usedADT());
   EXPECT_EQ(ADTSolver.getDiagnostics().fallback_reason,
             elimination::FallbackReason::ADTRejected);
+  EXPECT_EQ(ADTSolver.getDiagnostics().adt_rejection_reason,
+            elimination::ADTRejectionReason::NonBackEdgeCycle);
 
   const auto &StateRes = StateSolver.getResults();
   const auto &ADTRes = ADTSolver.getResults();

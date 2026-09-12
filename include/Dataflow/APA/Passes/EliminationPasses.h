@@ -5,14 +5,12 @@
 
 #include "Dataflow/APA/Analyses/Intra/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Intra/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Intra/Lockset.h"
 #include "Dataflow/APA/Analyses/Intra/NonNull.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Intra/Sign.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
-#include "Dataflow/APA/Analyses/Intra/VeryBusyExpressions.h"
 #include "Dataflow/APA/Core/Options.h"
 
 namespace elimination {
@@ -102,23 +100,6 @@ private:
   UninitVariablesResult Result;
 };
 
-class ElimLiveVariablesPass final : public llvm::FunctionPass {
-public:
-  static char ID;
-  ElimLiveVariablesPass() : llvm::FunctionPass(ID) {}
-
-  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
-  bool runOnFunction(llvm::Function &F) override;
-  llvm::StringRef getPassName() const override {
-    return "Elimination Live Variables";
-  }
-
-  const LiveVariablesResult &getResult() const { return Result; }
-
-private:
-  LiveVariablesResult Result;
-};
-
 class ElimLocksetPass final : public llvm::FunctionPass {
 public:
   static char ID;
@@ -132,23 +113,6 @@ public:
 
 private:
   LocksetResult Result;
-};
-
-class ElimVeryBusyExpressionsPass final : public llvm::FunctionPass {
-public:
-  static char ID;
-  ElimVeryBusyExpressionsPass() : llvm::FunctionPass(ID) {}
-
-  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
-  bool runOnFunction(llvm::Function &F) override;
-  llvm::StringRef getPassName() const override {
-    return "Elimination Very Busy Expressions";
-  }
-
-  const VeryBusyExpressionsResult &getResult() const { return Result; }
-
-private:
-  VeryBusyExpressionsResult Result;
 };
 
 class ElimNonNullPass final : public llvm::FunctionPass {

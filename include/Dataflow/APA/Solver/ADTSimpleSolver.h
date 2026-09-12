@@ -24,7 +24,7 @@ bool computeADTSimplePathExpr(
         typename IntraEliminationSolverContext<AnalysisTypesT>::ADTNode *>
         &LeafByPos) {
   if (!W) {
-    return false;
+    return Ctx.rejectADT(ADTRejectionReason::ADTConstructionFailed);
   }
   if (W->Leaf) {
     W->SimpleExpr = Ctx.Exprs.one();
@@ -59,10 +59,11 @@ bool computeADTSimplePathExpr(
   for (const auto &E : W->F) {
     auto It = LeafOf.find(E.Src);
     if (It == LeafOf.end()) {
-      return false;
+      return Ctx.rejectADT(ADTRejectionReason::MissingADTLeaf);
     }
     if (E.Dst != R2) {
-      return false;
+      return Ctx.rejectADT(
+          ADTRejectionReason::ForwardEdgeMissesIntervalEntry);
     }
     auto Edge = Ctx.Exprs.atom(R.edgeTransfer(E.Src, E.Dst));
     X = Ctx.Exprs.unite(X, Ctx.Exprs.concat(It->second->SimpleExpr, Edge));
@@ -72,10 +73,10 @@ bool computeADTSimplePathExpr(
   for (const auto &E : W->B) {
     auto It = LeafOf.find(E.Src);
     if (It == LeafOf.end()) {
-      return false;
+      return Ctx.rejectADT(ADTRejectionReason::MissingADTLeaf);
     }
     if (E.Dst != R1) {
-      return false;
+      return Ctx.rejectADT(ADTRejectionReason::BackEdgeMissesIntervalEntry);
     }
     auto Edge = Ctx.Exprs.atom(R.edgeTransfer(E.Src, E.Dst));
     Y = Ctx.Exprs.unite(Y, Ctx.Exprs.concat(It->second->SimpleExpr, Edge));

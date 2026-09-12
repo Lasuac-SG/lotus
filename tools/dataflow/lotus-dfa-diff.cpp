@@ -12,7 +12,6 @@
 
 #include "Dataflow/APA/Analyses/Intra/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Intra/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
@@ -20,7 +19,6 @@
 #include "Dataflow/IFDS/Analyses/IFDSUninitializedVariables.h"
 #include "Dataflow/IFDS/Solver/IFDSSolver.h"
 #include "Dataflow/Mono/Analyses/Intra/ConstantPropagation.h"
-#include "Dataflow/Mono/Analyses/Intra/LiveVariables.h"
 #include "Dataflow/Mono/Analyses/Intra/Reachability.h"
 #include "Dataflow/Mono/Analyses/Intra/UninitializedVariables.h"
 #include "ToolSupport.h"
@@ -45,9 +43,9 @@ static cl::opt<bool> StdoutOpt(
     cl::init(false));
 static cl::opt<std::string> AnalysisOpt(
     "analysis",
-    cl::desc("Analysis: liveness (default), reaching_defs, uninitialized, "
+    cl::desc("Analysis: reaching_defs (default), uninitialized, "
              "constant_prop, available_exprs, reachable"),
-    cl::init("liveness"));
+    cl::init("reaching_defs"));
 static cl::opt<std::string> ElimMethodOpt(
     "elim-method",
     cl::desc("Elimination solver method: state|adt-simple|adt-delayed"),
@@ -80,7 +78,8 @@ std::string formatExpressionKey(const elimination::ExpressionKey &Key) {
   return ss.str();
 }
 
-std::string formatValueLatticeElement(const ValueLatticeElement &Val) {
+std::string
+formatValueLatticeElement(const elimination::ConstantPropagationValue &Val) {
   std::ostringstream ss;
   if (Val.isUndef())
     ss << "undef";
@@ -210,14 +209,6 @@ struct ElimHandler final {
               const elimination::EliminationOptions &);
 };
 
-void runElimLiveness(raw_ostream &OS, const FunctionView &View,
-                     const elimination::EliminationOptions &Opts) {
-  auto Res = elimination::runIntraElimLiveVariables(&View.Function, Opts);
-  lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
-    lotus::dataflow_tool::formatValueSet(OS, Res.IN(I), View.ValueToId);
-  });
-}
-
 void runElimReachingDefinitions(raw_ostream &OS, const FunctionView &View,
                                 const elimination::EliminationOptions &Opts) {
   auto Res = elimination::runIntraElimReachingDefinitions(&View.Function,
@@ -242,7 +233,8 @@ void runElimConstantPropagation(raw_ostream &OS, const FunctionView &View,
                                                           nullptr, Opts);
   lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
     lotus::dataflow_tool::formatValueMap(
-        OS, Res.IN(I), View.ValueToId, [&](const ValueLatticeElement &Val) {
+        OS, Res.IN(I), View.ValueToId,
+        [&](const elimination::ConstantPropagationValue &Val) {
           return formatValueLatticeElement(Val);
         });
   });
@@ -276,14 +268,6 @@ struct MonoHandler final {
   StringRef Name;
   void (*Run)(raw_ostream &, const FunctionView &);
 };
-
-void runMonoLiveness(raw_ostream &OS, const FunctionView &View) {
-  if (auto Res = mono::runLiveVariablesAnalysis(&View.Function,
-                                                quietMonoDebugConfig()))
-    lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
-      lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);
-    });
-}
 
 void runMonoReachable(raw_ostream &OS, const FunctionView &View) {
   if (auto Res =
@@ -357,7 +341,6 @@ void runIFDSUninitialized(raw_ostream &OS, Module &M) {
 }
 
 const ElimHandler ElimHandlers[] = {
-    {"liveness", &runElimLiveness},
     {"reaching_defs", &runElimReachingDefinitions},
     {"uninitialized", &runElimUninitialized},
     {"constant_prop", &runElimConstantPropagation},
@@ -366,7 +349,6 @@ const ElimHandler ElimHandlers[] = {
 };
 
 const MonoHandler MonoHandlers[] = {
-    {"liveness", &runMonoLiveness},
     {"reachable", &runMonoReachable},
     {"constant_prop", &runMonoConstantPropagation},
     {"uninitialized", &runMonoUninitialized},

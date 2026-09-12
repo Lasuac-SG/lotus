@@ -36,11 +36,30 @@ enum class FallbackReason {
   InvalidProblem,
 };
 
+// The first structural precondition that rejected an ADT solve.  Keeping this
+// separate from FallbackReason preserves the coarse API while making fallback
+// hotspots actionable when profiling real CFGs.
+enum class ADTRejectionReason {
+  None,
+  EmptyTopologicalOrder,
+  DisconnectedFromEntry,
+  NonBackEdgeCycle,
+  EntryNotFirst,
+  MissingTopologicalNode,
+  InvalidImmediateDominator,
+  ADTConstructionFailed,
+  MissingADTLeaf,
+  EdgeClassificationFailed,
+  ForwardEdgeMissesIntervalEntry,
+  BackEdgeMissesIntervalEntry,
+};
+
 struct SolveDiagnostics final {
   bool used_adt = false;
   EliminationMethod requested_method = EliminationMethod::StateElimination;
   EliminationMethod executed_method = EliminationMethod::StateElimination;
   FallbackReason fallback_reason = FallbackReason::None;
+  ADTRejectionReason adt_rejection_reason = ADTRejectionReason::None;
   std::size_t star_iterations_total = 0;
   bool max_star_hit = false;
 };

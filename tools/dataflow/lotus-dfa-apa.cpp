@@ -12,20 +12,17 @@
 
 #include "Dataflow/APA/Analyses/Inter/AffineEqualities.h"
 #include "Dataflow/APA/Analyses/Inter/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Inter/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
 #include "Dataflow/APA/Analyses/Inter/ReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
 #include "Dataflow/APA/Analyses/Intra/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
-#include "Dataflow/APA/Analyses/Intra/LiveVariables.h"
 #include "Dataflow/APA/Analyses/Intra/Lockset.h"
 #include "Dataflow/APA/Analyses/Intra/NonNull.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
 #include "Dataflow/APA/Analyses/Intra/Sign.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
-#include "Dataflow/APA/Analyses/Intra/VeryBusyExpressions.h"
 #include "ToolSupport.h"
 
 #include <algorithm>
@@ -50,12 +47,12 @@ static cl::opt<bool> StdoutOpt(
     cl::init(false));
 static cl::opt<std::string> AnalysisOpt(
     "analysis",
-    cl::desc("Analysis: liveness (default), reaching_defs, uninitialized, "
-             "constant_prop, available_exprs, very_busy_exprs, reachable, "
-             "lockset, nonnull, sign, inter_liveness, inter_reaching_defs, "
+    cl::desc("Analysis: reachable (default), reaching_defs, uninitialized, "
+             "constant_prop, available_exprs, lockset, nonnull, sign, "
+             "inter_reaching_defs, "
              "inter_uninitialized, inter_constant_prop, inter_reachable, "
              "inter_affine"),
-    cl::init("liveness"));
+    cl::init("reachable"));
 static cl::opt<std::string>
     EntryFunctionOpt("entry-function",
                      cl::desc("Entry function for interprocedural analyses"),
@@ -68,6 +65,10 @@ static cl::opt<bool>
     DumpProfileOpt("dump-profile",
                    cl::desc("Dump solver and path-expression profiling data"),
                    cl::init(false));
+static cl::opt<bool> ProfileOnlyOpt(
+    "profile-only",
+    cl::desc("Emit profiling data without per-instruction facts"),
+    cl::init(false));
 static cl::opt<bool>
     DumpExprsOpt("dump-exprs",
                  cl::desc("Dump per-instruction path-expression summaries"),
@@ -151,6 +152,37 @@ const char *toString(elimination::FallbackReason R) {
     return "adt-rejected";
   case elimination::FallbackReason::InvalidProblem:
     return "invalid-problem";
+  }
+  return "unknown";
+}
+
+const char *toString(elimination::ADTRejectionReason R) {
+  using Reason = elimination::ADTRejectionReason;
+  switch (R) {
+  case Reason::None:
+    return "none";
+  case Reason::EmptyTopologicalOrder:
+    return "empty-topological-order";
+  case Reason::DisconnectedFromEntry:
+    return "disconnected-from-entry";
+  case Reason::NonBackEdgeCycle:
+    return "non-back-edge-cycle";
+  case Reason::EntryNotFirst:
+    return "entry-not-first";
+  case Reason::MissingTopologicalNode:
+    return "missing-topological-node";
+  case Reason::InvalidImmediateDominator:
+    return "invalid-immediate-dominator";
+  case Reason::ADTConstructionFailed:
+    return "adt-construction-failed";
+  case Reason::MissingADTLeaf:
+    return "missing-adt-leaf";
+  case Reason::EdgeClassificationFailed:
+    return "edge-classification-failed";
+  case Reason::ForwardEdgeMissesIntervalEntry:
+    return "forward-edge-misses-interval-entry";
+  case Reason::BackEdgeMissesIntervalEntry:
+    return "back-edge-misses-interval-entry";
   }
   return "unknown";
 }
@@ -374,6 +406,7 @@ void printSolveMetadata(raw_ostream &OS, const ResultT &Result) {
      << ", executed=" << toString(Diag.executed_method)
      << ", used_adt=" << (Diag.used_adt ? "true" : "false")
      << ", fallback=" << toString(Diag.fallback_reason)
+     << ", adt_reason=" << toString(Diag.adt_rejection_reason)
      << ", star_iters=" << Diag.star_iterations_total
      << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false") << "\n";
 }
@@ -468,8 +501,11 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
 template <typename ResultT, typename Printer>
 void dumpTimedResult(raw_ostream &OS, const FunctionView &View, ResultT &Result,
                      std::chrono::microseconds Elapsed, Printer &&PrintState) {
-  if (DumpProfileOpt || DumpExprsOpt)
+  const bool HasOutput = StdoutOpt || !OutDir.empty();
+  if (HasOutput && (DumpProfileOpt || DumpExprsOpt))
     dumpProfile(OS, View, Result, Elapsed);
+  if (ProfileOnlyOpt || !HasOutput)
+    return;
   lotus::dataflow_tool::printInstructionStates(
       OS, View, [&](Instruction *I) { PrintState(I, Result); });
 }
@@ -523,9 +559,14 @@ void runTimedInterproceduralAnalysis(raw_ostream &OS, Module &M,
   auto Result = Run(Entry);
   const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::steady_clock::now() - Start);
+  const bool HasOutput = StdoutOpt || !OutDir.empty();
+  if (HasOutput) {
+    OS << "  [profile] elapsed_us=" << Elapsed.count() << "\n";
+    printSolveMetadata(OS, Result);
+  }
+  if (ProfileOnlyOpt || !HasOutput)
+    return;
   const auto ValueToId = buildModuleValueIdMap(M);
-  OS << "  [profile] elapsed_us=" << Elapsed.count() << "\n";
-  printSolveMetadata(OS, Result);
   dumpInterproceduralResult(OS, M, ValueToId, Result,
                             [&](const auto &Key, const auto &Res) {
                               PrintState(Key, Res, ValueToId);
@@ -584,15 +625,6 @@ void runBoolInterAnalysis(raw_ostream &OS, Module &M, Function &Entry,
       });
 }
 
-void runLiveness(raw_ostream &OS, const FunctionView &View,
-                 const elimination::EliminationOptions &ElimOpts) {
-  runSetIntraAnalysis(
-      OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimLiveVariables(&F, Opts);
-      });
-}
-
 void runReachingDefinitions(raw_ostream &OS, const FunctionView &View,
                             const elimination::EliminationOptions &ElimOpts) {
   runSetIntraAnalysis(
@@ -647,26 +679,6 @@ void runAvailableExpressions(raw_ostream &OS, const FunctionView &View,
       });
 }
 
-void runVeryBusyExpressions(raw_ostream &OS, const FunctionView &View,
-                            const elimination::EliminationOptions &ElimOpts) {
-  runTimedAnalysis(
-      OS, View, ElimOpts,
-      [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimVeryBusyExpressions(&F, nullptr, Opts);
-      },
-      [&](Instruction *I, auto &Result) {
-        std::vector<std::string> Exprs;
-        for (const auto &Expr : Result.IN(I))
-          Exprs.push_back(formatExpressionKey(Expr));
-        std::sort(Exprs.begin(), Exprs.end());
-        for (size_t Index = 0; Index < Exprs.size(); ++Index) {
-          if (Index)
-            OS << ",";
-          OS << Exprs[Index];
-        }
-      });
-}
-
 void runLockset(raw_ostream &OS, const FunctionView &View,
                 const elimination::EliminationOptions &ElimOpts) {
   runSetIntraAnalysis(
@@ -707,12 +719,6 @@ void runReachable(raw_ostream &OS, const FunctionView &View,
       [](Function &F, const elimination::EliminationOptions &Opts) {
         return elimination::runIntraElimReachable(&F, Opts);
       });
-}
-
-void runInterLiveness(raw_ostream &OS, Module &M, Function &Entry) {
-  runSetInterAnalysis(OS, M, Entry, [](Function &F) {
-    return elimination::runInterElimLiveVariables(&F);
-  });
 }
 
 void runInterReachingDefinitions(raw_ostream &OS, Module &M, Function &Entry) {
@@ -770,17 +776,14 @@ struct AnalysisHandler final {
 };
 
 const AnalysisHandler Handlers[] = {
-    {"liveness", false, &runLiveness, nullptr},
     {"reaching_defs", false, &runReachingDefinitions, nullptr},
     {"uninitialized", false, &runUninitialized, nullptr},
     {"constant_prop", false, &runConstantPropagation, nullptr},
     {"available_exprs", false, &runAvailableExpressions, nullptr},
-    {"very_busy_exprs", false, &runVeryBusyExpressions, nullptr},
     {"reachable", false, &runReachable, nullptr},
     {"lockset", false, &runLockset, nullptr},
     {"nonnull", false, &runNonNull, nullptr},
     {"sign", false, &runSign, nullptr},
-    {"inter_liveness", true, nullptr, &runInterLiveness},
     {"inter_reaching_defs", true, nullptr, &runInterReachingDefinitions},
     {"inter_uninitialized", true, nullptr, &runInterUninitialized},
     {"inter_constant_prop", true, nullptr, &runInterConstantPropagation},

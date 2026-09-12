@@ -25,13 +25,13 @@ analysis problem.
 
 .. code-block:: bash
 
-   ./build/bin/lotus-dfa --analysis=liveness input.bc
+   ./build/bin/lotus-dfa --analysis=reaching_defs input.bc
    ./build/bin/lotus-dfa --analysis=constant_prop --engine=all input.bc
    ./build/bin/lotus-dfa --analysis=reaching_defs --engine=ifds input.bc
 
 Important options:
 
-- ``--analysis=liveness|reaching_defs|uninitialized|constant_prop|available_exprs|reachable``
+- ``--analysis=reaching_defs|uninitialized|constant_prop|available_exprs|reachable``
 - ``--engine=elim|mono|ifds|all``
 - ``--elim-method=state|adt-simple|adt-delayed``
 - ``--out-dir=<dir>``

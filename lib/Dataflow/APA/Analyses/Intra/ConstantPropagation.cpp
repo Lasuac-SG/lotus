@@ -137,6 +137,10 @@ ConstantPropagationValue evalICmp(const llvm::ICmpInst *ICmp,
       isOverdefined(Rhs)) {
     return makeOverdefined();
   }
+  if (Lhs.isConstant() && Rhs.isConstant() &&
+      (Lhs.getConstant()->getType() != ICmp->getOperand(0)->getType() ||
+       Rhs.getConstant()->getType() != ICmp->getOperand(1)->getType()))
+    return makeOverdefined();
 
   if (auto *C = Lhs.getCompare(ICmp->getPredicate(), ICmp->getType(), Rhs)) {
     if (llvm::isa<llvm::UndefValue>(C)) {
@@ -166,7 +170,7 @@ ConstantPropagationValue evalSelect(const llvm::SelectInst *Select,
   if (Select == nullptr) {
     return makeOverdefined();
   }
-  if (auto C = Cond.asConstantInteger()) {
+  if (const auto *C = Cond.asConstantInteger()) {
     return C->isZero() ? FVal : TVal;
   }
   ConstantPropagationValue Out = TVal;
@@ -188,13 +192,15 @@ ConstantPropagationValue evalPhi(const llvm::PHINode *Phi,
 }
 
 class ElimConstantPropagationProblem
-    : public LLVMIntraEliminationProblem<ConstantPropagationMap, ConstantPropagationDomain> {
+    : public LLVMIntraEliminationProblem<ConstantPropagationMap,
+                                         ConstantPropagationDomain> {
 public:
   explicit ElimConstantPropagationProblem(
       llvm::Function *F, llvm::AAResults *AA = nullptr,
       llvm::AssumptionCache *AC = nullptr, llvm::DominatorTree *DT = nullptr,
       llvm::TargetLibraryInfo *TLI = nullptr)
-      : LLVMIntraEliminationProblem<ConstantPropagationMap, ConstantPropagationDomain>(F),
+      : LLVMIntraEliminationProblem<ConstantPropagationMap,
+                                    ConstantPropagationDomain>(F),
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr), AA(AA),
         AC(AC), DT(DT), TLI(TLI) {
     buildTransferCache(F);
@@ -280,8 +286,8 @@ public:
         return Out;
       }
       if (llvm::CastInst::castIsValid(Cast->getOpcode(), C, Cast->getType())) {
-        auto *Folded = llvm::ConstantFoldCastOperand(
-            Cast->getOpcode(), C, Cast->getType(), *DL);
+        auto *Folded = llvm::ConstantFoldCastOperand(Cast->getOpcode(), C,
+                                                     Cast->getType(), *DL);
         Out[Cast] = makeConst(Folded);
         return Out;
       }
@@ -293,6 +299,21 @@ public:
       auto Lhs = resolveValue(In, ICmp->getOperand(0));
       auto Rhs = resolveValue(In, ICmp->getOperand(1));
       Out[ICmp] = evalICmp(ICmp, Lhs, Rhs);
+      return Out;
+    }
+
+    if (const auto *FCmp = llvm::dyn_cast<llvm::FCmpInst>(Inst)) {
+      auto Lhs = resolveValue(In, FCmp->getOperand(0));
+      auto Rhs = resolveValue(In, FCmp->getOperand(1));
+      if (!Lhs.isConstant() || !Rhs.isConstant() ||
+          Lhs.getConstant()->getType() != FCmp->getOperand(0)->getType() ||
+          Rhs.getConstant()->getType() != FCmp->getOperand(1)->getType()) {
+        Out[FCmp] = makeOverdefined();
+        return Out;
+      }
+      auto *Folded = llvm::ConstantFoldCompareInstOperands(
+          FCmp->getPredicate(), Lhs.getConstant(), Rhs.getConstant(), *DL);
+      Out[FCmp] = makeConst(llvm::dyn_cast_or_null<llvm::Constant>(Folded));
       return Out;
     }
 
@@ -312,8 +333,7 @@ public:
 
     if (const auto *Freeze = llvm::dyn_cast<llvm::FreezeInst>(Inst)) {
       auto Val = resolveValue(In, Freeze->getOperand(0));
-      Out[Freeze] =
-          Val.isConstant() ? Val : makeOverdefined();
+      Out[Freeze] = Val.isConstant() ? Val : makeOverdefined();
       return Out;
     }
 
@@ -363,9 +383,7 @@ public:
   // two lattice values. Keys absent from one side are treated as Unknown
   // (bottom), so mergeIn(Unknown) leaves the other side unchanged — but we
   // must also handle keys present only in Lhs symmetrically.
-  ConstantPropagationMap initialFact() const override {
-    return this->bottom();
-  }
+  ConstantPropagationMap initialFact() const override { return this->bottom(); }
 
 private:
   const llvm::DataLayout *DL;
@@ -395,9 +413,10 @@ private:
 
         if (DL == nullptr || I.getType()->isVoidTy() ||
             llvm::isa<llvm::AllocaInst>(I) || llvm::isa<llvm::LoadInst>(I) ||
-            llvm::isa<llvm::BinaryOperator>(I) || llvm::isa<llvm::CastInst>(I) ||
-            llvm::isa<llvm::ICmpInst>(I) || llvm::isa<llvm::SelectInst>(I) ||
-            llvm::isa<llvm::PHINode>(I) || llvm::isa<llvm::FreezeInst>(I))
+            llvm::isa<llvm::BinaryOperator>(I) ||
+            llvm::isa<llvm::CastInst>(I) || llvm::isa<llvm::CmpInst>(I) ||
+            llvm::isa<llvm::SelectInst>(I) || llvm::isa<llvm::PHINode>(I) ||
+            llvm::isa<llvm::FreezeInst>(I))
           continue;
         llvm::SimplifyQuery SQ(*DL, TLI, DT, AC, nullptr, true);
         SQ.CxtI = &I;
@@ -432,8 +451,9 @@ ConstantPropagationResult runIntraElimConstantPropagation(
   }
 
   ElimConstantPropagationProblem Problem(F, AA, AC, DT, TLI);
-  IntraEliminationSolver<LLVMAnalysisTypes<ConstantPropagationMap, ConstantPropagationDomain>> Solver(
-      Problem, Opts);
+  IntraEliminationSolver<
+      LLVMAnalysisTypes<ConstantPropagationMap, ConstantPropagationDomain>>
+      Solver(Problem, Opts);
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   Out.setSolveMetadata(Status, Solver.getDiagnostics());

@@ -27,14 +27,12 @@ Main components
 
   - available expressions
   - constant propagation
-  - live variables
   - lockset analysis
   - non-null
   - reachability
   - reaching definitions
   - sign analysis
   - uninitialized variables
-  - very busy expressions
 
 - ``Analyses/Inter/`` contains the supported interprocedural variants. Domains
   that currently support only one scope simply have no analysis entry point in

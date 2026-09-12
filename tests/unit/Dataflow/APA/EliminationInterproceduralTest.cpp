@@ -516,58 +516,6 @@ TEST_F(APATest, ForwardSummaryConstantPropagationMatchesNestedCallWorklist) {
     EXPECT_EQ(CI->getSExtValue(), 9);
   }
 }
-TEST_F(APATest, InterproceduralLiveVariablesBackwardAcrossCall) {
-  const char *Source = R"(
-    define i32 @id(i32 %x) {
-    entry:
-      ret i32 %x
-    }
-
-    define i32 @main() {
-    entry:
-      %seed = add i32 1, 2
-      %unused = add i32 %seed, 5
-      %call = call i32 @id(i32 %seed)
-      ret i32 %call
-    }
-  )";
-
-  auto Module = lotus::unittest::parseModule(Context, Source, "APATest");
-  ASSERT_NE(Module, nullptr);
-
-  auto *Main = Module->getFunction("main");
-  auto *Id = Module->getFunction("id");
-  ASSERT_NE(Main, nullptr);
-  ASSERT_NE(Id, nullptr);
-
-  auto Result = elimination::runInterElimLiveVariables(Main);
-  ASSERT_TRUE(Result.hasSolveMetadata());
-  EXPECT_EQ(Result.solveStatus(), elimination::SolveStatus::Ok);
-
-  auto *Seed = findInstructionByName(Main, "seed");
-  auto *Unused = findInstructionByName(Main, "unused");
-  auto *Call = findFirst<llvm::CallInst>(Main);
-  auto *MainRet = findFirst<llvm::ReturnInst>(Main);
-  auto *CalleeRet = findFirst<llvm::ReturnInst>(Id);
-  ASSERT_NE(Seed, nullptr);
-  ASSERT_NE(Unused, nullptr);
-  ASSERT_NE(Call, nullptr);
-  ASSERT_NE(MainRet, nullptr);
-  ASSERT_NE(CalleeRet, nullptr);
-
-  auto *CallFacts = Result.tryIN(Call, {});
-  ASSERT_NE(CallFacts, nullptr);
-  EXPECT_NE(CallFacts->find(Seed), CallFacts->end());
-  EXPECT_EQ(CallFacts->find(Unused), CallFacts->end());
-
-  auto *CalleeFacts = Result.tryOUT(CalleeRet, {Call});
-  ASSERT_NE(CalleeFacts, nullptr);
-  EXPECT_NE(CalleeFacts->find(&*Id->arg_begin()), CalleeFacts->end());
-
-  auto *RetFacts = Result.tryOUT(MainRet, {});
-  ASSERT_NE(RetFacts, nullptr);
-  EXPECT_NE(RetFacts->find(Call), RetFacts->end());
-}
 TEST_F(APATest, InterproceduralConstantPropagationThroughPointerArgument) {
   const char *Source = R"(
     define void @set42(i32* %p) {

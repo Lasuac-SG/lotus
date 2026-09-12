@@ -56,6 +56,8 @@ public:
                              const ConstantPropagationValue &Other) const {
     if (!isConstant() || !Other.isConstant())
       return nullptr;
+    if (getConstant()->getType() != Other.getConstant()->getType())
+      return nullptr;
     return llvm::ConstantExpr::getCompare(Pred, getConstant(),
                                           Other.getConstant());
   }

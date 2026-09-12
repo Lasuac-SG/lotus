@@ -20,8 +20,8 @@ be read as:
 - a lightweight **call-string-sensitive interprocedural** extension for selected
   LLVM analyses,
 - specialized to LLVM CFG / ICFG clients,
-- aimed at MOP-style dataflow clients (reachable, const-prop, RD, liveness,
-  etc.).
+- aimed at forward MOP-style dataflow clients such as reachability, constant
+  propagation, and reaching definitions.
 
 For broader interprocedural formulations, see other frameworks in this repository
 (e.g., IFDS/IDE, WPDS, and NPA modules).
@@ -255,8 +255,8 @@ These are tested for parity with the existing worklist-style interprocedural
 solver on focused forward-analysis cases. Lockset wrapper propagation is also
 tested directly because the summary graph can preserve a callee-return fact that
 the legacy worklist path currently drops. The generic solver is intentionally
-forward-only at this stage; backward analyses and affine equalities remain out
-of scope for this backend.
+forward-only at this stage; affine equalities remain out of scope for this
+backend.
 
 ## Interprocedural call-string solver
 
@@ -303,7 +303,6 @@ of `K = 2`:
 - `kDefaultInterElimConstantPropagationCallStringLength`
 - `kDefaultInterElimUninitVariablesCallStringLength`
 - `kDefaultInterElimReachingDefinitionsCallStringLength`
-- `kDefaultInterElimLiveVariablesCallStringLength`
 - `kDefaultInterElimLocksetCallStringLength`
 
 `K = 0` is also supported by the generic solver and degenerates to
@@ -321,9 +320,7 @@ paper), and serve as examples for adding additional analyses:
 - Uninitialized variables (`runIntraElimUninitVariables`)
 - Reaching definitions (`runIntraElimReachingDefinitions`)
 - Available expressions (`runIntraElimAvailableExpressions`)
-- Live variables (`runIntraElimLiveVariables`)
 - Lockset analysis (`runIntraElimLockset`)
-- Very busy expressions (`runIntraElimVeryBusyExpressions`)
 - Non-null propagation (`runIntraElimNonNull`)
 - Sign analysis (`runIntraElimSignAnalysis`)
 
@@ -335,7 +332,6 @@ Selected LLVM analyses also expose call-string-sensitive entry points:
 - Constant propagation (`runInterElimConstantPropagation`)
 - Uninitialized variables (`runInterElimUninitVariables`)
 - Reaching definitions (`runInterElimReachingDefinitions`)
-- Live variables (`runInterElimLiveVariables`)
 - Lockset analysis (`runInterElimLockset`)
 
 These clients reuse the same elimination machinery inside each procedure but
@@ -345,7 +341,7 @@ memory effects.
 
 ## LLVM pass wrappers
 
-For convenient use under LLVM's legacy pass manager, ten function passes are
+For convenient use under LLVM's legacy pass manager, eight function passes are
 provided:
 
 - `-elim-reachable` (reachability)
@@ -353,9 +349,7 @@ provided:
 - `-elim-rd` (reaching definitions)
 - `-elim-available` (available expressions)
 - `-elim-uninit` (uninitialized variables)
-- `-elim-live` (live variables)
 - `-elim-lockset` (may-lockset analysis)
-- `-elim-busy` (very busy expressions)
 - `-elim-nonnull` (nonnull propagation)
 - `-elim-sign` (sign analysis)
 
@@ -367,9 +361,7 @@ Printing is optional via:
 - `-elim-rd-print`
 - `-elim-available-print`
 - `-elim-uninit-print`
-- `-elim-live-print`
 - `-elim-lockset-print`
-- `-elim-busy-print`
 - `-elim-nonnull-print`
 - `-elim-sign-print`
 

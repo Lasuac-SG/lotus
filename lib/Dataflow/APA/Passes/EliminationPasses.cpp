@@ -44,18 +44,9 @@ cl::opt<bool>
                    cl::desc("Print elimination available expressions facts"),
                    cl::init(false));
 
-cl::opt<bool> ElimLivePrint("elim-live-print",
-                             cl::desc("Print elimination live variables facts"),
-                             cl::init(false));
-
 cl::opt<bool> ElimLocksetPrint("elim-lockset-print",
                                cl::desc("Print elimination lockset facts"),
                                cl::init(false));
-
-cl::opt<bool>
-    ElimBusyPrint("elim-busy-print",
-                  cl::desc("Print elimination very busy expressions facts"),
-                  cl::init(false));
 
 cl::opt<bool> ElimNonNullPrint("elim-nonnull-print",
                                 cl::desc("Print elimination nonnull facts"),
@@ -279,6 +270,36 @@ const char *toString(FallbackReason R) {
   return "unknown";
 }
 
+const char *toString(ADTRejectionReason R) {
+  switch (R) {
+  case ADTRejectionReason::None:
+    return "none";
+  case ADTRejectionReason::EmptyTopologicalOrder:
+    return "empty-topological-order";
+  case ADTRejectionReason::DisconnectedFromEntry:
+    return "disconnected-from-entry";
+  case ADTRejectionReason::NonBackEdgeCycle:
+    return "non-back-edge-cycle";
+  case ADTRejectionReason::EntryNotFirst:
+    return "entry-not-first";
+  case ADTRejectionReason::MissingTopologicalNode:
+    return "missing-topological-node";
+  case ADTRejectionReason::InvalidImmediateDominator:
+    return "invalid-immediate-dominator";
+  case ADTRejectionReason::ADTConstructionFailed:
+    return "adt-construction-failed";
+  case ADTRejectionReason::MissingADTLeaf:
+    return "missing-adt-leaf";
+  case ADTRejectionReason::EdgeClassificationFailed:
+    return "edge-classification-failed";
+  case ADTRejectionReason::ForwardEdgeMissesIntervalEntry:
+    return "forward-edge-misses-interval-entry";
+  case ADTRejectionReason::BackEdgeMissesIntervalEntry:
+    return "back-edge-misses-interval-entry";
+  }
+  return "unknown";
+}
+
 template <typename ResultT> void printSolveMetadata(raw_ostream &OS,
                                                     const ResultT &Result) {
   if (!Result.hasSolveMetadata()) {
@@ -290,6 +311,7 @@ template <typename ResultT> void printSolveMetadata(raw_ostream &OS,
      << ", executed=" << toString(Diag.executed_method)
      << ", used_adt=" << (Diag.used_adt ? "true" : "false")
      << ", fallback=" << toString(Diag.fallback_reason)
+     << ", adt_reason=" << toString(Diag.adt_rejection_reason)
      << ", star_iters=" << Diag.star_iterations_total
      << ", max_star_hit=" << (Diag.max_star_hit ? "true" : "false") << "\n";
 }
@@ -468,34 +490,6 @@ bool ElimUninitVariablesPass::runOnFunction(Function &F) {
   return false;
 }
 
-void ElimLiveVariablesPass::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.setPreservesAll();
-}
-
-bool ElimLiveVariablesPass::runOnFunction(Function &F) {
-  Result = runIntraElimLiveVariables(&F, getElimOptions());
-  if (ElimLivePrint) {
-    errs() << "== Elimination Live Variables: " << F.getName() << " ==\n";
-    printSolveMetadata(errs(), Result);
-    for (auto &BB : F) {
-      for (auto &I : BB) {
-        errs() << "  ";
-        I.print(errs());
-        errs() << " :: ";
-        if (const auto *Fact = Result.tryIN(&I)) {
-          printValueSet(errs(), *Fact);
-        } else {
-          const std::set<const Value *> Empty{};
-          printValueSet(errs(), Empty);
-        }
-        errs() << "\n";
-      }
-    }
-    errs() << "\n";
-  }
-  return false;
-}
-
 void ElimLocksetPass::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
 }
@@ -515,47 +509,6 @@ bool ElimLocksetPass::runOnFunction(Function &F) {
         } else {
           const LocksetFact Empty{};
           printValueSet(errs(), Empty);
-        }
-        errs() << "\n";
-      }
-    }
-    errs() << "\n";
-  }
-  return false;
-}
-
-void ElimVeryBusyExpressionsPass::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.setPreservesAll();
-  AU.addRequired<AAResultsWrapperPass>();
-  AU.addRequired<DominatorTreeWrapperPass>();
-  AU.addRequired<TargetLibraryInfoWrapperPass>();
-  AU.addRequired<MemorySSAWrapperPass>();
-}
-
-bool ElimVeryBusyExpressionsPass::runOnFunction(Function &F) {
-  auto &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
-  auto &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-  auto &TLI = getAnalysis<TargetLibraryInfoWrapperPass>().getTLI(F);
-  llvm::MemorySSA *MSSA = nullptr;
-  if (ElimUseMemorySSA) {
-    MSSA = &getAnalysis<MemorySSAWrapperPass>().getMSSA();
-  }
-  Result = runIntraElimVeryBusyExpressions(&F, &AA, &DT, &TLI, MSSA,
-                                           getElimOptions());
-  if (ElimBusyPrint) {
-    errs() << "== Elimination Very Busy Expressions: " << F.getName()
-           << " ==\n";
-    printSolveMetadata(errs(), Result);
-    for (auto &BB : F) {
-      for (auto &I : BB) {
-        errs() << "  ";
-        I.print(errs());
-        errs() << " :: ";
-        if (const auto *Fact = Result.tryIN(&I)) {
-          printExprSet(errs(), *Fact);
-        } else {
-          const std::set<ExpressionKey> Empty{};
-          printExprSet(errs(), Empty);
         }
         errs() << "\n";
       }
@@ -645,17 +598,9 @@ char ElimUninitVariablesPass::ID = 0;
 static RegisterPass<ElimUninitVariablesPass>
     Z("elim-uninit", "Elimination-based uninitialized variables (intra)");
 
-char ElimLiveVariablesPass::ID = 0;
-static RegisterPass<ElimLiveVariablesPass>
-    LV("elim-live", "Elimination-based live variables (intra)");
-
 char ElimLocksetPass::ID = 0;
 static RegisterPass<ElimLocksetPass>
     LS("elim-lockset", "Elimination-based may-lockset analysis (intra)");
-
-char ElimVeryBusyExpressionsPass::ID = 0;
-static RegisterPass<ElimVeryBusyExpressionsPass>
-    VB("elim-busy", "Elimination-based very busy expressions (intra)");
 
 char ElimNonNullPass::ID = 0;
 static RegisterPass<ElimNonNullPass> NN("elim-nonnull",

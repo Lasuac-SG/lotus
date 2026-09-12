@@ -150,7 +150,8 @@ ConstantPropagationValue evalBinaryOp(const llvm::Instruction *Inst,
 }
 
 class InterElimConstantPropagationProblem
-    : public LLVMInterEliminationProblem<InterConstantPropagationAnalysisTypes> {
+    : public LLVMInterEliminationProblem<
+          InterConstantPropagationAnalysisTypes> {
 public:
   explicit InterElimConstantPropagationProblem(
       llvm::Function *Entry, llvm::AAResults *AA = nullptr,
@@ -217,6 +218,21 @@ public:
       auto *Folded = llvm::ConstantFoldCompareInstOperands(
           ICmp->getPredicate(), Lhs.getConstant(), Rhs.getConstant(), *DL);
       Out[ICmp] = makeConst(llvm::dyn_cast_or_null<llvm::Constant>(Folded));
+      return Out;
+    }
+
+    if (const auto *FCmp = llvm::dyn_cast<llvm::FCmpInst>(Inst)) {
+      auto Lhs = resolveValue(In, FCmp->getOperand(0));
+      auto Rhs = resolveValue(In, FCmp->getOperand(1));
+      if (!Lhs.isConstant() || !Rhs.isConstant() ||
+          Lhs.getConstant()->getType() != FCmp->getOperand(0)->getType() ||
+          Rhs.getConstant()->getType() != FCmp->getOperand(1)->getType()) {
+        Out[FCmp] = makeOverdefined();
+        return Out;
+      }
+      auto *Folded = llvm::ConstantFoldCompareInstOperands(
+          FCmp->getPredicate(), Lhs.getConstant(), Rhs.getConstant(), *DL);
+      Out[FCmp] = makeConst(llvm::dyn_cast_or_null<llvm::Constant>(Folded));
       return Out;
     }
 

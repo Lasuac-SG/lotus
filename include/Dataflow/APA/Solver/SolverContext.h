@@ -302,7 +302,7 @@ public:
     Out.Problem = &Problem;
     Out.Nodes = Problem.nodes();
     if (Out.Nodes.empty()) {
-      return false;
+      return rejectADT(ADTRejectionReason::EmptyTopologicalOrder);
     }
 
     Out.NodeIndex.clear();
@@ -314,7 +314,7 @@ public:
     const auto Entry = Problem.entry();
     const auto EntryIt = Out.NodeIndex.find(Entry);
     if (EntryIt == Out.NodeIndex.end()) {
-      return false;
+      return rejectADT(ADTRejectionReason::MissingTopologicalNode);
     }
     const std::size_t EntryIdx = EntryIt->second;
 
@@ -338,7 +338,7 @@ public:
       }
     }
     if (Reach.size() != Out.Nodes.size()) {
-      return false;
+      return rejectADT(ADTRejectionReason::DisconnectedFromEntry);
     }
 
     Out.Edges.clear();
@@ -387,7 +387,7 @@ public:
       DFSStack.pop_back();
     }
     if (PostOrder.size() != N) {
-      return false;
+      return rejectADT(ADTRejectionReason::DisconnectedFromEntry);
     }
 
     std::vector<std::size_t> RPO;
@@ -434,7 +434,7 @@ public:
           }
         }
         if (NewIdom == static_cast<std::size_t>(-1)) {
-          return false;
+          return rejectADT(ADTRejectionReason::InvalidImmediateDominator);
         }
         if (IdomIdx[V] != static_cast<int>(NewIdom)) {
           IdomIdx[V] = static_cast<int>(NewIdom);
@@ -446,7 +446,7 @@ public:
     Out.Idom.assign(N, Out.Nodes.front());
     for (std::size_t V = 0; V < N; ++V) {
       if (IdomIdx[V] == -1) {
-        return false;
+        return rejectADT(ADTRejectionReason::InvalidImmediateDominator);
       }
       Out.Idom[V] = Out.Nodes[static_cast<std::size_t>(IdomIdx[V])];
     }
@@ -496,7 +496,7 @@ public:
     }
 
     if (InDeg[EntryIdx] != 0) {
-      return false;
+      return rejectADT(ADTRejectionReason::NonBackEdgeCycle);
     }
 
     std::deque<std::size_t> Ready;
@@ -524,10 +524,10 @@ public:
     }
 
     if (Out.Topo.size() != N) {
-      return false;
+      return rejectADT(ADTRejectionReason::NonBackEdgeCycle);
     }
     if (Out.Topo.front() != Entry) {
-      return false;
+      return rejectADT(ADTRejectionReason::EntryNotFirst);
     }
     return true;
   }
@@ -539,7 +539,7 @@ public:
                   std::vector<ADTNode *> &LeafByPos, LCATable &Lca) {
     const auto &Topo = R.topologicalOrder();
     if (Topo.empty()) {
-      return false;
+      return rejectADT(ADTRejectionReason::EmptyTopologicalOrder);
     }
 
     TopoPos.clear();
@@ -549,12 +549,12 @@ public:
     }
 
     if (Topo.front() != Problem.entry()) {
-      return false;
+      return rejectADT(ADTRejectionReason::EntryNotFirst);
     }
 
     for (const auto &N : Problem.nodes()) {
       if (TopoPos.find(N) == TopoPos.end()) {
-        return false;
+        return rejectADT(ADTRejectionReason::MissingTopologicalNode);
       }
     }
 
@@ -571,7 +571,7 @@ public:
       const auto V = R.idom(U);
       auto It = Stacks.find(V);
       if (It == Stacks.end()) {
-        return false;
+        return rejectADT(ADTRejectionReason::InvalidImmediateDominator);
       }
       It->second.push_back(U);
     }
@@ -585,7 +585,7 @@ public:
 
     Root = traverseADT(Problem.entry(), Stacks, LeafOf);
     if (!Root) {
-      return false;
+      return rejectADT(ADTRejectionReason::ADTConstructionFailed);
     }
     Root->Parent = nullptr;
     computeEntriesAndRanges(Root, TopoPos);
@@ -594,22 +594,29 @@ public:
     for (const auto &It : LeafOf) {
       const auto PosIt = TopoPos.find(It.first);
       if (PosIt == TopoPos.end()) {
-        return false;
+        return rejectADT(ADTRejectionReason::MissingTopologicalNode);
       }
       LeafByPos[PosIt->second] = It.second;
     }
     for (auto *Leaf : LeafByPos) {
       if (!Leaf) {
-        return false;
+        return rejectADT(ADTRejectionReason::MissingADTLeaf);
       }
     }
 
     Lca.build(Root);
     if (!computeFBSets(R, Root, LeafOf, TopoPos, Lca)) {
-      return false;
+      return rejectADT(ADTRejectionReason::EdgeClassificationFailed);
     }
     buildSelfLoopCache(R);
     return true;
+  }
+
+  bool rejectADT(ADTRejectionReason Reason) const {
+    if (Diagnostics.adt_rejection_reason == ADTRejectionReason::None) {
+      Diagnostics.adt_rejection_reason = Reason;
+    }
+    return false;
   }
 
   ADTNode *newLeaf(n_t N, std::unordered_map<n_t, ADTNode *> &LeafOf) {
