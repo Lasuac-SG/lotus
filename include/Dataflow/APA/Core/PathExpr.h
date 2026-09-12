@@ -42,16 +42,38 @@ public:
   }
 
   Ref atom(TransferT T) const {
-    if constexpr (is_equality_comparable<TransferT>::value) {
+    if constexpr (is_equality_comparable<TransferT>::value &&
+                  is_std_hashable<TransferT>::value) {
+      // Hash-consed dedup: O(1) amortized instead of the O(atoms) linear scan
+      // below. Returns the same unique node the scan would (atoms are unique by
+      // value), so the exported DAG is byte-identical — only faster. Enabled
+      // whenever TransferT is both hashable and comparable (e.g. Instruction*
+      // intraprocedurally, and the interprocedural summary atom).
+      const std::size_t H = std::hash<TransferT>{}(T);
+      const auto Range = AtomIndex.equal_range(H);
+      for (auto It = Range.first; It != Range.second; ++It) {
+        if (*It->second->Transfer == T) {
+          return It->second;
+        }
+      }
+      auto Node = std::make_shared<Expr>(Kind::Atom, std::move(T));
+      AtomIndex.emplace(H, Node);
+      return Node;
+    } else if constexpr (is_equality_comparable<TransferT>::value) {
       for (const auto &Existing : Atoms) {
         if (*Existing->Transfer == T) {
           return Existing;
         }
       }
+      auto Node = std::make_shared<Expr>(Kind::Atom, std::move(T));
+      Atoms.push_back(Node);
+      return Node;
+    } else {
+      // Not comparable: cannot dedup, mint a fresh node each call.
+      auto Node = std::make_shared<Expr>(Kind::Atom, std::move(T));
+      Atoms.push_back(Node);
+      return Node;
     }
-    auto Node = std::make_shared<Expr>(Kind::Atom, std::move(T));
-    Atoms.push_back(Node);
-    return Node;
   }
 
   Ref unite(const Ref &A, const Ref &B) const {
@@ -123,6 +145,14 @@ private:
       T, std::void_t<decltype(std::declval<const T &>() ==
                               std::declval<const T &>())>> : std::true_type {};
 
+  template <typename T, typename = void>
+  struct is_std_hashable : std::false_type {};
+
+  template <typename T>
+  struct is_std_hashable<
+      T, std::void_t<decltype(std::declval<std::hash<T>>()(
+             std::declval<const T &>()))>> : std::true_type {};
+
   struct BinaryKey final {
     const Expr *L = nullptr;
     const Expr *R = nullptr;
@@ -145,6 +175,9 @@ private:
   }
 
   mutable std::vector<Ref> Atoms;
+  // Hash index over atom Transfer values (used when TransferT is hashable);
+  // buckets map hash(Transfer) -> atom node for O(1) amortized hash-consing.
+  mutable std::unordered_multimap<std::size_t, Ref> AtomIndex;
   mutable std::unordered_map<BinaryKey, Ref, BinaryKeyHash> Unions;
   mutable std::unordered_map<BinaryKey, Ref, BinaryKeyHash> Concats;
   mutable std::unordered_map<const Expr *, Ref> Stars;

@@ -82,6 +82,21 @@ template <typename AnalysisDomainTy> struct InterSummaryTransferAtom final {
   n_t ExitStmt{};
   n_t RetSite{};
   std::vector<f_t> Callees;
+
+  // Value equality over all discriminant fields. Enables hash-consed dedup of
+  // summary atoms in PathExprFactory (without it the factory mints a fresh node
+  // per atom(), collapsing all structural sharing of the interprocedural DAG).
+  friend bool operator==(const InterSummaryTransferAtom &A,
+                         const InterSummaryTransferAtom &B) {
+    return A.K == B.K && A.NormalTransfer == B.NormalTransfer &&
+           A.CallSite == B.CallSite && A.Callee == B.Callee &&
+           A.ExitStmt == B.ExitStmt && A.RetSite == B.RetSite &&
+           A.Callees == B.Callees;
+  }
+  friend bool operator!=(const InterSummaryTransferAtom &A,
+                         const InterSummaryTransferAtom &B) {
+    return !(A == B);
+  }
 };
 
 template <typename AnalysisDomainTy, unsigned K>
@@ -248,5 +263,31 @@ private:
 };
 
 } // namespace elimination
+
+// Hash over all discriminant fields, mirroring operator==. Placed after the
+// type is complete so PathExprFactory<InterSummaryTransferAtom>::atom() selects
+// its hash-consing path (is_std_hashable becomes true).
+namespace std {
+template <typename AnalysisDomainTy>
+struct hash<elimination::InterSummaryTransferAtom<AnalysisDomainTy>> {
+  std::size_t operator()(
+      const elimination::InterSummaryTransferAtom<AnalysisDomainTy> &A) const {
+    using Atom = elimination::InterSummaryTransferAtom<AnalysisDomainTy>;
+    std::size_t H = std::hash<int>{}(static_cast<int>(A.K));
+    const auto mix = [&H](std::size_t V) {
+      H ^= V + 0x9e3779b97f4a7c15ULL + (H << 6) + (H >> 2);
+    };
+    mix(std::hash<typename Atom::transfer_t>{}(A.NormalTransfer));
+    mix(std::hash<typename Atom::n_t>{}(A.CallSite));
+    mix(std::hash<typename Atom::f_t>{}(A.Callee));
+    mix(std::hash<typename Atom::n_t>{}(A.ExitStmt));
+    mix(std::hash<typename Atom::n_t>{}(A.RetSite));
+    for (const auto &C : A.Callees) {
+      mix(std::hash<typename Atom::f_t>{}(C));
+    }
+    return H;
+  }
+};
+} // namespace std
 
 #endif // DATAFLOW_APA_SOLVER_INTERSUMMARYTRANSFER_H_

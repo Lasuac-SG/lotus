@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -53,6 +54,19 @@ public:
         return Inst < Other.Inst;
       }
       return Ctx < Other.Ctx;
+    }
+
+    bool operator==(const ContextKey &Other) const {
+      return Inst == Other.Inst && Ctx == Other.Ctx;
+    }
+  };
+
+  struct ContextKeyHash final {
+    std::size_t operator()(const ContextKey &Key) const {
+      std::size_t H = std::hash<n_t>{}(Key.Inst);
+      H ^= std::hash<Context>{}(Key.Ctx) + 0x9e3779b97f4a7c15ULL + (H << 6) +
+           (H >> 2);
+      return H;
     }
   };
 
@@ -373,7 +387,7 @@ private:
   PathSummaryEquationOptions Options;
   const i_t *ICF = nullptr;
   summary_graph_t Graph;
-  std::set<ContextKey> Discovered;
+  std::unordered_set<ContextKey, ContextKeyHash> Discovered;
   std::unordered_map<n_t, fact_t> SeedFacts;
   fact_t InitialFact{};
   bool HaveInitialFact = false;
