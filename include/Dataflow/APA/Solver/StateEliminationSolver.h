@@ -114,6 +114,7 @@ template <typename AnalysisTypesT>
 void eliminateStateIntermediates(
     IntraEliminationSolverContext<AnalysisTypesT> &Ctx) {
   using Context = IntraEliminationSolverContext<AnalysisTypesT>;
+  using transfer_t = typename Context::transfer_t;
   const auto N = Ctx.Nodes.size();
   std::vector<typename Context::expr_ref_t> ColK(N);
   std::vector<typename Context::expr_ref_t> RowK(N);

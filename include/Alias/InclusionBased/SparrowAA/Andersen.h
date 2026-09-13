@@ -73,11 +73,11 @@
 #include "Alias/InclusionBased/SparrowAA/TemplatePtsSet.h"
 #include "Alias/Infrastructure/Spec/AliasSpecManager.h"
 
+#include <deque>
 #include <functional>
 #include <map>
 #include <string>
 #include <vector>
-#include <deque>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>

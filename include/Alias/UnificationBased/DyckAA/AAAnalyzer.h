@@ -20,8 +20,8 @@
 #define DYCKAA_AAANALYZER_H
 
 #include "Alias/UnificationBased/DyckAA/DyckCallGraph.h"
-#include "Alias/UnificationBased/DyckAA/DyckGraph.h"
 #include "Alias/Infrastructure/Spec/AliasSpecManager.h"
+#include "Alias/UnificationBased/DyckAA/DyckGraph.h"
 
 #include <map>
 #include <set>

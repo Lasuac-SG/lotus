@@ -8,8 +8,8 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "Alias/Specialized/SRAA/RangeAnalysis.h"
 #include "Alias/Infrastructure/Spec/AliasSpecManager.h"
+#include "Alias/Specialized/SRAA/RangeAnalysis.h"
 
 #include <iterator>
 #include <map>
