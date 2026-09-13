@@ -25,7 +25,7 @@ TEST(InterAffineEqualities, CompareOfSameValueProducesConstant) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -73,7 +73,7 @@ TEST(InterAffineEqualities,
   ASSERT_NE(OtherIt, Main->end());
   auto *Other = &*OtherIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto takenStates =
       materializedAffineStatesForBlock(result.blockRelations, Taken);
   ASSERT_EQ(takenStates.size(), 1u);
@@ -110,7 +110,7 @@ TEST(InterAffineEqualities, TrueEqualityBranchRefinesComparedValue) {
   ASSERT_NE(EqualIt, Main->end());
   auto *Equal = &*EqualIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Equal);
   ASSERT_EQ(states.size(), 1u);
 
@@ -140,7 +140,7 @@ TEST(InterAffineEqualities, AssumeLikeCallRefinesComparedValue) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -168,7 +168,7 @@ TEST(InterAffineEqualities, AssumeLikeCallWithFalseConditionIsBottom) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto relations = relationsForBlock(result.blockRelations, Next);
   ASSERT_EQ(relations.size(), 1u);
   EXPECT_TRUE(elimination::AffineRelationDomain::isBottom(*relations.front()));
@@ -204,7 +204,7 @@ TEST(InterAffineEqualities,
   ASSERT_NE(EqualIt, Main->end());
   auto *Equal = &*EqualIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Equal);
   ASSERT_EQ(states.size(), 1u);
 
@@ -244,7 +244,7 @@ TEST(InterAffineEqualities, SingletonUnsignedComparisonRefinesToConstant) {
   ASSERT_NE(ZeroIt, Main->end());
   auto *Zero = &*ZeroIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Zero);
   ASSERT_EQ(states.size(), 1u);
 
@@ -277,7 +277,7 @@ TEST(InterAffineEqualities, FalseUnsignedComparisonRefinesToZeroConstant) {
   ASSERT_NE(ZeroIt, Main->end());
   auto *Zero = &*ZeroIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Zero);
   ASSERT_EQ(states.size(), 1u);
 
@@ -308,7 +308,7 @@ TEST(InterAffineEqualities, ExtremeComparisonProducesConstantResult) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 

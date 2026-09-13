@@ -22,7 +22,7 @@ TEST(InterAffineEqualities, TracksModularWrapForConstants) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -55,7 +55,7 @@ TEST(InterAffineEqualities, ZextOfBooleanArgumentStaysSymbolic) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -91,7 +91,7 @@ TEST(InterAffineEqualities, SextOfBooleanArgumentUsesSignSemantics) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -127,7 +127,7 @@ TEST(InterAffineEqualities, TruncKeepsLowBitCongruence) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -158,7 +158,7 @@ TEST(InterAffineEqualities, ZextKeepsSourceLowBitCongruence) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -190,7 +190,7 @@ TEST(InterAffineEqualities, FreezePreservesAffineValue) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -227,7 +227,7 @@ TEST(InterAffineEqualities, ShiftAndNegationStayAffine) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -270,7 +270,7 @@ TEST(InterAffineEqualities,
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -306,7 +306,7 @@ TEST(InterAffineEqualities,
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 

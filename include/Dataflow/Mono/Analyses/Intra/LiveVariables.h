@@ -1,9 +1,8 @@
-#ifndef LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_LIVEVARIABLES_H_
-#define LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_LIVEVARIABLES_H_
+#pragma once
 
 #include "Dataflow/Mono/Domains/LiveVariablesDomain.h"
-#include "Dataflow/Mono/Support/Result.h"
 #include "Dataflow/Mono/Support/MonoDebug.h"
+#include "Dataflow/Mono/Support/Result.h"
 
 #include <memory>
 
@@ -33,9 +32,7 @@ namespace mono {
  * @return DataFlowResult containing live SSA value sets for each instruction
  */
 std::unique_ptr<DataFlowResult>
-runLiveVariablesAnalysis(llvm::Function *f,
-                         const DebugConfig &DebugCfg = DebugConfig{});
+runIntraMonoLiveVariables(llvm::Function *f,
+                          const DebugConfig &DebugCfg = DebugConfig{});
 
 } // namespace mono
-
-#endif // LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_LIVEVARIABLES_H_

@@ -10,6 +10,6 @@ namespace elimination {
 
 struct UninitializedVariablesDomain : IndexedUnionDomain<llvm::Value *> {};
 
-using UninitVariablesFact = UninitializedVariablesDomain::value_type;
+using UninitializedVariablesFact = UninitializedVariablesDomain::value_type;
 
 } // namespace elimination

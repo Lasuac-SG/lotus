@@ -16,7 +16,7 @@ TEST_F(MonoTest, LiveVariables) {
   Function *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  auto result = runLiveVariablesAnalysis(F);
+  auto result = runIntraMonoLiveVariables(F);
   ASSERT_NE(result, nullptr);
 
   // Verify that results are computed for all instructions
@@ -59,7 +59,7 @@ TEST_F(MonoTest, LiveVariablesMultiBlock) {
   Function *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  auto result = runLiveVariablesAnalysis(F);
+  auto result = runIntraMonoLiveVariables(F);
   ASSERT_NE(result, nullptr);
 
   // Find the return instruction
@@ -93,7 +93,7 @@ TEST_F(MonoTest, EmptyFunction) {
   Function *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  auto result = runLiveVariablesAnalysis(F);
+  auto result = runIntraMonoLiveVariables(F);
   ASSERT_NE(result, nullptr);
 
   // Should handle empty function gracefully
@@ -201,7 +201,7 @@ TEST_F(MonoTest, UninitVariablesMustAliasClear) {
   Function *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  auto result = runIntraMonoUninitVariables(F);
+  auto result = runIntraMonoUninitializedVariables(F);
   ASSERT_NE(result, nullptr);
 
   auto *load = findFirst<LoadInst>(F);
@@ -244,14 +244,14 @@ TEST_F(MonoTest, IntraMonoSolverPreservesExplicitMidFunctionSeed) {
     }
 
     mono_container_t join(const mono_container_t &Lhs,
-                           const mono_container_t &Rhs) override {
+                          const mono_container_t &Rhs) override {
       mono_container_t Out = Lhs;
       Out.insert(Rhs.begin(), Rhs.end());
       return Out;
     }
 
     bool equal(const mono_container_t &Lhs,
-                  const mono_container_t &Rhs) override {
+               const mono_container_t &Rhs) override {
       return Lhs == Rhs;
     }
 
@@ -318,14 +318,14 @@ TEST_F(MonoTest, InterMonoSolverRecomputesIN) {
     }
 
     mono_container_t join(const mono_container_t &Lhs,
-                           const mono_container_t &Rhs) override {
+                          const mono_container_t &Rhs) override {
       mono_container_t Out = Lhs;
       Out.insert(Rhs.begin(), Rhs.end());
       return Out;
     }
 
     bool equal(const mono_container_t &Lhs,
-                  const mono_container_t &Rhs) override {
+               const mono_container_t &Rhs) override {
       return Lhs == Rhs;
     }
 
@@ -393,11 +393,11 @@ TEST_F(MonoTest, InterMonoTaintStrongWeakUpdate) {
   Function *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  InterMonoTaintConfig Config;
+  MonoTaintConfig Config;
   Config.SourceFunctions.insert("source");
   Config.SinkFunctions.insert("sink");
 
-  auto Result = runInterMonoTaintAnalysis(F, Config);
+  auto Result = runInterMonoTaint(F, Config);
   ASSERT_NE(Result.Results, nullptr);
 
   bool FoundLeak = false;
@@ -436,11 +436,11 @@ TEST_F(MonoTest, InterMonoTaintReportsAliasedSinkLeak) {
   auto *Alias = findFirst<BitCastInst>(F);
   ASSERT_NE(Alias, nullptr);
 
-  InterMonoTaintConfig Config;
+  MonoTaintConfig Config;
   Config.SourceFunctions.insert("source");
   Config.SinkFunctions.insert("sink");
 
-  auto Result = runInterMonoTaintAnalysis(F, Config);
+  auto Result = runInterMonoTaint(F, Config);
   ASSERT_NE(Result.Results, nullptr);
 
   bool FoundAliasLeak = false;
@@ -485,11 +485,11 @@ TEST_F(MonoTest, InterMonoTaintIndirectCallUsesAAResolution) {
   auto *F = module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  InterMonoTaintConfig Config;
+  MonoTaintConfig Config;
   Config.SourceFunctions.insert("source");
   Config.SinkFunctions.insert("sink");
 
-  auto Result = runInterMonoTaintAnalysis(F, Config);
+  auto Result = runInterMonoTaint(F, Config);
   ASSERT_NE(Result.Results, nullptr);
 
   bool FoundLeak = false;
@@ -561,7 +561,8 @@ TEST_F(MonoTest, InterMonoConstantPropagationIndirectCallUsesAAResolution) {
   }
   EXPECT_TRUE(FoundConst);
 }
-TEST_F(MonoTest, InterMonoConstantPropagationMultiCalleeSameConstantRemainsConstant) {
+TEST_F(MonoTest,
+       InterMonoConstantPropagationMultiCalleeSameConstantRemainsConstant) {
   const char *source = R"(
     define i32 @foo() {
     entry:
@@ -667,7 +668,8 @@ TEST_F(MonoTest, InterMonoFullConstantPropagationIndirectCallUsesAAResolution) {
   }
   EXPECT_TRUE(FoundConst);
 }
-TEST_F(MonoTest, InterMonoFullConstantPropagationMultiCalleeSameConstantRemainsConstant) {
+TEST_F(MonoTest,
+       InterMonoFullConstantPropagationMultiCalleeSameConstantRemainsConstant) {
   const char *source = R"(
     define i32 @foo() {
     entry:
@@ -760,14 +762,14 @@ TEST_F(MonoTest, InterMonoSolverUsesIndirectCallResolverHook) {
     }
 
     mono_container_t join(const mono_container_t &Lhs,
-                           const mono_container_t &Rhs) override {
+                          const mono_container_t &Rhs) override {
       mono_container_t Out = Lhs;
       Out.insert(Rhs.begin(), Rhs.end());
       return Out;
     }
 
     bool equal(const mono_container_t &Lhs,
-                  const mono_container_t &Rhs) override {
+               const mono_container_t &Rhs) override {
       return Lhs == Rhs;
     }
 
@@ -876,7 +878,9 @@ TEST_F(MonoTest, IntraConstantPropagationJoinMissingBindingIsTop) {
     EXPECT_EQ(FactIt->second.Tag, ConstantPropagationTag::Top);
   }
 }
-TEST_F(MonoTest, IntraFullConstantPropagationAliasLoadFromPartiallyInitializedStateIsTop) {
+TEST_F(
+    MonoTest,
+    IntraFullConstantPropagationAliasLoadFromPartiallyInitializedStateIsTop) {
   const char *source = R"(
     define i32 @test(i32* %p, i1 %c) {
     entry:

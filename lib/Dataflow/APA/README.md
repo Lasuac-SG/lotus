@@ -245,10 +245,13 @@ and recursive context dependencies are closed by SCC-local `Star` expressions.
 
 LLVM client entry points currently include:
 
-- `runInterSummaryElimReachable`
+- `runInterSummaryElimReachability`
+- `runInterSummaryElimAvailableExpressions`
 - `runInterSummaryElimConstantPropagation`
+- `runInterSummaryElimNonNull`
 - `runInterSummaryElimReachingDefinitions`
-- `runInterSummaryElimUninitVariables`
+- `runInterSummaryElimSign`
+- `runInterSummaryElimUninitializedVariables`
 - `runInterSummaryElimLockset`
 
 These are tested for parity with the existing worklist-style interprocedural
@@ -300,10 +303,13 @@ The shipped interprocedural analyses currently use a default call-string bound
 of `K = 2`:
 
 - `kDefaultInterElimReachabilityCallStringLength`
+- `kDefaultInterElimAvailableExpressionsCallStringLength`
 - `kDefaultInterElimConstantPropagationCallStringLength`
-- `kDefaultInterElimUninitVariablesCallStringLength`
+- `kDefaultInterElimNonNullCallStringLength`
+- `kDefaultInterElimUninitializedVariablesCallStringLength`
 - `kDefaultInterElimReachingDefinitionsCallStringLength`
 - `kDefaultInterElimLocksetCallStringLength`
+- `kDefaultInterElimSignCallStringLength`
 
 `K = 0` is also supported by the generic solver and degenerates to
 context-insensitive return propagation.
@@ -315,24 +321,29 @@ We provide a few concrete LLVM IR analyses implemented on top of the
 elimination framework. These are intended as practical clients (as in the
 paper), and serve as examples for adding additional analyses:
 
-- Reachability (`runIntraElimReachable`)
+- Reachability (`runIntraElimReachability`)
 - Constant propagation (`runIntraElimConstantPropagation`)
-- Uninitialized variables (`runIntraElimUninitVariables`)
+- Uninitialized variables (`runIntraElimUninitializedVariables`)
 - Reaching definitions (`runIntraElimReachingDefinitions`)
 - Available expressions (`runIntraElimAvailableExpressions`)
 - Lockset analysis (`runIntraElimLockset`)
 - Non-null propagation (`runIntraElimNonNull`)
-- Sign analysis (`runIntraElimSignAnalysis`)
+- Sign analysis (`runIntraElimSign`)
+- Affine equalities (`runIntraElimAffineEqualities`)
 
 ## Interprocedural LLVM analyses
 
-Selected LLVM analyses also expose call-string-sensitive entry points:
+All nine LLVM analyses also expose interprocedural entry points:
 
-- Reachability (`runInterElimReachable`)
+- Reachability (`runInterElimReachability`)
+- Available expressions (`runInterElimAvailableExpressions`)
 - Constant propagation (`runInterElimConstantPropagation`)
-- Uninitialized variables (`runInterElimUninitVariables`)
+- Non-null propagation (`runInterElimNonNull`)
+- Uninitialized variables (`runInterElimUninitializedVariables`)
 - Reaching definitions (`runInterElimReachingDefinitions`)
 - Lockset analysis (`runInterElimLockset`)
+- Sign analysis (`runInterElimSign`)
+- Affine equalities (`runInterElimAffineEqualities`)
 
 These clients reuse the same elimination machinery inside each procedure but
 define analysis-specific `callFlow`, `returnFlow`, and `callToRetFlow`

@@ -5,6 +5,7 @@
 #include "Dataflow/NPA/Analyses/Inter/Interval.h"
 
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
+#include "Dataflow/NPA/LLVM/IntraEngine.h"
 
 #include <algorithm>
 #include <array>
@@ -912,5 +913,22 @@ InterIntervalAnalysis::run(llvm::Module &M, bool verbose,
                            engineResult.blockEntryFacts.end());
   return result;
 }
+
+namespace detail {
+
+InterIntervalAnalysis::Result
+runIntraInterval(llvm::Function &F, bool verbose, LinearStrategy linearStrategy,
+                 NewtonRoundStrategy roundStrategy) {
+  IntervalAnalysis analysis;
+  auto engineResult = IntraEngine<IntervalSummary, IntervalAnalysis>::run(
+      F, analysis, verbose, linearStrategy, roundStrategy);
+  InterIntervalAnalysis::Result result;
+  result.status = engineResult.status;
+  result.summaries[{&F}] = std::move(engineResult.summary);
+  result.blockFacts = std::move(engineResult.blockEntryFacts);
+  return result;
+}
+
+} // namespace detail
 
 } // namespace npa

@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_SIGN_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_SIGN_H_
+#pragma once
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
@@ -11,12 +10,9 @@
 
 namespace elimination {
 
-using SignAnalysisResult =
+using SignResult =
     DataFlowResultT<llvm::Instruction *, SignMap, llvm::Instruction *>;
 
-SignAnalysisResult runIntraElimSignAnalysis(llvm::Function *F,
-                                            EliminationOptions Opts = {});
+SignResult runIntraElimSign(llvm::Function *F, EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_SIGN_H_

@@ -6,6 +6,7 @@
 
 #include "Alias/Infrastructure/AliasAnalysisWrapper/AliasAnalysisWrapper.h"
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
+#include "Dataflow/NPA/LLVM/IntraEngine.h"
 
 #include <algorithm>
 #include <functional>
@@ -1304,5 +1305,29 @@ InterNullability::run(llvm::Module &M, bool verbose,
   options.newton_round_strategy = roundStrategy;
   return run(M, options, verbose, linearStrategy);
 }
+
+namespace detail {
+
+InterNullability::Result
+runIntraNullability(llvm::Function &F,
+                    lotus::AliasAnalysisWrapper &aliasAnalysis,
+                    const InterNullability::Options &options, bool verbose,
+                    LinearStrategy linearStrategy) {
+  NullabilityAnalysis analysis(*F.getParent(), aliasAnalysis, options);
+  auto engineResult = IntraEngine<TaintTransformer, NullabilityAnalysis>::run(
+      F, analysis, verbose, linearStrategy, options.newton_round_strategy);
+
+  InterNullability::Result result;
+  result.status = engineResult.status;
+  result.summaries[{&F}] = std::move(engineResult.summary);
+  result.blockFacts = std::move(engineResult.blockEntryFacts);
+  result.blockExitFacts = std::move(engineResult.blockExitFacts);
+  result.valueBits = analysis.getValueBits();
+  result.memoryBits = analysis.getMemoryBits();
+  result.pointerMemoryBits = analysis.getPointerMemoryBits();
+  return result;
+}
+
+} // namespace detail
 
 } // namespace npa

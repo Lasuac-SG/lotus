@@ -9,14 +9,20 @@ set(NPA_SOURCES
   Domains/TaintDomain.cpp
 
   LLVM/BitVectorSolver.cpp
+  Analyses/Intra/ConstantPropagation.cpp
+  Analyses/Intra/Interval.cpp
   Analyses/Intra/LiveVariables.cpp
+  Analyses/Intra/MaybeUninitialized.cpp
+  Analyses/Intra/Nullability.cpp
+  Analyses/Intra/ReachableBlocks.cpp
+  Analyses/Intra/ReachingDefinitions.cpp
+  Analyses/Intra/Taint.cpp
   Analyses/Inter/ConstantPropagation.cpp
   Analyses/Inter/Interval.cpp
   Analyses/Inter/LiveVariables.cpp
-  Analyses/Inter/Nullability.cpp
-  Analyses/Intra/ReachingDefinitions.cpp
-  Analyses/Intra/ReachableBlocks.cpp
   Analyses/Inter/MaybeUninitialized.cpp
+  Analyses/Inter/Nullability.cpp
+  Analyses/Inter/ReachableBlocks.cpp
   Analyses/Inter/ReachingDefinitions.cpp
   Analyses/Inter/Taint.cpp
 )

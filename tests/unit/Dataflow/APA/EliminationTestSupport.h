@@ -6,10 +6,13 @@
  */
 
 #include "Dataflow/APA/APA.h"
+#include "Dataflow/APA/Analyses/Inter/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Inter/ConstantPropagation.h"
 #include "Dataflow/APA/Analyses/Inter/Lockset.h"
+#include "Dataflow/APA/Analyses/Inter/NonNull.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
 #include "Dataflow/APA/Analyses/Inter/ReachingDefinitions.h"
+#include "Dataflow/APA/Analyses/Inter/Sign.h"
 #include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
@@ -21,11 +24,11 @@
 #include <utility>
 #include <vector>
 
+#include <gtest/gtest.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <gtest/gtest.h>
 
 using lotus::unittest::findInstructionByName;
 

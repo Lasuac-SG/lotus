@@ -7,9 +7,8 @@
 // positive R1 (law-gated admissibility) case. We also pin the underlying
 // distributivity equation directly.
 
-#include "Dataflow/APA/Analyses/Intra/IntraAffineEqualities.h"
+#include "Dataflow/APA/Analyses/Intra/AffineEqualities.h"
 #include "Dataflow/APA/Domains/AffineRelationDomain.h"
-
 #include "TestUtils/LLVMHelpers.h"
 
 #include <map>
@@ -23,8 +22,8 @@
 
 namespace {
 
+using elimination::AffineEqualitiesResult;
 using elimination::AffineFact;
-using elimination::AffineResult;
 using D = elimination::AffineRelationDomain;
 
 // Build + install a vocabulary of tracked integer scalars of the single
@@ -101,10 +100,13 @@ exit:
 )LL";
 
 // Assert that a config reproduces the Default facts at every instruction.
-void expectSameFacts(llvm::Function &F, const elimination::EliminationOptions &O,
+void expectSameFacts(llvm::Function &F,
+                     const elimination::EliminationOptions &O,
                      const char *Label) {
-  const AffineResult Base = elimination::runIntraElimAffine(&F, defaultOpts());
-  const AffineResult Got = elimination::runIntraElimAffine(&F, O);
+  const AffineEqualitiesResult Base =
+      elimination::runIntraElimAffineEqualities(&F, defaultOpts());
+  const AffineEqualitiesResult Got =
+      elimination::runIntraElimAffineEqualities(&F, O);
   // Re-install the vocabulary (each run reconfigured with its own local copy).
   auto Vocab = buildVocab(F);
   D::configure(&Vocab);
@@ -112,11 +114,9 @@ void expectSameFacts(llvm::Function &F, const elimination::EliminationOptions &O
   for (auto &I : llvm::instructions(F)) {
     const auto *B = Base.tryIN(&I);
     const auto *G = Got.tryIN(&I);
-    ASSERT_EQ(B != nullptr, G != nullptr)
-        << Label << " presence @inst#" << Idx;
+    ASSERT_EQ(B != nullptr, G != nullptr) << Label << " presence @inst#" << Idx;
     if (B != nullptr && G != nullptr) {
-      EXPECT_TRUE(D::equal(*B, *G))
-          << Label << " fact differs @inst#" << Idx;
+      EXPECT_TRUE(D::equal(*B, *G)) << Label << " fact differs @inst#" << Idx;
     }
     ++Idx;
   }
@@ -167,22 +167,22 @@ TEST(AffineEan, DomainComposeThreeVars) {
     if (D::isBottom(D::extend(T, D::identity())))
       Bad += " " + std::to_string(C);
   }
-  EXPECT_TRUE(Bad.empty()) << "extend(y'=x+C, identity) bottom for C in:" << Bad;
+  EXPECT_TRUE(Bad.empty()) << "extend(y'=x+C, identity) bottom for C in:"
+                           << Bad;
 }
 
 TEST(AffineEan, ComputesNonTrivialAffineFacts) {
   llvm::LLVMContext Ctx;
-  auto M = lotus::unittest::parseModuleChecked(
-      Ctx,
-      "define i32 @s(i32 %n) {\n"
-      "  %a = add i32 %n, 1\n"
-      "  %b = add i32 %a, 2\n"
-      "  ret i32 %b\n"
-      "}\n");
+  auto M = lotus::unittest::parseModuleChecked(Ctx, "define i32 @s(i32 %n) {\n"
+                                                    "  %a = add i32 %n, 1\n"
+                                                    "  %b = add i32 %a, 2\n"
+                                                    "  ret i32 %b\n"
+                                                    "}\n");
   auto *F = M->getFunction("s");
   ASSERT_NE(F, nullptr);
 
-  const AffineResult Res = elimination::runIntraElimAffine(F, {});
+  const AffineEqualitiesResult Res =
+      elimination::runIntraElimAffineEqualities(F, {});
   auto Vocab = buildVocab(*F);
   D::configure(&Vocab);
   unsigned Total = 0, NonNull = 0, Bottom = 0, Informative = 0;
@@ -204,8 +204,8 @@ TEST(AffineEan, ComputesNonTrivialAffineFacts) {
   EXPECT_EQ(NonNull, Total) << "some IN facts missing";
   EXPECT_EQ(Bottom, 0u) << "reachable code should not be bottom";
   EXPECT_GT(Informative, 0u)
-      << "no informative affine fact (Total=" << Total
-      << " NonNull=" << NonNull << " Bottom=" << Bottom << ")";
+      << "no informative affine fact (Total=" << Total << " NonNull=" << NonNull
+      << " Bottom=" << Bottom << ")";
 }
 
 TEST(AffineEan, EanSafePreservesFacts) {
@@ -247,8 +247,10 @@ TEST(AffineEan, MemoInterpreterMatchesTreeInterpreter) {
   };
   // Tree (baseline) vs memo, under Default and under EAN(kleene).
   for (const auto &Base : {defaultOpts(), eanKleeneOpts()}) {
-    const AffineResult Tree = elimination::runIntraElimAffine(F, Base);
-    const AffineResult Memo = elimination::runIntraElimAffine(F, memo(Base));
+    const AffineEqualitiesResult Tree =
+        elimination::runIntraElimAffineEqualities(F, Base);
+    const AffineEqualitiesResult Memo =
+        elimination::runIntraElimAffineEqualities(F, memo(Base));
     auto Vocab = buildVocab(*F);
     D::configure(&Vocab);
     unsigned Idx = 0;

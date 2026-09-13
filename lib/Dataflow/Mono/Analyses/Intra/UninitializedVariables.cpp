@@ -267,7 +267,7 @@ private:
 
 } // namespace
 
-std::unique_ptr<DataFlowResult> runIntraMonoUninitVariables(
+std::unique_ptr<DataFlowResult> runIntraMonoUninitializedVariables(
     Function *F, const DebugConfig &DebugCfg) {
   if (F == nullptr || F->isDeclaration()) {
     return nullptr;

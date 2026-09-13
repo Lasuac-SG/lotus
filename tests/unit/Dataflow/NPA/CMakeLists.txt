@@ -3,6 +3,7 @@
 add_lotus_test_suite(npa_tests
   SOURCES
     NPASolverTest.cpp
+    NPASymmetricAnalysesTest.cpp
     NPAAdaptiveSccTest.cpp
     TensorProductLiftTest.cpp
     NPATensorRegularizationTest.cpp

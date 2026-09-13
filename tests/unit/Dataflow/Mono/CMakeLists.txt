@@ -3,6 +3,7 @@
 add_lotus_test_suite(mono_test
   SOURCES
     MonoTest.cpp
+    MonoSymmetricAnalysesTest.cpp
     MonoDomainTest.cpp
     MonoSolverContextSensitivityTest.cpp
     MonoSolverContextEdgeCasesTest.cpp

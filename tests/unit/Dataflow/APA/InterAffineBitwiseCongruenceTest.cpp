@@ -23,7 +23,7 @@ TEST(InterAffineEqualities, BitwiseAndMaskKeepsLowBitCongruence) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -60,7 +60,7 @@ TEST(InterAffineEqualities, BitwiseSelfOperationsStayPrecise) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -106,7 +106,7 @@ TEST(InterAffineEqualities, BitwiseAndClearedMaskKeepsZeroCongruence) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -136,7 +136,7 @@ TEST(InterAffineEqualities, PowerOfTwoRemainderKeepsLowBitCongruence) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -167,7 +167,7 @@ TEST(InterAffineEqualities, CompositeUnsignedRemainderKeepsCommonLowBits) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -198,7 +198,7 @@ TEST(InterAffineEqualities, CompositeSignedRemainderKeepsCommonLowBits) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -232,7 +232,7 @@ TEST(InterAffineEqualities, BitwiseOrUsesPartialConstantMiddleZeros) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -267,7 +267,7 @@ TEST(InterAffineEqualities, BitwiseAndUsesPartialConstantMiddleOnes) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -302,7 +302,7 @@ TEST(InterAffineEqualities, BitwiseXorUsesPartialConstantMiddleOnesComplement) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 

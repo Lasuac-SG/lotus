@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_NONNULL_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_NONNULL_H_
+#pragma once
 
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/IR/Dominators.h"
@@ -10,13 +9,6 @@
 #include "Dataflow/APA/Domains/NonNullDomain.h"
 
 namespace elimination {
-
-// Edge-sensitive transfer for branch-conditioned facts (e.g., pointer != null
-// on one successor only).
-struct NonNullEdgeTransfer {
-  llvm::Instruction *Src = nullptr;
-  llvm::Instruction *Dst = nullptr;
-};
 
 using NonNullResult =
     DataFlowResultT<llvm::Instruction *, NonNullFact, NonNullEdgeTransfer>;
@@ -29,5 +21,3 @@ NonNullResult runIntraElimNonNull(llvm::Function *F, llvm::AssumptionCache *AC,
                                   EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_NONNULL_H_

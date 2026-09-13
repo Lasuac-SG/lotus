@@ -26,6 +26,7 @@ Main components
 - ``Analyses/Intra/`` provides ready-made intraprocedural analyses:
 
   - available expressions
+  - affine equalities
   - constant propagation
   - lockset analysis
   - non-null
@@ -34,9 +35,9 @@ Main components
   - sign analysis
   - uninitialized variables
 
-- ``Analyses/Inter/`` contains the supported interprocedural variants. Domains
-  that currently support only one scope simply have no analysis entry point in
-  the other directory.
+- ``Analyses/Inter/`` provides the same nine analyses as ``Analyses/Intra/``.
+  Eight use the common call-string worklist and forward-summary solvers;
+  interprocedural affine equalities uses its module-scoped driver.
 
 - ``Passes/EliminationPasses.h`` exposes LLVM-pass integration.
 
@@ -110,10 +111,13 @@ approach:
 Supported analyses
 ^^^^^^^^^^^^^^^^^^
 
-Five interprocedural analysis entry points provide both worklist and
+Eight interprocedural analysis entry points provide both worklist and
 summary solver variants:
 
-``runInterSummaryElimReachable``
+``runInterSummaryElimAvailableExpressions``
+  ``(Function *Entry, const InterCFG *, PathSummaryEquationOptions)``
+
+``runInterSummaryElimReachability``
   ``(Function *Entry, const InterCFG *, PathSummaryEquationOptions)``
 
 ``runInterSummaryElimConstantPropagation``
@@ -124,11 +128,18 @@ summary solver variants:
   ``(Function *Entry, AAResults *, MemorySSA *, const InterCFG *,``
   ``PathSummaryEquationOptions)``
 
-``runInterSummaryElimUninitVariables``
+``runInterSummaryElimUninitializedVariables``
   ``(Function *Entry, AAResults *, AssumptionCache *, DominatorTree *,``
   ``const InterCFG *, PathSummaryEquationOptions)``
 
 ``runInterSummaryElimLockset``
+  ``(Function *Entry, const InterCFG *, PathSummaryEquationOptions)``
+
+``runInterSummaryElimNonNull``
+  ``(Function *Entry, AssumptionCache *, DominatorTree *, const InterCFG *,``
+  ``PathSummaryEquationOptions)``
+
+``runInterSummaryElimSign``
   ``(Function *Entry, const InterCFG *, PathSummaryEquationOptions)``
 
 Each pair-solver variant shares the same analysis domain and fact types
@@ -178,7 +189,7 @@ Usage example
   auto ICF = dataflow::controlflow::InterCFG::build(*Module);
 
   // Run the summary-based reachability analysis.
-  auto Result = runInterSummaryElimReachable(Main, ICF.get());
+  auto Result = runInterSummaryElimReachability(Main, ICF.get());
 
   // Inspect the result at a program point.
   for (auto &Inst : instructions(*Main)) {

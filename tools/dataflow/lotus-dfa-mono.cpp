@@ -67,7 +67,7 @@ std::string formatMonoConstantValue(const mono::ConstantPropagationValue &Val) {
 }
 
 void runLiveness(raw_ostream &OS, const FunctionView &View) {
-  if (auto Res = mono::runLiveVariablesAnalysis(&View.Function,
+  if (auto Res = mono::runIntraMonoLiveVariables(&View.Function,
                                                 quietMonoDebugConfig()))
     lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
       lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);
@@ -76,7 +76,7 @@ void runLiveness(raw_ostream &OS, const FunctionView &View) {
 
 void runReachable(raw_ostream &OS, const FunctionView &View) {
   if (auto Res =
-          mono::runReachableAnalysis(&View.Function, quietMonoDebugConfig()))
+          mono::runIntraMonoReachability(&View.Function, quietMonoDebugConfig()))
     lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
       lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);
     });
@@ -97,7 +97,7 @@ void runConstantPropagation(raw_ostream &OS, const FunctionView &View) {
 }
 
 void runUninitialized(raw_ostream &OS, const FunctionView &View) {
-  if (auto Res = mono::runIntraMonoUninitVariables(&View.Function,
+  if (auto Res = mono::runIntraMonoUninitializedVariables(&View.Function,
                                                    quietMonoDebugConfig()))
     lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
       lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);

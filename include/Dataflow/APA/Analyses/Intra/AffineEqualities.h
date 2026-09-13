@@ -1,12 +1,11 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_AFFINE_EQUALITIES_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_AFFINE_EQUALITIES_H_
+#pragma once
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
 
 #include "Dataflow/APA/APA.h"
-#include "Dataflow/APA/LLVM/ForwardProblem.h"
 #include "Dataflow/APA/Domains/AffineRelationDomain.h"
+#include "Dataflow/APA/LLVM/ForwardProblem.h"
 
 namespace elimination {
 
@@ -19,11 +18,10 @@ namespace elimination {
 // Kleene EAN law profile is sound for this client (unlike reachability /
 // liveness), making it the paper's positive R1 (law-gated admissibility) case.
 using AffineFact = AffineRelationDomain::value_type;
-using AffineResult =
+using AffineEqualitiesResult =
     DataFlowResultT<llvm::Instruction *, AffineFact, llvm::Instruction *>;
 
-AffineResult runIntraElimAffine(llvm::Function *F, EliminationOptions Opts = {});
+AffineEqualitiesResult
+runIntraElimAffineEqualities(llvm::Function *F, EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_AFFINE_EQUALITIES_H_

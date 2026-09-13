@@ -5,6 +5,7 @@
 #include "Dataflow/NPA/Analyses/Inter/ConstantPropagation.h"
 
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
+#include "Dataflow/NPA/LLVM/IntraEngine.h"
 
 #include <algorithm>
 
@@ -580,5 +581,24 @@ InterConstantPropagation::run(llvm::Module &M, bool verbose,
                            engineResult.blockEntryFacts.end());
   return result;
 }
+
+namespace detail {
+
+InterConstantPropagation::Result
+runIntraConstantPropagation(llvm::Function &F, bool verbose,
+                            LinearStrategy linearStrategy,
+                            NewtonRoundStrategy roundStrategy) {
+  ConstantPropagationAnalysis analysis;
+  auto engineResult =
+      IntraEngine<ConstantPropagationSummary, ConstantPropagationAnalysis>::run(
+          F, analysis, verbose, linearStrategy, roundStrategy);
+  InterConstantPropagation::Result result;
+  result.status = engineResult.status;
+  result.summaries[{&F}] = std::move(engineResult.summary);
+  result.blockFacts = std::move(engineResult.blockEntryFacts);
+  return result;
+}
+
+} // namespace detail
 
 } // namespace npa

@@ -17,28 +17,32 @@
 namespace elimination {
 namespace {
 
-class ElimUninitVariablesProblem
-    : public LLVMIntraEliminationProblem<UninitVariablesFact, UninitializedVariablesDomain> {
+class ElimUninitializedVariablesProblem
+    : public LLVMIntraEliminationProblem<UninitializedVariablesFact,
+                                         UninitializedVariablesDomain> {
 public:
-  explicit ElimUninitVariablesProblem(llvm::Function *F)
-      : LLVMIntraEliminationProblem<UninitVariablesFact, UninitializedVariablesDomain>(F),
+  explicit ElimUninitializedVariablesProblem(llvm::Function *F)
+      : LLVMIntraEliminationProblem<UninitializedVariablesFact,
+                                    UninitializedVariablesDomain>(F),
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr) {
     buildTransferCache(F);
   }
 
-  ElimUninitVariablesProblem(llvm::Function *F, llvm::AAResults *AA,
-                             llvm::AssumptionCache *AC, llvm::DominatorTree *DT)
-      : LLVMIntraEliminationProblem<UninitVariablesFact, UninitializedVariablesDomain>(F),
+  ElimUninitializedVariablesProblem(llvm::Function *F, llvm::AAResults *AA,
+                                    llvm::AssumptionCache *AC,
+                                    llvm::DominatorTree *DT)
+      : LLVMIntraEliminationProblem<UninitializedVariablesFact,
+                                    UninitializedVariablesDomain>(F),
         DL(F != nullptr ? &F->getParent()->getDataLayout() : nullptr), AA(AA),
         AC(AC), DT(DT) {
     buildTransferCache(F);
   }
 
-  UninitVariablesFact
+  UninitializedVariablesFact
   applyTransfer(const transfer_t &T,
-                const UninitVariablesFact &In) const override {
+                const UninitializedVariablesFact &In) const override {
     auto *Inst = T;
-    UninitVariablesFact Out = In;
+    UninitializedVariablesFact Out = In;
     if (Inst == nullptr) {
       return Out;
     }
@@ -137,7 +141,7 @@ public:
     return Out;
   }
 
-  UninitVariablesFact initialFact() const override {
+  UninitializedVariablesFact initialFact() const override {
     return this->bottom();
   }
 
@@ -147,8 +151,9 @@ private:
   llvm::AssumptionCache *AC = nullptr;
   llvm::DominatorTree *DT = nullptr;
   std::unordered_map<const llvm::Value *, const llvm::Value *> BaseCache;
-  std::unordered_map<const llvm::Value *, UninitVariablesFact> BaseClear;
-  std::unordered_map<const llvm::Value *, UninitVariablesFact> AliasClear;
+  std::unordered_map<const llvm::Value *, UninitializedVariablesFact> BaseClear;
+  std::unordered_map<const llvm::Value *, UninitializedVariablesFact>
+      AliasClear;
   std::unordered_set<const llvm::StoreInst *> GuaranteedInitialized;
 
   void buildTransferCache(llvm::Function *F) {
@@ -169,8 +174,8 @@ private:
         for (auto &Op : I.operands())
           Record(Op.get());
         if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I)) {
-          if (llvm::isGuaranteedNotToBeUndefOrPoison(
-                  Store->getValueOperand(), AC, Store, DT))
+          if (llvm::isGuaranteedNotToBeUndefOrPoison(Store->getValueOperand(),
+                                                     AC, Store, DT))
             GuaranteedInitialized.insert(Store);
         }
       }
@@ -212,9 +217,9 @@ private:
       for (auto *Candidate : Values) {
         if (Candidate == nullptr || !Candidate->getType()->isPointerTy())
           continue;
-        llvm::MemoryLocation CandLoc(
-            Candidate, llvm::LocationSize::beforeOrAfterPointer(),
-            llvm::AAMDNodes());
+        llvm::MemoryLocation CandLoc(Candidate,
+                                     llvm::LocationSize::beforeOrAfterPointer(),
+                                     llvm::AAMDNodes());
         if (AA->alias(StoreLoc, CandLoc) != llvm::AliasResult::NoAlias)
           Kill.insert(Candidate);
       }
@@ -242,7 +247,7 @@ private:
     return V;
   }
 
-  void clearAliasUninit(UninitVariablesFact &Out,
+  void clearAliasUninit(UninitializedVariablesFact &Out,
                         const llvm::Value *Ptr) const {
     auto *Base = getBaseObject(Ptr);
     auto *Norm = Base != nullptr ? Base : Ptr;
@@ -253,12 +258,14 @@ private:
       Out.erase(const_cast<llvm::Value *>(Norm));
   }
 
-  void markAliasUninit(UninitVariablesFact &Out, llvm::Value *Ptr) const {
+  void markAliasUninit(UninitializedVariablesFact &Out,
+                       llvm::Value *Ptr) const {
     auto *Norm = normalizePointer(Ptr);
     Out.insert(Norm);
   }
 
-  void clearAliasSetUninit(UninitVariablesFact &Out, llvm::Value *Ptr) const {
+  void clearAliasSetUninit(UninitializedVariablesFact &Out,
+                           llvm::Value *Ptr) const {
     if (AA == nullptr || Ptr == nullptr) {
       return;
     }
@@ -272,7 +279,7 @@ private:
   }
 
   void handleMemIntrinsics(llvm::CallBase *Call,
-                           UninitVariablesFact &Out) const {
+                           UninitializedVariablesFact &Out) const {
     auto *Callee = Call->getCalledFunction();
     if (isMemIntrinsic(Callee, llvm::Intrinsic::memset)) {
       if (Call->arg_size() >= 2) {
@@ -304,29 +311,28 @@ private:
 
 } // namespace
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  EliminationOptions Opts) {
-  return runIntraElimUninitVariables(F, nullptr, Opts);
+UninitializedVariablesResult
+runIntraElimUninitializedVariables(llvm::Function *F, EliminationOptions Opts) {
+  return runIntraElimUninitializedVariables(F, nullptr, Opts);
 }
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  llvm::AAResults *AA,
-                                                  EliminationOptions Opts) {
-  return runIntraElimUninitVariables(F, AA, nullptr, nullptr, Opts);
+UninitializedVariablesResult
+runIntraElimUninitializedVariables(llvm::Function *F, llvm::AAResults *AA,
+                                   EliminationOptions Opts) {
+  return runIntraElimUninitializedVariables(F, AA, nullptr, nullptr, Opts);
 }
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  llvm::AAResults *AA,
-                                                  llvm::AssumptionCache *AC,
-                                                  llvm::DominatorTree *DT,
-                                                  EliminationOptions Opts) {
+UninitializedVariablesResult runIntraElimUninitializedVariables(
+    llvm::Function *F, llvm::AAResults *AA, llvm::AssumptionCache *AC,
+    llvm::DominatorTree *DT, EliminationOptions Opts) {
   if (F == nullptr || F->isDeclaration()) {
-    return UninitVariablesResult{};
+    return UninitializedVariablesResult{};
   }
 
-  ElimUninitVariablesProblem Problem(F, AA, AC, DT);
-  IntraEliminationSolver<LLVMAnalysisTypes<UninitVariablesFact, UninitializedVariablesDomain>> Solver(
-      Problem, Opts);
+  ElimUninitializedVariablesProblem Problem(F, AA, AC, DT);
+  IntraEliminationSolver<LLVMAnalysisTypes<UninitializedVariablesFact,
+                                           UninitializedVariablesDomain>>
+      Solver(Problem, Opts);
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   Out.setSolveMetadata(Status, Solver.getDiagnostics());

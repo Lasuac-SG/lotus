@@ -20,7 +20,10 @@ Implementation Layout
 * ``Solver/`` contains the intra/inter solvers and call-string engine.
 * ``LLVM/`` contains LLVM problem interfaces and solver-facing analysis types.
 * ``Domains/`` contains named abstract fact domains.
-* ``Analyses/Intra/`` and ``Analyses/Inter/`` contain concrete clients.
+* ``Analyses/Intra/`` and ``Analyses/Inter/`` contain matching sets of eight
+  concrete clients: available expressions, constant propagation, full
+  constant propagation, live variables, reachability, reaching definitions,
+  taint analysis, and uninitialized variables.
 * ``Container/`` and ``Support/`` provide reusable fact containers, results,
   diagnostics, and soundness metadata.
 
@@ -67,7 +70,7 @@ Example Analyses
 Live Variables (SSA)
 --------------------
 
-``runLiveVariablesAnalysis`` implements a **backward liveness analysis**
+``runIntraMonoLiveVariables`` implements a **backward liveness analysis**
 for SSA registers:
 
 * **Direction**: backward.
@@ -82,7 +85,7 @@ for SSA registers:
 Reachable Instructions
 ----------------------
 
-``runReachableAnalysis`` is another client that computes which
+``runIntraMonoReachability`` is another client that computes which
 instructions are **reachable in the future**:
 
 * **Direction**: backward.
@@ -96,4 +99,3 @@ instructions are **reachable in the future**:
 
 Both examples show how to express standard gen–kill problems while
 delegating the fixed-point iteration to ``IntraMonoSolver``.
-

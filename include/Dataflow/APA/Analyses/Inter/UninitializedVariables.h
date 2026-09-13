@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTER_UNINITIALIZEDVARIABLES_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTER_UNINITIALIZEDVARIABLES_H_
+#pragma once
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumptionCache.h"
@@ -13,23 +12,21 @@
 
 namespace elimination {
 
-constexpr unsigned kDefaultInterElimUninitVariablesCallStringLength = 2;
+constexpr unsigned kDefaultInterElimUninitializedVariablesCallStringLength = 2;
 
-using InterUninitVariablesResult =
-    InterDataFlowResultT<kDefaultInterElimUninitVariablesCallStringLength,
-                         UninitVariablesFact, llvm::Instruction *>;
+using InterUninitializedVariablesResult = InterDataFlowResultT<
+    kDefaultInterElimUninitializedVariablesCallStringLength,
+    UninitializedVariablesFact, llvm::Instruction *>;
 
-InterUninitVariablesResult runInterElimUninitVariables(
+InterUninitializedVariablesResult runInterElimUninitializedVariables(
     llvm::Function *Entry, llvm::AAResults *AA = nullptr,
     llvm::AssumptionCache *AC = nullptr, llvm::DominatorTree *DT = nullptr,
     const dataflow::controlflow::InterCFG *ICF = nullptr);
 
-InterUninitVariablesResult runInterSummaryElimUninitVariables(
+InterUninitializedVariablesResult runInterSummaryElimUninitializedVariables(
     llvm::Function *Entry, llvm::AAResults *AA = nullptr,
     llvm::AssumptionCache *AC = nullptr, llvm::DominatorTree *DT = nullptr,
     const dataflow::controlflow::InterCFG *ICF = nullptr,
     PathSummaryEquationOptions Options = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTER_UNINITIALIZEDVARIABLES_H_

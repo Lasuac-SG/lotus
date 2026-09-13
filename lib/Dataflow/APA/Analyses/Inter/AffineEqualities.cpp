@@ -4,7 +4,7 @@
  */
 #include "Dataflow/APA/Analyses/Inter/AffineEqualities.h"
 
-#include "Dataflow/APA/Analyses/Inter/FlowHelpers.h"
+#include "FlowHelpers.h"
 #include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Solver/InterSolver.h"
 
@@ -1060,7 +1060,7 @@ public:
   using transfer_t = typename AffineInterAnalysisTypes::transfer_t;
 
   explicit InterAffineEqualitiesProblem(
-      llvm::Module &M, InterAffineEqualities::VocabularyMode VocabularyMode,
+      llvm::Module &M, InterAffineVocabularyMode VocabularyMode,
       std::size_t MaxTrackedValues,
       const dataflow::controlflow::InterCFG *ICF = nullptr)
       : LLVMInterEliminationProblem<AffineInterAnalysisTypes>(
@@ -1157,7 +1157,7 @@ private:
   std::unordered_map<const llvm::Function *, std::vector<const llvm::Value *>>
       FunctionLocals;
   std::vector<const llvm::Value *> EmptyLocals;
-  InterAffineEqualities::VocabularyMode VocabularyMode;
+  InterAffineVocabularyMode VocabularyMode;
   std::size_t MaxTrackedValues = 0;
 
   static std::vector<llvm::Function *> findEntryPoints(llvm::Module &M) {
@@ -1215,7 +1215,7 @@ private:
       }
     }
 
-    if (VocabularyMode == InterAffineEqualities::VocabularyMode::AllScalars) {
+    if (VocabularyMode == InterAffineVocabularyMode::AllScalars) {
       for (const auto &F : M) {
         if (F.isDeclaration() || !Reachable.count(&F))
           continue;
@@ -1264,7 +1264,7 @@ private:
             auto *Callee = Call->getCalledFunction();
             if (Callee == nullptr || Callee->isDeclaration())
               continue;
-            auto Formal = Callee->arg_begin();
+            auto *Formal = Callee->arg_begin();
             for (unsigned Index = 0;
                  Index < Call->arg_size() && Formal != Callee->arg_end();
                  ++Index, ++Formal) {
@@ -1947,8 +1947,8 @@ materializeAffineExpressions(const AffineRelationDomain::value_type &relation) {
   return materializeAffineExpressionsImpl(relation);
 }
 
-InterAffineEqualities::Result InterAffineEqualities::run(llvm::Module &M,
-                                                         Options options) {
+InterAffineEqualitiesResult runInterElimAffineEqualities(llvm::Module &M,
+    InterAffineEqualitiesOptions options) {
   (void)options.verbose;
   using Solver =
       InterEliminationSolver<AffineInterAnalysisTypes,
@@ -1965,7 +1965,7 @@ InterAffineEqualities::Result InterAffineEqualities::run(llvm::Module &M,
                  << "\n";
   Solver SolverInstance(Problem);
 
-  Result Out;
+  InterAffineEqualitiesResult Out;
   Out.trackedValues = Problem.vocabularySize();
   auto Status = SolverInstance.solve();
   Out.status = Status;
@@ -1991,7 +1991,7 @@ InterAffineEqualities::Result InterAffineEqualities::run(llvm::Module &M,
       }
     }
     if (HaveSummary)
-      Out.summaries.emplace(FunctionKey{&F}, std::move(Summary));
+      Out.summaries.emplace(AffineFunctionKey{&F}, std::move(Summary));
 
     for (auto &BB : F) {
       auto *EntryInst = BB.empty() ? nullptr : &*BB.begin();
@@ -2026,7 +2026,8 @@ InterAffineEqualities::Result InterAffineEqualities::run(llvm::Module &M,
         }
       }
       if (HaveBlock)
-        Out.blockRelations.emplace(BlockKey{&BB}, std::move(BlockRelation));
+        Out.blockRelations.emplace(AffineBlockKey{&BB},
+                                   std::move(BlockRelation));
     }
   }
   return Out;

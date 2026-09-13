@@ -87,8 +87,8 @@ TEST(APADomain, SignDomainSatisfiesJoinSemilatticeLaws) {
 
 TEST(APADomain, UninitializedVariablesIsAMayUnionDomain) {
   elimination::UninitializedVariablesDomain Domain;
-  elimination::UninitVariablesFact X;
-  elimination::UninitVariablesFact Y;
+  elimination::UninitializedVariablesFact X;
+  elimination::UninitializedVariablesFact Y;
   auto *A = reinterpret_cast<llvm::Value *>(std::uintptr_t{1});
   auto *B = reinterpret_cast<llvm::Value *>(std::uintptr_t{2});
   X.insert(A);

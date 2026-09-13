@@ -1,5 +1,4 @@
-#ifndef LOTUS_DATAFLOW_MONO_ANALYSES_INTER_TAINT_H_
-#define LOTUS_DATAFLOW_MONO_ANALYSES_INTER_TAINT_H_
+#pragma once
 
 #include "Dataflow/Mono/Container/Traits.h"
 #include "Dataflow/Mono/Domains/TaintDomain.h"
@@ -8,8 +7,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <string>
-#include <unordered_set>
 
 namespace llvm {
 class Function;
@@ -18,14 +15,6 @@ class Value;
 } // namespace llvm
 
 namespace mono {
-
-struct InterMonoTaintConfig {
-  std::unordered_set<std::string> SourceFunctions;
-  std::unordered_set<std::string> SinkFunctions;
-  std::unordered_set<std::string> SanitizerFunctions;
-  bool SeedEntryArguments = false;
-  bool TaintPointerArgsFromSources = true;
-};
 
 struct InterMonoTaintReport {
   std::map<llvm::Instruction *, std::set<llvm::Value *>> Leaks;
@@ -42,10 +31,7 @@ struct InterMonoTaintAnalysisResult {
 };
 
 // Interprocedural taint analysis (call-string length is fixed at 2).
-InterMonoTaintAnalysisResult
-runInterMonoTaintAnalysis(llvm::Function *Entry,
-                          const InterMonoTaintConfig &Config);
+InterMonoTaintAnalysisResult runInterMonoTaint(llvm::Function *Entry,
+                                               const MonoTaintConfig &Config);
 
 } // namespace mono
-
-#endif // LOTUS_DATAFLOW_MONO_ANALYSES_INTER_TAINT_H_

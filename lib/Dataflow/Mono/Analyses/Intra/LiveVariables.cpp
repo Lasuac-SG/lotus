@@ -58,7 +58,7 @@ public:
 } // namespace
 
 // SSA register liveness analysis
-std::unique_ptr<DataFlowResult> runLiveVariablesAnalysis(Function *f,
+std::unique_ptr<DataFlowResult> runIntraMonoLiveVariables(Function *f,
                                                          const DebugConfig &DebugCfg) {
   if (f == nullptr || f->isDeclaration()) {
     return nullptr;

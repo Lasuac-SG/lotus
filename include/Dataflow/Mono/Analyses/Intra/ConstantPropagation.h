@@ -13,7 +13,8 @@ class Instruction;
 
 namespace mono {
 
-using ConstantPropagationSolver = IntraMonoSolver<ConstantPropagationAnalysisTypes>;
+using ConstantPropagationSolver =
+    IntraMonoSolver<ConstantPropagationAnalysisTypes>;
 
 std::unordered_map<llvm::Instruction *, ConstantPropagationMap>
 runIntraMonoConstantPropagation(llvm::Function *F,

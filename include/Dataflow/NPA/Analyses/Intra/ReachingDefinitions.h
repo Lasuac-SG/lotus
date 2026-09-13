@@ -1,5 +1,4 @@
-#ifndef NPA_REACHING_DEFINITIONS_H
-#define NPA_REACHING_DEFINITIONS_H
+#pragma once
 
 #include "Dataflow/NPA/LLVM/BitVectorSolver.h"
 
@@ -19,5 +18,3 @@ public:
 };
 
 } // namespace npa
-
-#endif // NPA_REACHING_DEFINITIONS_H

@@ -25,7 +25,7 @@ TEST_F(APATest, LLVMReachabilitySkipsUnreachableBlock) {
   auto *F = Module->getFunction("test");
   ASSERT_NE(F, nullptr);
 
-  auto Result = elimination::runIntraElimReachable(F);
+  auto Result = elimination::runIntraElimReachability(F);
   ASSERT_TRUE(Result.hasSolveMetadata());
   EXPECT_EQ(Result.solveStatus(), elimination::SolveStatus::Ok);
 

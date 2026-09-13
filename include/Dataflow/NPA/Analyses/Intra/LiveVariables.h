@@ -1,5 +1,4 @@
-#ifndef NPA_LIVE_VARIABLES_H
-#define NPA_LIVE_VARIABLES_H
+#pragma once
 
 #include "Dataflow/NPA/LLVM/BitVectorSolver.h"
 
@@ -16,5 +15,3 @@ public:
 };
 
 } // namespace npa
-
-#endif // NPA_LIVE_VARIABLES_H

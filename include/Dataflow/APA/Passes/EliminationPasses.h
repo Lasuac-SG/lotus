@@ -15,10 +15,10 @@
 
 namespace elimination {
 
-class ElimReachablePass final : public llvm::FunctionPass {
+class ElimReachabilityPass final : public llvm::FunctionPass {
 public:
   static char ID;
-  ElimReachablePass() : llvm::FunctionPass(ID) {}
+  ElimReachabilityPass() : llvm::FunctionPass(ID) {}
 
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
   bool runOnFunction(llvm::Function &F) override;
@@ -26,10 +26,10 @@ public:
     return "Elimination Reachability";
   }
 
-  const ReachableResult &getResult() const { return Result; }
+  const ReachabilityResult &getResult() const { return Result; }
 
 private:
-  ReachableResult Result;
+  ReachabilityResult Result;
 };
 
 class ElimConstantPropagationPass final : public llvm::FunctionPass {
@@ -83,10 +83,10 @@ private:
   AvailableExpressionsResult Result;
 };
 
-class ElimUninitVariablesPass final : public llvm::FunctionPass {
+class ElimUninitializedVariablesPass final : public llvm::FunctionPass {
 public:
   static char ID;
-  ElimUninitVariablesPass() : llvm::FunctionPass(ID) {}
+  ElimUninitializedVariablesPass() : llvm::FunctionPass(ID) {}
 
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
   bool runOnFunction(llvm::Function &F) override;
@@ -94,10 +94,10 @@ public:
     return "Elimination Uninitialized Variables";
   }
 
-  const UninitVariablesResult &getResult() const { return Result; }
+  const UninitializedVariablesResult &getResult() const { return Result; }
 
 private:
-  UninitVariablesResult Result;
+  UninitializedVariablesResult Result;
 };
 
 class ElimLocksetPass final : public llvm::FunctionPass {
@@ -130,10 +130,10 @@ private:
   NonNullResult Result;
 };
 
-class ElimSignAnalysisPass final : public llvm::FunctionPass {
+class ElimSignPass final : public llvm::FunctionPass {
 public:
   static char ID;
-  ElimSignAnalysisPass() : llvm::FunctionPass(ID) {}
+  ElimSignPass() : llvm::FunctionPass(ID) {}
 
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
   bool runOnFunction(llvm::Function &F) override;
@@ -141,10 +141,10 @@ public:
     return "Elimination Sign Analysis";
   }
 
-  const SignAnalysisResult &getResult() const { return Result; }
+  const SignResult &getResult() const { return Result; }
 
 private:
-  SignAnalysisResult Result;
+  SignResult Result;
 };
 
 } // namespace elimination

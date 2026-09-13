@@ -27,7 +27,7 @@ TEST(InterAffineEqualities, TransferSymbolicRelationsAcrossCall) {
   auto *Y = &*YIt;
   auto *A = &*Caller->arg_begin();
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto relations =
       relationsForBlock(result.blockRelations, &Sink->getEntryBlock());
   ASSERT_EQ(relations.size(), 1u);
@@ -85,7 +85,7 @@ TEST(InterAffineEqualities, PreservesCallerLocalEffectAcrossResolvedCall) {
   ASSERT_NE(NextIt, Caller->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -123,7 +123,7 @@ TEST(InterAffineEqualities, ExposesEqualityBasisRows) {
   auto *Y = &*YIt;
   auto *A = &*Caller->arg_begin();
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations,
                                                  &Sink->getEntryBlock());
   ASSERT_EQ(states.size(), 1u);
@@ -168,7 +168,7 @@ TEST(InterAffineEqualities, DefaultSwitchRemainsUnrefinedByDisequality) {
   ASSERT_NE(DefaultIt, Main->end());
   auto *Default = &*DefaultIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states =
       materializedAffineStatesForBlock(result.blockRelations, Default);
   ASSERT_EQ(states.size(), 1u);
@@ -209,7 +209,7 @@ TEST(InterAffineEqualities, CastAndSelectUseKnownConditionValue) {
   ASSERT_NE(NextIt, Main->end());
   auto *Next = &*NextIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Next);
   ASSERT_EQ(states.size(), 1u);
 
@@ -257,7 +257,7 @@ TEST(InterAffineEqualities, PhiKeepsBranchConditionAtMerge) {
   auto *X = findInstructionByName(*Main, "x");
   ASSERT_NE(X, nullptr);
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto states = materializedAffineStatesForBlock(result.blockRelations, Merge);
   ASSERT_EQ(states.size(), 1u);
 
@@ -299,7 +299,7 @@ TEST(InterAffineEqualities, SwitchOnAffineConstantRoutesToTakenCase) {
   ASSERT_NE(DefaultIt, Main->end());
   auto *Default = &*DefaultIt;
 
-  auto result = elimination::InterAffineEqualities::run(*module);
+  auto result = elimination::runInterElimAffineEqualities(*module);
   auto caseRelations = relationsForBlock(result.blockRelations, Case8);
   ASSERT_EQ(caseRelations.size(), 1u);
   EXPECT_FALSE(caseRelations.front()->bottom);
@@ -322,10 +322,9 @@ TEST(InterAffineEqualities, ObservableVocabularyHonorsTrackingBudget) {
   )");
   ASSERT_NE(module, nullptr);
 
-  elimination::InterAffineEqualities::Options options(
-      elimination::InterAffineEqualities::VocabularyMode::ObservableSlice,
-      false, 2);
-  auto result = elimination::InterAffineEqualities::run(*module, options);
+  elimination::InterAffineEqualitiesOptions options(
+      elimination::InterAffineVocabularyMode::ObservableSlice, false, 2);
+  auto result = elimination::runInterElimAffineEqualities(*module, options);
   EXPECT_EQ(result.status, elimination::SolveStatus::Ok);
   EXPECT_EQ(result.trackedValues, 2u);
 }

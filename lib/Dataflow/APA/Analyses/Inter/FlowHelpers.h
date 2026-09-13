@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_ANALYSES_INTER_FLOWHELPERS_H_
-#define DATAFLOW_APA_ANALYSES_INTER_FLOWHELPERS_H_
+#pragma once
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
@@ -58,5 +57,3 @@ template <typename FactT> void copyStoreFacts(const FactT &In, FactT &Out) {
 
 } // namespace llvm_inter
 } // namespace elimination
-
-#endif // DATAFLOW_APA_ANALYSES_INTER_FLOWHELPERS_H_

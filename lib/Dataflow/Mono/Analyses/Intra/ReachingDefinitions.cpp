@@ -64,7 +64,7 @@ public:
 // Public API
 // ============================================================================
 
-std::unique_ptr<DataFlowResult> runReachingDefinitionsAnalysis(Function *F) {
+std::unique_ptr<DataFlowResult> runIntraMonoReachingDefinitions(Function *F) {
   if (F == nullptr || F->isDeclaration()) {
     return nullptr;
   }
@@ -108,10 +108,10 @@ std::unique_ptr<DataFlowResult> runReachingDefinitionsAnalysis(Function *F) {
 }
 
 std::unique_ptr<DataFlowResult>
-runReachingDefinitionsAnalysisBitVector(Function *F) {
+runIntraMonoReachingDefinitionsBitVector(Function *F) {
   // For now, same as regular version - framework can optimize internally
   // In the future, this could use BitVectorContainer explicitly if needed
-  return runReachingDefinitionsAnalysis(F);
+  return runIntraMonoReachingDefinitions(F);
 }
 
 } // namespace mono

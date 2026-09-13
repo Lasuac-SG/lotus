@@ -209,7 +209,12 @@ The core headers implement the algorithms from Esparza et al. (JACM) and Reps et
   engines uniformly encode one equation per basic block plus a function-summary
   equation; they do not construct whole-function path expressions.
 * **Domains/**: Concrete semiring and transformer domains.
-* **Analyses/Intra/** and **Analyses/Inter/**: Concrete LLVM analysis clients.
+* **Analyses/Intra/** and **Analyses/Inter/**: Matching sets of eight concrete
+  LLVM clients: constant propagation, interval analysis, live variables,
+  maybe-uninitialized values, nullability, reachable blocks, reaching
+  definitions, and taint analysis.
+* **LLVM/IntraEngine.h**: Intraprocedural equation construction for the same
+  transformer domains used by the forward interprocedural engine.
 
 Usage Notes
 ===========

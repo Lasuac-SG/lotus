@@ -1,5 +1,4 @@
-#ifndef LOTUS_DATAFLOW_MONO_ANALYSES_INTER_CONSTANTPROPAGATION_H_
-#define LOTUS_DATAFLOW_MONO_ANALYSES_INTER_CONSTANTPROPAGATION_H_
+#pragma once
 
 #include "Dataflow/Mono/Domains/ConstantPropagationDomain.h"
 #include "Dataflow/Mono/Solver/CallStringSolver.h"
@@ -26,5 +25,3 @@ InterMonoConstantPropagationAnalysisResult
 runInterMonoConstantPropagation(llvm::Function *Entry);
 
 } // namespace mono
-
-#endif // LOTUS_DATAFLOW_MONO_ANALYSES_INTER_CONSTANTPROPAGATION_H_

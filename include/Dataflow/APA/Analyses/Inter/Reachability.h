@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHABILITY_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHABILITY_H_
+#pragma once
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
@@ -11,25 +10,23 @@ namespace elimination {
 
 constexpr unsigned kDefaultInterElimReachabilityCallStringLength = 2;
 
-using InterReachableResult =
+using InterReachabilityResult =
     InterDataFlowResultT<kDefaultInterElimReachabilityCallStringLength,
                          ReachableFact, llvm::Instruction *>;
 
-InterReachableResult
-runInterElimReachable(llvm::Function *Entry,
-                      const dataflow::controlflow::InterCFG *ICF = nullptr);
+InterReachabilityResult
+runInterElimReachability(llvm::Function *Entry,
+                         const dataflow::controlflow::InterCFG *ICF = nullptr);
 
-InterReachableResult runInterSummaryElimReachable(
+InterReachabilityResult runInterSummaryElimReachability(
     llvm::Function *Entry, const dataflow::controlflow::InterCFG *ICF = nullptr,
     PathSummaryEquationOptions Options = {});
 
 // Modular (E6) variant: builds per-procedure summaries and interprets them with
 // a context-insensitive (functional) fixpoint. Opt-in alternative to the
 // whole-program ForwardInterSummarySolver above.
-InterReachableResult runModularInterReachable(
+InterReachabilityResult runModularInterReachability(
     llvm::Function *Entry, const dataflow::controlflow::InterCFG *ICF = nullptr,
     PathSummaryEquationOptions Options = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHABILITY_H_

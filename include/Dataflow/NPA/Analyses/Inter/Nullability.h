@@ -1,5 +1,4 @@
-#ifndef NPA_INTERPROC_NULLABILITY_H
-#define NPA_INTERPROC_NULLABILITY_H
+#pragma once
 
 #include "Dataflow/NPA/Domains/TaintDomain.h"
 #include "Dataflow/NPA/LLVM/AnalysisSupport.h"
@@ -62,5 +61,3 @@ public:
 };
 
 } // namespace npa
-
-#endif // NPA_INTERPROC_NULLABILITY_H

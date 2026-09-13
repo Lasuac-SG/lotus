@@ -42,9 +42,10 @@ class InterMonoTaintProblem : public InterMonoProblem<TaintAnalysisTypes> {
 public:
   using mono_container_t = typename TaintAnalysisTypes::mono_container_t;
 
-  InterMonoTaintProblem(Function *Entry, const InterMonoTaintConfig &Config,
+  InterMonoTaintProblem(Function *Entry, const MonoTaintConfig &Config,
                         lotus::AliasAnalysisWrapper *AA)
-      : InterMonoProblem<TaintAnalysisTypes>({Entry}, AA), Config(Config), AA(AA) {}
+      : InterMonoProblem<TaintAnalysisTypes>({Entry}, AA), Config(Config),
+        AA(AA) {}
 
   mono_container_t normalFlow(Instruction *Inst,
                               const mono_container_t &In) override {
@@ -157,7 +158,8 @@ public:
     if (!Callees.empty()) {
       return Callees;
     }
-    return InterMonoProblem<TaintAnalysisTypes>::resolve_indirect_callees(CallSite);
+    return InterMonoProblem<TaintAnalysisTypes>::resolve_indirect_callees(
+        CallSite);
   }
 
   const InterMonoTaintReport &getReport() const { return Report; }
@@ -298,11 +300,10 @@ private:
 
   void recordSinkLeak(CallBase *Call, ArrayRef<Function *> Callees,
                       const mono_container_t &In) {
-    if (Call == nullptr ||
-        !std::any_of(Callees.begin(), Callees.end(),
-                     [this](const Function *Callee) {
-                       return isSinkFunction(Callee);
-                     })) {
+    if (Call == nullptr || !std::any_of(Callees.begin(), Callees.end(),
+                                        [this](const Function *Callee) {
+                                          return isSinkFunction(Callee);
+                                        })) {
       return;
     }
     for (auto &Arg : Call->args()) {
@@ -374,18 +375,17 @@ private:
       }
     }
 
-    if (!Callees.empty() &&
-        std::all_of(Callees.begin(), Callees.end(),
-                    [this](const Function *Callee) {
-                      return isSanitizerFunction(Callee);
-                    })) {
+    if (!Callees.empty() && std::all_of(Callees.begin(), Callees.end(),
+                                        [this](const Function *Callee) {
+                                          return isSanitizerFunction(Callee);
+                                        })) {
       sanitizeCallResult(Call, Out);
     }
 
     return Out;
   }
 
-  const InterMonoTaintConfig &Config;
+  const MonoTaintConfig &Config;
   InterMonoTaintReport Report;
   lotus::AliasAnalysisWrapper *AA;
 };
@@ -393,7 +393,7 @@ private:
 } // namespace
 
 InterMonoTaintAnalysisResult
-runInterMonoTaintAnalysis(Function *Entry, const InterMonoTaintConfig &Config) {
+runInterMonoTaint(Function *Entry, const MonoTaintConfig &Config) {
   InterMonoTaintAnalysisResult Result;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Result;
@@ -405,7 +405,8 @@ runInterMonoTaintAnalysis(Function *Entry, const InterMonoTaintConfig &Config) {
                       lotus::AAConfig::ContextSensitivity::None, 0, true,
                       lotus::AAConfig::Solver::Default));
   InterMonoTaintProblem Problem(Entry, Config, AA.get());
-  InterMonoSolver<TaintAnalysisTypes, kDefaultTaintCallStringLength> Solver(Problem);
+  InterMonoSolver<TaintAnalysisTypes, kDefaultTaintCallStringLength> Solver(
+      Problem);
   Solver.solve();
 
   if (auto *Raw = Solver.getResults()) {

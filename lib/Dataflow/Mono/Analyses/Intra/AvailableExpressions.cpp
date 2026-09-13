@@ -151,7 +151,7 @@ static std::map<AvailableExpression, Instruction *> buildExprToInstMap(Function 
 // Public API
 // ============================================================================
 
-std::unique_ptr<DataFlowResult> runAvailableExpressionsAnalysis(Function *F) {
+std::unique_ptr<DataFlowResult> runIntraMonoAvailableExpressions(Function *F) {
   if (F == nullptr || F->isDeclaration()) {
     return nullptr;
   }

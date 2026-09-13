@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTER_LOCKSET_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTER_LOCKSET_H_
+#pragma once
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
@@ -25,5 +24,3 @@ runInterSummaryElimLockset(llvm::Function *Entry,
                            PathSummaryEquationOptions Options = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTER_LOCKSET_H_

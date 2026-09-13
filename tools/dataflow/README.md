@@ -34,8 +34,8 @@ bitcode, run multiple engines, and compare their outputs to find discrepancies.
 
 | Analysis        | Elimination | Mono | WPDS |
 |----------------|-------------|------|------|
-| Reachable      | `-elim-reachable` | `runReachableAnalysis` | — |
-| Uninit vars    | `-elim-uninit` | `runUninitVariablesAnalysis` | `runUninitializedVariablesAnalysis` |
+| Reachable      | `-elim-reachable` | `runIntraMonoReachability` | — |
+| Uninit vars    | `-elim-uninit` | `runIntraMonoUninitializedVariables` | `runUninitializedVariablesAnalysis` |
 | Reaching defs  | `-elim-rd`  | —    | —    |
 | Constant prop  | `-elim-constprop` | (Inter)Mono constant prop | WPDS constant prop |
 

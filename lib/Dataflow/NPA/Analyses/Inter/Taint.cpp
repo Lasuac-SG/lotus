@@ -7,6 +7,7 @@
 #include "Alias/Infrastructure/AliasAnalysisWrapper/AliasAnalysisWrapper.h"
 #include "Annotation/Taint/TaintConfigManager.h"
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
+#include "Dataflow/NPA/LLVM/IntraEngine.h"
 
 #include <algorithm>
 #include <functional>
@@ -1921,5 +1922,75 @@ InterTaint::run(llvm::Module &M, lotus::AliasAnalysisWrapper &aliasAnalysis,
   options.newton_round_strategy = roundStrategy;
   return run(M, aliasAnalysis, options, verbose, linearStrategy);
 }
+
+namespace detail {
+
+InterTaint::Result runIntraTaint(llvm::Function &F,
+                                 lotus::AliasAnalysisWrapper &aliasAnalysis,
+                                 const InterTaint::Options &options,
+                                 bool verbose, LinearStrategy linearStrategy) {
+  const bool configLoaded =
+      options.taint_config_path.empty()
+          ? taint_config::load_default_config()
+          : taint_config::load_config(options.taint_config_path);
+  if (!configLoaded) {
+    InterTaint::Result result;
+    result.status.configuration_error = true;
+    result.status.approximated = true;
+    result.status.overall_converged = false;
+    return result;
+  }
+
+  if (linearStrategy == LinearStrategy::TensorProduct)
+    linearStrategy = LinearStrategy::SCC;
+  TaintAnalysis analysis(*F.getParent(), aliasAnalysis, options);
+  if (analysis.hasUnsupportedSpecs() && options.fail_on_unsupported_specs) {
+    InterTaint::Result result;
+    result.status.unsupported_specs = true;
+    result.status.approximated = true;
+    result.status.overall_converged = false;
+    return result;
+  }
+
+  auto engineResult = IntraEngine<TaintTransformer, TaintAnalysis>::run(
+      F, analysis, verbose, linearStrategy, options.newton_round_strategy);
+  InterTaint::Result result;
+  result.status = engineResult.status;
+  result.summaries[{&F}] = std::move(engineResult.summary);
+  result.blockFacts = std::move(engineResult.blockEntryFacts);
+  result.blockExitFacts = std::move(engineResult.blockExitFacts);
+  result.valueBits = analysis.getValueBits();
+  result.pointerMemoryBits = analysis.buildPointerMemoryBits();
+  result.reachablePointerMemoryBits =
+      analysis.buildReachablePointerMemoryBits();
+  result.blockReachablePointerMemoryBits =
+      analysis.buildFlowSensitiveReachablePointerMemoryBits();
+
+  const std::unordered_map<const llvm::Function *, TaintTransformer::value_type>
+      noSummaries;
+  for (auto &BB : F) {
+    auto FactIt = result.blockFacts.find(BlockKey{&BB});
+    if (FactIt == result.blockFacts.end())
+      continue;
+    auto current = FactIt->second;
+    for (auto &I : BB) {
+      if (auto *Call = llvm::dyn_cast<llvm::CallBase>(&I)) {
+        auto transfer = analysis.buildCallTransfer(*Call, noSummaries);
+        auto post = TaintTransformer::apply(transfer, current);
+        auto inputs = analysis.triggeredSinkInputs(*Call, current, post);
+        if (!inputs.empty())
+          result.sinkHits.push_back({Call, std::move(inputs)});
+        current = std::move(post);
+      } else {
+        current =
+            TaintTransformer::apply(analysis.buildNormalTransfer(I), current);
+      }
+    }
+    result.blockExitFacts[{&BB}] = std::move(current);
+  }
+  return result;
+}
+
+} // namespace detail
 
 } // namespace npa

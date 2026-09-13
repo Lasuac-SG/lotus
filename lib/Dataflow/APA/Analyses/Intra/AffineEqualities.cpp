@@ -1,4 +1,4 @@
-#include "Dataflow/APA/Analyses/Intra/IntraAffineEqualities.h"
+#include "Dataflow/APA/Analyses/Intra/AffineEqualities.h"
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/InstIterator.h"
@@ -164,14 +164,15 @@ AffineFact instructionTransfer(const llvm::Instruction &I) {
   return D::makeForget(&I);
 }
 
-// --- Memoizing (transformer-composition) interpreter --------------------------
-// Instead of the generic tree-walking eval (cost ∝ expanded tree, which blows
-// up on real affine functions), compute each unique path-expression DAG node's
-// transformer exactly once (memoized by Expr pointer) and combine bottom-up.
-// Cost ∝ unique DAG nodes. Because the affine domain is a Kleene algebra of
-// transformers and initialFact() is the compositional unit (identity), the node
-// transformer IS the IN relation, so IN(node) = T(ExprTo(node)) — identical to
-// the tree eval but without recomputing shared subexpressions.
+// --- Memoizing (transformer-composition) interpreter
+// -------------------------- Instead of the generic tree-walking eval (cost ∝
+// expanded tree, which blows up on real affine functions), compute each unique
+// path-expression DAG node's transformer exactly once (memoized by Expr
+// pointer) and combine bottom-up. Cost ∝ unique DAG nodes. Because the affine
+// domain is a Kleene algebra of transformers and initialFact() is the
+// compositional unit (identity), the node transformer IS the IN relation, so
+// IN(node) = T(ExprTo(node)) — identical to the tree eval but without
+// recomputing shared subexpressions.
 using ExprFactory = PathExprFactory<llvm::Instruction *>;
 using ExprRef = ExprFactory::Ref;
 using ExprNode = ExprFactory::Expr;
@@ -238,7 +239,8 @@ AffineFact memoTransfer(const ExprRef &E,
 // Fill every node's IN fact by memoized transformer evaluation of its optimized
 // path expression. One shared Memo across the whole batch → each unique DAG
 // node's transformer is computed once (cost ∝ unique nodes, not tree size).
-void memoInterpret(llvm::Function &F, AffineResult &Result, std::size_t Limit) {
+void memoInterpret(llvm::Function &F, AffineEqualitiesResult &Result,
+                   std::size_t Limit) {
   std::unordered_map<const ExprNode *, AffineFact> Memo;
   for (auto &I : llvm::instructions(F)) {
     ExprRef E = Result.ExprTo(&I);
@@ -264,8 +266,7 @@ public:
 
   // CFG merge / path-expression Union: affine hull (join), NOT the domain's
   // constraint-intersecting meet().
-  AffineFact join(const AffineFact &Lhs,
-                  const AffineFact &Rhs) const override {
+  AffineFact join(const AffineFact &Lhs, const AffineFact &Rhs) const override {
     return D::combine(Lhs, Rhs);
   }
 
@@ -282,9 +283,10 @@ public:
 
 } // namespace
 
-AffineResult runIntraElimAffine(llvm::Function *F, EliminationOptions Opts) {
+AffineEqualitiesResult runIntraElimAffineEqualities(llvm::Function *F,
+                                                    EliminationOptions Opts) {
   if (F == nullptr || F->isDeclaration()) {
-    return AffineResult{};
+    return AffineEqualitiesResult{};
   }
 
   // The domain is parameterized by a static vocabulary singleton; configure it
@@ -294,8 +296,7 @@ AffineResult runIntraElimAffine(llvm::Function *F, EliminationOptions Opts) {
   D::configure(&Vocab);
 
   ElimAffineProblem Problem(F);
-  IntraEliminationSolver<LLVMAnalysisTypes<AffineFact>> Solver(Problem,
-                                                              Opts);
+  IntraEliminationSolver<LLVMAnalysisTypes<AffineFact>> Solver(Problem, Opts);
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   auto Diag = Solver.getDiagnostics();

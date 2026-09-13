@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_REACHINGDEFINITIONS_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_REACHINGDEFINITIONS_H_
+#pragma once
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/MemorySSA.h"
@@ -32,13 +31,12 @@ runIntraElimReachingDefinitions(llvm::Function *F, llvm::AAResults *AA,
 // TranslAPA baseline: same front-end (path-expression DAG), but interpret each
 // summary with the closed-form Gen/Kill semiring (paper §4) instead of the
 // generic fixpoint interpreter. Records the fold time in
-// SolveDiagnostics::interp_time_us. Reaching definitions is a separable Gen/Kill
-// problem, so the mechanically-translated result equals the generic result.
+// SolveDiagnostics::interp_time_us. Reaching definitions is a separable
+// Gen/Kill problem, so the mechanically-translated result equals the generic
+// result.
 ReachingDefinitionsResult
 runIntraTranslApaReachingDefinitions(llvm::Function *F,
                                      llvm::AAResults *AA = nullptr,
                                      EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_REACHINGDEFINITIONS_H_

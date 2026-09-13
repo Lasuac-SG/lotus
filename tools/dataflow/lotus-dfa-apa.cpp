@@ -11,17 +11,21 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "Dataflow/APA/Analyses/Inter/AffineEqualities.h"
+#include "Dataflow/APA/Analyses/Inter/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Inter/ConstantPropagation.h"
+#include "Dataflow/APA/Analyses/Inter/Lockset.h"
+#include "Dataflow/APA/Analyses/Inter/NonNull.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
 #include "Dataflow/APA/Analyses/Inter/ReachingDefinitions.h"
+#include "Dataflow/APA/Analyses/Inter/Sign.h"
 #include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
+#include "Dataflow/APA/Analyses/Intra/AffineEqualities.h"
 #include "Dataflow/APA/Analyses/Intra/AvailableExpressions.h"
 #include "Dataflow/APA/Analyses/Intra/ConstantPropagation.h"
 #include "Dataflow/APA/Analyses/Intra/Lockset.h"
 #include "Dataflow/APA/Analyses/Intra/NonNull.h"
 #include "Dataflow/APA/Analyses/Intra/Reachability.h"
 #include "Dataflow/APA/Analyses/Intra/ReachingDefinitions.h"
-#include "Dataflow/APA/Analyses/Intra/IntraAffineEqualities.h"
 #include "Dataflow/APA/Analyses/Intra/Sign.h"
 #include "Dataflow/APA/Analyses/Intra/UninitializedVariables.h"
 #include "ToolSupport.h"
@@ -68,10 +72,10 @@ static cl::opt<bool> StdoutOpt(
 static cl::opt<std::string> AnalysisOpt(
     "analysis",
     cl::desc("Analysis: reachable (default), reaching_defs, uninitialized, "
-             "constant_prop, available_exprs, lockset, nonnull, sign, "
-             "inter_reaching_defs, "
-             "inter_uninitialized, inter_constant_prop, inter_reachable, "
-             "inter_affine"),
+             "constant_prop, available_exprs, affine, lockset, nonnull, sign, "
+             "inter_reaching_defs, inter_uninitialized, "
+             "inter_constant_prop, inter_available_exprs, inter_reachable, "
+             "inter_lockset, inter_nonnull, inter_sign, inter_affine"),
     cl::init("reachable"));
 static cl::opt<std::string>
     EntryFunctionOpt("entry-function",
@@ -100,24 +104,23 @@ static cl::opt<unsigned> AffineMaxTrackedOpt(
     cl::init(32));
 
 // --- EAN / Order (evaluation) configuration ---------------------------------
-static cl::opt<std::string>
-    OrderingOpt("ordering",
-                cl::desc("Pivot order for state elimination: default|cost-aware"),
-                cl::init("default"));
-static cl::opt<bool> EanOpt("ean",
-                            cl::desc("Run the EAN normalizer post-pass"),
+static cl::opt<std::string> OrderingOpt(
+    "ordering",
+    cl::desc("Pivot order for state elimination: default|cost-aware"),
+    cl::init("default"));
+static cl::opt<bool> EanOpt("ean", cl::desc("Run the EAN normalizer post-pass"),
                             cl::init(false));
 static cl::opt<bool>
     GreedyOpt("greedy",
               cl::desc("Run the Greedy one-pass simplifier post-pass"),
               cl::init(false));
-static cl::opt<bool>
-    EanMonotoneOpt("ean-monotone",
-                   cl::desc("EAN returns the input if its output has more nodes"),
-                   cl::init(false));
-static cl::opt<std::string>
-    EanLawsOpt("ean-laws", cl::desc("EAN law profile: safe|kleene"),
-               cl::init("safe"));
+static cl::opt<bool> EanMonotoneOpt(
+    "ean-monotone",
+    cl::desc("EAN returns the input if its output has more nodes"),
+    cl::init(false));
+static cl::opt<std::string> EanLawsOpt("ean-laws",
+                                       cl::desc("EAN law profile: safe|kleene"),
+                                       cl::init("safe"));
 static cl::opt<std::string>
     EanCostOpt("ean-cost",
                cl::desc("EAN extraction cost: uniform|dag (dag counts edges "
@@ -174,9 +177,10 @@ static cl::opt<bool> MemoInterpOpt(
     cl::init(false));
 static cl::opt<std::string> InterpOpt(
     "interp",
-    cl::desc("Path-expression interpreter: generic (framework eval) | translapa "
-             "(closed-form Gen/Kill semiring baseline). Applies to the reachable "
-             "and reachdef clients."),
+    cl::desc(
+        "Path-expression interpreter: generic (framework eval) | translapa "
+        "(closed-form Gen/Kill semiring baseline). Applies to the reachable "
+        "and reachdef clients."),
     cl::init("generic"));
 
 namespace {
@@ -232,9 +236,8 @@ elimination::EliminationOptions buildElimOpts() {
   Opts.EANLaws = (EanLawsOpt == "kleene")
                      ? elimination::ean::LawProfile::kleeneAlgebra()
                      : elimination::ean::LawProfile::safeMinimal();
-  Opts.EANCost = (EanCostOpt == "dag")
-                     ? elimination::ean::CostModel::dag()
-                     : elimination::ean::CostModel::uniform();
+  Opts.EANCost = (EanCostOpt == "dag") ? elimination::ean::CostModel::dag()
+                                       : elimination::ean::CostModel::uniform();
   elimination::ean::Budget B = elimination::ean::Budget::unbounded();
   if (EanRoundLimit)
     B.roundLimit = EanRoundLimit;
@@ -622,8 +625,8 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
      << ", branching_blocks=" << CFG.BranchingBlocks
      << ", max_succs=" << CFG.MaxSuccessors << ", phis=" << CFG.PhiNodes
      << ", calls=" << CFG.Calls << ", returns=" << CFG.Returns
-     << ", unreachable=" << CFG.Unreachable
-     << ", elapsed_us=" << T.end2end << "\n";
+     << ", unreachable=" << CFG.Unreachable << ", elapsed_us=" << T.end2end
+     << "\n";
   OS << "  [timing] gen_us=" << T.gen << ", norm_us=" << T.norm
      << ", interp_us=" << T.interp << ", end2end_us=" << T.end2end
      << ", runs=" << T.runs << "\n";
@@ -634,7 +637,8 @@ void dumpProfile(raw_ostream &OS, const FunctionView &View,
   // is deduced from the result so clients with a non-Instruction* atom (e.g.
   // NonNull's edge transfer) profile correctly.
   using ResultTransferT = typename ResultT::transfer_t;
-  using BatchExprRef = typename elimination::PathExprFactory<ResultTransferT>::Ref;
+  using BatchExprRef =
+      typename elimination::PathExprFactory<ResultTransferT>::Ref;
   std::vector<BatchExprRef> Batch;
   Batch.reserve(View.OrderedInsts.size());
   for (auto *I : View.OrderedInsts) {
@@ -880,7 +884,7 @@ void runInterSummaryReachable(raw_ostream &OS, Module &M, Function &Entry) {
   runInterSummaryAnalysis(
       OS, M, Entry,
       [&](Function &F) {
-        return elimination::runInterSummaryElimReachable(&F, nullptr, Opts);
+        return elimination::runInterSummaryElimReachability(&F, nullptr, Opts);
       },
       [&](const auto &Key, const auto &Result, const auto &) {
         OS << (Result.IN(Key) ? "true" : "false");
@@ -906,7 +910,7 @@ void runInterSummaryUninitialized(raw_ostream &OS, Module &M, Function &Entry) {
   runInterSummaryAnalysis(
       OS, M, Entry,
       [&](Function &F) {
-        return elimination::runInterSummaryElimUninitVariables(
+        return elimination::runInterSummaryElimUninitializedVariables(
             &F, nullptr, nullptr, nullptr, nullptr, Opts);
       },
       [&](const auto &Key, const auto &Result, const auto &ValueToId) {
@@ -929,6 +933,68 @@ void runInterSummaryConstantPropagation(raw_ostream &OS, Module &M,
             [&](const elimination::ConstantPropagationValue &Value) {
               return formatValueLatticeElement(Value);
             });
+      });
+}
+
+void runInterSummaryAvailableExpressions(raw_ostream &OS, Module &M,
+                                         Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimAvailableExpressions(&F, nullptr,
+                                                                    Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &) {
+        std::vector<std::string> Expressions;
+        for (const auto &Expression : Result.IN(Key))
+          Expressions.push_back(formatExpressionKey(Expression));
+        std::sort(Expressions.begin(), Expressions.end());
+        for (std::size_t Index = 0; Index < Expressions.size(); ++Index) {
+          if (Index != 0)
+            OS << ",";
+          OS << Expressions[Index];
+        }
+      });
+}
+
+void runInterSummaryLockset(raw_ostream &OS, Module &M, Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimLockset(&F, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueSet(OS, Result.IN(Key), ValueToId);
+      });
+}
+
+void runInterSummaryNonNull(raw_ostream &OS, Module &M, Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimNonNull(&F, nullptr, nullptr,
+                                                       nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueSet(OS, Result.IN(Key), ValueToId);
+      });
+}
+
+void runInterSummarySign(raw_ostream &OS, Module &M, Function &Entry) {
+  auto Opts = buildInterSummaryOpts();
+  runInterSummaryAnalysis(
+      OS, M, Entry,
+      [&](Function &F) {
+        return elimination::runInterSummaryElimSign(&F, nullptr, Opts);
+      },
+      [&](const auto &Key, const auto &Result, const auto &ValueToId) {
+        lotus::dataflow_tool::formatValueMap(OS, Result.IN(Key), ValueToId,
+                                             [](elimination::SignValue Value) {
+                                               return formatSignValue(Value);
+                                             });
       });
 }
 
@@ -991,12 +1057,10 @@ void runReachingDefinitions(raw_ostream &OS, const FunctionView &View,
   runSetIntraAnalysis(
       OS, View, ElimOpts,
       [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
-        return TranslApa
-                   ? elimination::runIntraTranslApaReachingDefinitions(&F,
-                                                                       nullptr,
-                                                                       Opts)
-                   : elimination::runIntraElimReachingDefinitions(&F, nullptr,
-                                                                  Opts);
+        return TranslApa ? elimination::runIntraTranslApaReachingDefinitions(
+                               &F, nullptr, Opts)
+                         : elimination::runIntraElimReachingDefinitions(
+                               &F, nullptr, Opts);
       });
 }
 
@@ -1005,15 +1069,16 @@ void runUninitialized(raw_ostream &OS, const FunctionView &View,
   runSetIntraAnalysis(
       OS, View, ElimOpts,
       [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimUninitVariables(&F, nullptr, Opts);
+        return elimination::runIntraElimUninitializedVariables(&F, nullptr,
+                                                               Opts);
       });
 }
 
 // Canonical, vocabulary-free serialization of an affine relation: the Howell
 // normal form's rows are already canonical, so equal relations serialize
-// identically. This lets the RQ1 differential compare Default vs EAN(safe/kleene)
-// affine facts as text WITHOUT needing the (already-freed) per-function
-// vocabulary at print time.
+// identically. This lets the RQ1 differential compare Default vs
+// EAN(safe/kleene) affine facts as text WITHOUT needing the (already-freed)
+// per-function vocabulary at print time.
 std::string serializeAffine(const elimination::AffineRelation &R) {
   if (R.bottom)
     return "bottom";
@@ -1036,7 +1101,8 @@ std::string serializeAffine(const elimination::AffineRelation &R) {
       }
       Rows.push_back(std::move(RowStr));
     }
-    std::sort(Rows.begin(), Rows.end()); // guard against row-order nondeterminism
+    std::sort(Rows.begin(),
+              Rows.end()); // guard against row-order nondeterminism
     bool FirstRow = true;
     for (auto &Row : Rows) {
       if (!FirstRow)
@@ -1053,9 +1119,11 @@ void runAffine(raw_ostream &OS, const FunctionView &View,
   runTimedAnalysis(
       OS, View, ElimOpts,
       [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimAffine(&F, Opts);
+        return elimination::runIntraElimAffineEqualities(&F, Opts);
       },
-      [&](Instruction *I, auto &Result) { OS << serializeAffine(Result.IN(I)); });
+      [&](Instruction *I, auto &Result) {
+        OS << serializeAffine(Result.IN(I));
+      });
 }
 
 void runConstantPropagation(raw_ostream &OS, const FunctionView &View,
@@ -1117,7 +1185,7 @@ void runSign(raw_ostream &OS, const FunctionView &View,
   runTimedAnalysis(
       OS, View, ElimOpts,
       [](Function &F, const elimination::EliminationOptions &Opts) {
-        return elimination::runIntraElimSignAnalysis(&F, Opts);
+        return elimination::runIntraElimSign(&F, Opts);
       },
       [&](Instruction *I, auto &Result) {
         lotus::dataflow_tool::formatValueMap(OS, Result.IN(I), View.ValueToId,
@@ -1134,8 +1202,8 @@ void runReachable(raw_ostream &OS, const FunctionView &View,
   runBoolIntraAnalysis(
       OS, View, ElimOpts,
       [TranslApa](Function &F, const elimination::EliminationOptions &Opts) {
-        return TranslApa ? elimination::runIntraTranslApaReachable(&F, Opts)
-                         : elimination::runIntraElimReachable(&F, Opts);
+        return TranslApa ? elimination::runIntraTranslApaReachability(&F, Opts)
+                         : elimination::runIntraElimReachability(&F, Opts);
       });
 }
 
@@ -1155,7 +1223,7 @@ void runInterUninitialized(raw_ostream &OS, Module &M, Function &Entry) {
     return;
   }
   runSetInterAnalysis(OS, M, Entry, [](Function &F) {
-    return elimination::runInterElimUninitVariables(&F);
+    return elimination::runInterElimUninitializedVariables(&F);
   });
 }
 
@@ -1174,13 +1242,67 @@ void runInterConstantPropagation(raw_ostream &OS, Module &M, Function &Entry) {
       });
 }
 
+void runInterAvailableExpressions(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryAvailableExpressions(OS, M, Entry);
+    return;
+  }
+  runTimedInterproceduralAnalysis(
+      OS, M, Entry,
+      [](Function &F) {
+        return elimination::runInterElimAvailableExpressions(&F);
+      },
+      [&](const auto &Key, const auto &Result, const auto &) {
+        std::vector<std::string> Expressions;
+        for (const auto &Expression : Result.IN(Key))
+          Expressions.push_back(formatExpressionKey(Expression));
+        std::sort(Expressions.begin(), Expressions.end());
+        for (std::size_t Index = 0; Index < Expressions.size(); ++Index) {
+          if (Index != 0)
+            OS << ",";
+          OS << Expressions[Index];
+        }
+      });
+}
+
+void runInterLockset(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryLockset(OS, M, Entry);
+    return;
+  }
+  runSetInterAnalysis(OS, M, Entry, [](Function &F) {
+    return elimination::runInterElimLockset(&F);
+  });
+}
+
+void runInterNonNull(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummaryNonNull(OS, M, Entry);
+    return;
+  }
+  runSetInterAnalysis(OS, M, Entry, [](Function &F) {
+    return elimination::runInterElimNonNull(&F);
+  });
+}
+
+void runInterSign(raw_ostream &OS, Module &M, Function &Entry) {
+  if (InterSummaryOpt) {
+    runInterSummarySign(OS, M, Entry);
+    return;
+  }
+  runMapInterAnalysis(
+      OS, M, Entry,
+      [](Function &F) { return elimination::runInterElimSign(&F); },
+      [](elimination::SignValue Value) { return formatSignValue(Value); });
+}
+
 void runInterReachable(raw_ostream &OS, Module &M, Function &Entry) {
   if (ModularInterOpt) {
     auto Opts = buildInterSummaryOpts();
     runInterSummaryAnalysis(
         OS, M, Entry,
         [&](Function &F) {
-          return elimination::runModularInterReachable(&F, nullptr, Opts);
+          return elimination::runModularInterReachability(&F, nullptr, Opts);
         },
         [&](const auto &Key, const auto &Result, const auto &) {
           OS << (Result.IN(Key) ? "true" : "false");
@@ -1192,18 +1314,17 @@ void runInterReachable(raw_ostream &OS, Module &M, Function &Entry) {
     return;
   }
   runBoolInterAnalysis(OS, M, Entry, [](Function &F) {
-    return elimination::runInterElimReachable(&F);
+    return elimination::runInterElimReachability(&F);
   });
 }
 
 void runInterAffine(raw_ostream &OS, Module &M, Function & /*Entry*/) {
   const auto Start = std::chrono::steady_clock::now();
-  elimination::InterAffineEqualities::Options Options;
-  Options.vocabulary =
-      elimination::InterAffineEqualities::VocabularyMode::ObservableSlice;
+  elimination::InterAffineEqualitiesOptions Options;
+  Options.vocabulary = elimination::InterAffineVocabularyMode::ObservableSlice;
   Options.verbose = false;
   Options.maxTrackedValues = AffineMaxTrackedOpt;
-  auto Result = elimination::InterAffineEqualities::run(M, Options);
+  auto Result = elimination::runInterElimAffineEqualities(M, Options);
   const auto Elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::steady_clock::now() - Start);
   OS << "  [profile] elapsed_us=" << Elapsed.count()
@@ -1226,6 +1347,7 @@ const AnalysisHandler Handlers[] = {
     {"uninitialized", false, &runUninitialized, nullptr},
     {"constant_prop", false, &runConstantPropagation, nullptr},
     {"available_exprs", false, &runAvailableExpressions, nullptr},
+    {"affine", false, &runAffine, nullptr},
     {"reachable", false, &runReachable, nullptr},
     {"lockset", false, &runLockset, nullptr},
     {"nonnull", false, &runNonNull, nullptr},
@@ -1233,7 +1355,11 @@ const AnalysisHandler Handlers[] = {
     {"inter_reaching_defs", true, nullptr, &runInterReachingDefinitions},
     {"inter_uninitialized", true, nullptr, &runInterUninitialized},
     {"inter_constant_prop", true, nullptr, &runInterConstantPropagation},
+    {"inter_available_exprs", true, nullptr, &runInterAvailableExpressions},
     {"inter_reachable", true, nullptr, &runInterReachable},
+    {"inter_lockset", true, nullptr, &runInterLockset},
+    {"inter_nonnull", true, nullptr, &runInterNonNull},
+    {"inter_sign", true, nullptr, &runInterSign},
     {"inter_affine", true, nullptr, &runInterAffine},
 };
 
@@ -1272,7 +1398,8 @@ int main(int argc, char **argv) {
     while (std::getline(SS, Name, ',')) {
       if (Name.empty())
         continue;
-      const auto *H = lotus::dataflow_tool::findHandler(StringRef(Name), Handlers);
+      const auto *H =
+          lotus::dataflow_tool::findHandler(StringRef(Name), Handlers);
       if (!H) {
         errs() << "error: unknown elimination analysis '" << Name << "'\n";
         return 1;
@@ -1311,8 +1438,7 @@ int main(int argc, char **argv) {
     std::size_t Skipped = 0;
     lotus::dataflow_tool::forEachDefinedFunction(
         *M, OS, [&](const FunctionView &View) {
-          if (MaxFuncInsts != 0 &&
-              View.OrderedInsts.size() > MaxFuncInsts) {
+          if (MaxFuncInsts != 0 && View.OrderedInsts.size() > MaxFuncInsts) {
             OS << "  [skipped] reason=too_large insts="
                << View.OrderedInsts.size() << "\n";
             ++Skipped;

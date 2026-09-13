@@ -94,7 +94,7 @@ TEST_F(APATest, InterproceduralReachabilityDirectCallAndDeadFunction) {
   ASSERT_NE(Id, nullptr);
   ASSERT_NE(Dead, nullptr);
 
-  auto Result = elimination::runInterElimReachable(Main);
+  auto Result = elimination::runInterElimReachability(Main);
   ASSERT_TRUE(Result.hasSolveMetadata());
   EXPECT_EQ(Result.solveStatus(), elimination::SolveStatus::Ok);
 
@@ -262,8 +262,8 @@ TEST_F(APATest, ForwardSummaryReachabilityMatchesDirectCallWorklist) {
   ASSERT_NE(Id, nullptr);
   ASSERT_NE(Dead, nullptr);
 
-  auto Worklist = elimination::runInterElimReachable(Main);
-  auto Summary = elimination::runInterSummaryElimReachable(Main);
+  auto Worklist = elimination::runInterElimReachability(Main);
+  auto Summary = elimination::runInterSummaryElimReachability(Main);
   ASSERT_TRUE(Summary.hasSolveMetadata());
   EXPECT_EQ(Summary.solveStatus(), elimination::SolveStatus::Ok);
   ASSERT_TRUE(Summary.hasSummarySolveDiagnostics());
@@ -320,7 +320,7 @@ TEST_F(APATest, ForwardSummaryReachabilityHandlesRecursiveCallSCC) {
   ASSERT_NE(Main, nullptr);
   ASSERT_NE(Rec, nullptr);
 
-  auto Summary = elimination::runInterSummaryElimReachable(Main);
+  auto Summary = elimination::runInterSummaryElimReachability(Main);
   ASSERT_TRUE(Summary.hasSolveMetadata());
   EXPECT_EQ(Summary.solveStatus(), elimination::SolveStatus::Ok);
   ASSERT_TRUE(Summary.hasSummarySolveDiagnostics());
@@ -722,7 +722,7 @@ TEST_F(APATest, InterproceduralUninitializedVariablesAcrossCall) {
   ASSERT_NE(Main, nullptr);
   ASSERT_NE(LoadIt, nullptr);
 
-  auto Result = elimination::runInterElimUninitVariables(Main);
+  auto Result = elimination::runInterElimUninitializedVariables(Main);
   ASSERT_TRUE(Result.hasSolveMetadata());
   EXPECT_EQ(Result.solveStatus(), elimination::SolveStatus::Ok);
 
@@ -767,7 +767,7 @@ TEST_F(APATest, BottomValuedCallerStillDiscoversCalleeContext) {
   ASSERT_NE(Call, nullptr);
   ASSERT_NE(Alloca, nullptr);
 
-  auto Result = elimination::runInterElimUninitVariables(Main);
+  auto Result = elimination::runInterElimUninitializedVariables(Main);
   auto *Facts = Result.tryOUT(Alloca, {Call});
   ASSERT_NE(Facts, nullptr);
   EXPECT_NE(Facts->find(Alloca), Facts->end());
@@ -797,8 +797,8 @@ TEST_F(APATest, ForwardSummaryUninitializedVariablesMatchesWorklist) {
   ASSERT_NE(Main, nullptr);
   ASSERT_NE(LoadIt, nullptr);
 
-  auto Worklist = elimination::runInterElimUninitVariables(Main);
-  auto Summary = elimination::runInterSummaryElimUninitVariables(Main);
+  auto Worklist = elimination::runInterElimUninitializedVariables(Main);
+  auto Summary = elimination::runInterSummaryElimUninitializedVariables(Main);
   ASSERT_TRUE(Summary.hasSolveMetadata());
   EXPECT_EQ(Summary.solveStatus(), elimination::SolveStatus::Ok);
 

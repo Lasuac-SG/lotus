@@ -150,7 +150,7 @@ SignValue evalCast(const llvm::CastInst *Cast, SignValue Src) {
     return Src;
   case llvm::Instruction::Trunc:
     return Cast->getType()->isIntegerTy(1) ? SignValue::nonNegative()
-                                          : SignValue::top();
+                                           : SignValue::top();
   default:
     return SignValue::top();
   }
@@ -190,7 +190,8 @@ void clobberMemoryByCall(const llvm::CallBase *Call, SignMap &Out) {
     Out.set(Key, SignValue::top());
 }
 
-class ElimSignAnalysisProblem : public LLVMIntraEliminationProblem<SignMap, SignDomain> {
+class ElimSignAnalysisProblem
+    : public LLVMIntraEliminationProblem<SignMap, SignDomain> {
 public:
   explicit ElimSignAnalysisProblem(llvm::Function *F)
       : LLVMIntraEliminationProblem<SignMap, SignDomain>(F) {
@@ -222,7 +223,8 @@ public:
 
     if (const auto *Store = llvm::dyn_cast<llvm::StoreInst>(Inst)) {
       auto *Ptr = Store->getPointerOperand();
-      if (Ptr != nullptr && Store->getValueOperand()->getType()->isIntegerTy()) {
+      if (Ptr != nullptr &&
+          Store->getValueOperand()->getType()->isIntegerTy()) {
         Out[cachedMemKey(Store, Ptr)] =
             resolveValue(In, Store->getValueOperand());
       }
@@ -307,14 +309,14 @@ private:
 
 } // namespace
 
-SignAnalysisResult runIntraElimSignAnalysis(llvm::Function *F,
-                                            EliminationOptions Opts) {
+SignResult runIntraElimSign(llvm::Function *F, EliminationOptions Opts) {
   if (F == nullptr || F->isDeclaration()) {
-    return SignAnalysisResult{};
+    return SignResult{};
   }
 
   ElimSignAnalysisProblem Problem(F);
-  IntraEliminationSolver<LLVMAnalysisTypes<SignMap, SignDomain>> Solver(Problem, Opts);
+  IntraEliminationSolver<LLVMAnalysisTypes<SignMap, SignDomain>> Solver(Problem,
+                                                                        Opts);
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   Out.setSolveMetadata(Status, Solver.getDiagnostics());

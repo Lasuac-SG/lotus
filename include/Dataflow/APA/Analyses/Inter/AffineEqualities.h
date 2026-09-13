@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_ANALYSES_INTER_AFFINEEQUALITIES_H_
-#define DATAFLOW_APA_ANALYSES_INTER_AFFINEEQUALITIES_H_
+#pragma once
 
 #include "Dataflow/APA/Core/Options.h"
 #include "Dataflow/APA/Domains/AffineRelationDomain.h"
@@ -19,18 +18,20 @@ class Module;
 
 namespace elimination {
 
-struct FunctionKey {
+struct AffineFunctionKey {
   const llvm::Function *function = nullptr;
 
-  bool operator<(const FunctionKey &other) const {
+  bool operator<(const AffineFunctionKey &other) const {
     return function < other.function;
   }
 };
 
-struct BlockKey {
+struct AffineBlockKey {
   const llvm::BasicBlock *block = nullptr;
 
-  bool operator<(const BlockKey &other) const { return block < other.block; }
+  bool operator<(const AffineBlockKey &other) const {
+    return block < other.block;
+  }
 };
 
 struct AffineExpr {
@@ -66,36 +67,36 @@ struct AffineState {
   }
 };
 
-class InterAffineEqualities {
-public:
-  enum class VocabularyMode { AllScalars, ObservableSlice };
+enum class InterAffineVocabularyMode { AllScalars, ObservableSlice };
 
-  struct Options {
-    explicit Options(VocabularyMode Vocabulary = VocabularyMode::AllScalars,
-                     bool Verbose = false, std::size_t MaxTrackedValues = 0)
-        : vocabulary(Vocabulary), verbose(Verbose),
-          maxTrackedValues(MaxTrackedValues) {}
+struct InterAffineEqualitiesOptions {
+  explicit InterAffineEqualitiesOptions(
+      InterAffineVocabularyMode Vocabulary =
+          InterAffineVocabularyMode::AllScalars,
+      bool Verbose = false, std::size_t MaxTrackedValues = 0)
+      : vocabulary(Vocabulary), verbose(Verbose),
+        maxTrackedValues(MaxTrackedValues) {}
 
-    VocabularyMode vocabulary;
-    bool verbose;
-    // Zero means unlimited. Values outside a bounded observable slice are
-    // soundly treated as untracked/havoced.
-    std::size_t maxTrackedValues;
-  };
-
-  struct Result {
-    SolveStatus status = SolveStatus::Ok;
-    std::size_t trackedValues = 0;
-    std::map<FunctionKey, AffineRelationDomain::value_type> summaries;
-    std::map<BlockKey, AffineRelationDomain::value_type> blockRelations;
-  };
-
-  static Result run(llvm::Module &M, Options options = Options());
+  InterAffineVocabularyMode vocabulary;
+  bool verbose;
+  // Zero means unlimited. Values outside a bounded observable slice are
+  // soundly treated as untracked/havoced.
+  std::size_t maxTrackedValues;
 };
+
+struct InterAffineEqualitiesResult {
+  SolveStatus status = SolveStatus::Ok;
+  std::size_t trackedValues = 0;
+  std::map<AffineFunctionKey, AffineRelationDomain::value_type> summaries;
+  std::map<AffineBlockKey, AffineRelationDomain::value_type> blockRelations;
+};
+
+InterAffineEqualitiesResult
+runInterElimAffineEqualities(llvm::Module &M,
+                             InterAffineEqualitiesOptions options =
+                                 InterAffineEqualitiesOptions());
 
 AffineState
 materializeAffineExpressions(const AffineRelationDomain::value_type &relation);
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_ANALYSES_INTER_AFFINEEQUALITIES_H_

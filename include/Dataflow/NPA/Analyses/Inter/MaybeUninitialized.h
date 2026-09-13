@@ -1,5 +1,4 @@
-#ifndef NPA_INTERPROC_MAYBE_UNINITIALIZED_H
-#define NPA_INTERPROC_MAYBE_UNINITIALIZED_H
+#pragma once
 
 #include "Dataflow/NPA/Domains/TaintDomain.h"
 #include "Dataflow/NPA/LLVM/AnalysisSupport.h"
@@ -27,5 +26,3 @@ public:
 };
 
 } // namespace npa
-
-#endif // NPA_INTERPROC_MAYBE_UNINITIALIZED_H

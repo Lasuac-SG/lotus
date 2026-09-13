@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHINGDEFINITIONS_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHINGDEFINITIONS_H_
+#pragma once
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/MemorySSA.h"
@@ -29,5 +28,3 @@ InterReachingDefinitionsResult runInterSummaryElimReachingDefinitions(
     PathSummaryEquationOptions Options = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHINGDEFINITIONS_H_

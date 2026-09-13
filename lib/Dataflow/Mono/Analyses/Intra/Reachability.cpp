@@ -30,7 +30,7 @@ namespace mono {
  * Author: rainoftime
  */
 std::unique_ptr<DataFlowResult>
-runReachableAnalysis(Function *f,
+runIntraMonoReachability(Function *f,
                      const std::function<bool(Instruction *i)> &filter,
                      const DebugConfig &DebugCfg) {
 
@@ -104,7 +104,7 @@ runReachableAnalysis(Function *f,
   return Result;
 }
 
-std::unique_ptr<DataFlowResult> runReachableAnalysis(Function *f,
+std::unique_ptr<DataFlowResult> runIntraMonoReachability(Function *f,
                                                      const DebugConfig &DebugCfg) {
 
   /*
@@ -115,7 +115,7 @@ std::unique_ptr<DataFlowResult> runReachableAnalysis(Function *f,
   /*
    * Run the analysis
    */
-  return runReachableAnalysis(f, noFilter, DebugCfg);
+  return runIntraMonoReachability(f, noFilter, DebugCfg);
 }
 
 } // namespace mono

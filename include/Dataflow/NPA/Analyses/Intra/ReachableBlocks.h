@@ -1,5 +1,4 @@
-#ifndef NPA_REACHABLE_BLOCKS_H
-#define NPA_REACHABLE_BLOCKS_H
+#pragma once
 
 #include "Dataflow/NPA/LLVM/BitVectorSolver.h"
 
@@ -21,5 +20,3 @@ public:
 };
 
 } // namespace npa
-
-#endif // NPA_REACHABLE_BLOCKS_H

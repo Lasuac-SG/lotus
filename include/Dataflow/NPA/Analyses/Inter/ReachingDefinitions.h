@@ -1,5 +1,4 @@
-#ifndef NPA_INTERPROC_RD_H
-#define NPA_INTERPROC_RD_H
+#pragma once
 
 #include "Dataflow/NPA/Domains/GenKillDomain.h"
 #include "Dataflow/NPA/LLVM/AnalysisSupport.h"
@@ -27,4 +26,3 @@ public:
 };
 
 } // namespace npa
-#endif

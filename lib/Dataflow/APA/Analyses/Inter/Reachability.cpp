@@ -1,5 +1,6 @@
-#include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Analyses/Inter/Reachability.h"
+
+#include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Solver/ForwardInterSummarySolver.h"
 #include "Dataflow/APA/Solver/ModularInterSummaryDriver.h"
 
@@ -53,10 +54,10 @@ public:
 
 } // namespace
 
-InterReachableResult
-runInterElimReachable(llvm::Function *Entry,
-                      const dataflow::controlflow::InterCFG *ICF) {
-  InterReachableResult Out;
+InterReachabilityResult
+runInterElimReachability(llvm::Function *Entry,
+                         const dataflow::controlflow::InterCFG *ICF) {
+  InterReachabilityResult Out;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Out;
   }
@@ -80,11 +81,11 @@ runInterElimReachable(llvm::Function *Entry,
   return Out;
 }
 
-InterReachableResult
-runInterSummaryElimReachable(llvm::Function *Entry,
-                             const dataflow::controlflow::InterCFG *ICF,
-                             PathSummaryEquationOptions Options) {
-  InterReachableResult Out;
+InterReachabilityResult
+runInterSummaryElimReachability(llvm::Function *Entry,
+                                const dataflow::controlflow::InterCFG *ICF,
+                                PathSummaryEquationOptions Options) {
+  InterReachabilityResult Out;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Out;
   }
@@ -109,11 +110,11 @@ runInterSummaryElimReachable(llvm::Function *Entry,
   return Out;
 }
 
-InterReachableResult
-runModularInterReachable(llvm::Function *Entry,
-                         const dataflow::controlflow::InterCFG *ICF,
-                         PathSummaryEquationOptions Options) {
-  InterReachableResult Out;
+InterReachabilityResult
+runModularInterReachability(llvm::Function *Entry,
+                            const dataflow::controlflow::InterCFG *ICF,
+                            PathSummaryEquationOptions Options) {
+  InterReachabilityResult Out;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Out;
   }
@@ -130,7 +131,8 @@ runModularInterReachable(llvm::Function *Entry,
                             kDefaultInterElimReachabilityCallStringLength>
       Driver(Problem, *ICF, Options);
   // Reachability seed: the entry procedure starts reachable (fact = true).
-  Out = Driver.solve(std::vector<llvm::Function *>{Entry}, /*InitialFact=*/true);
+  Out =
+      Driver.solve(std::vector<llvm::Function *>{Entry}, /*InitialFact=*/true);
   return Out;
 }
 

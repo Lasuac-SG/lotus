@@ -8,12 +8,16 @@ set(MONO_SOURCES
   Analyses/Intra/LiveVariables.cpp
   Analyses/Intra/Reachability.cpp
   Analyses/Intra/ReachingDefinitions.cpp
-  Analyses/Intra/SolverTest.cpp
+  Analyses/Intra/Taint.cpp
   Analyses/Intra/UninitializedVariables.cpp
+  Analyses/Inter/AvailableExpressions.cpp
   Analyses/Inter/ConstantPropagation.cpp
   Analyses/Inter/FullConstantPropagation.cpp
-  Analyses/Inter/SolverTest.cpp
+  Analyses/Inter/LiveVariables.cpp
+  Analyses/Inter/Reachability.cpp
+  Analyses/Inter/ReachingDefinitions.cpp
   Analyses/Inter/Taint.cpp
+  Analyses/Inter/UninitializedVariables.cpp
 )
 
 add_library(MONODataFlow STATIC ${MONO_SOURCES})

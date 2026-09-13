@@ -49,8 +49,8 @@ cl::opt<bool> ElimLocksetPrint("elim-lockset-print",
                                cl::init(false));
 
 cl::opt<bool> ElimNonNullPrint("elim-nonnull-print",
-                                cl::desc("Print elimination nonnull facts"),
-                                cl::init(false));
+                               cl::desc("Print elimination nonnull facts"),
+                               cl::init(false));
 
 cl::opt<bool> ElimSignPrint("elim-sign-print",
                             cl::desc("Print elimination sign-analysis facts"),
@@ -107,7 +107,7 @@ void printConstMap(raw_ostream &OS, const ConstantPropagationMap &Map) {
   OS << "}";
 }
 
-void printUninitSet(raw_ostream &OS, const UninitVariablesFact &Set) {
+void printUninitSet(raw_ostream &OS, const UninitializedVariablesFact &Set) {
   if (Set.empty()) {
     OS << "{}";
     return;
@@ -124,8 +124,7 @@ void printUninitSet(raw_ostream &OS, const UninitVariablesFact &Set) {
   OS << "}";
 }
 
-template <typename SetT>
-void printValueSet(raw_ostream &OS, const SetT &Set) {
+template <typename SetT> void printValueSet(raw_ostream &OS, const SetT &Set) {
   if (Set.empty()) {
     OS << "{}";
     return;
@@ -201,8 +200,7 @@ void printSignMap(raw_ostream &OS, const SignMap &Map) {
   OS << "}";
 }
 
-template <typename SetT>
-void printExprSet(raw_ostream &OS, const SetT &Set) {
+template <typename SetT> void printExprSet(raw_ostream &OS, const SetT &Set) {
   if (Set.empty()) {
     OS << "{}";
     return;
@@ -300,8 +298,8 @@ const char *toString(ADTRejectionReason R) {
   return "unknown";
 }
 
-template <typename ResultT> void printSolveMetadata(raw_ostream &OS,
-                                                    const ResultT &Result) {
+template <typename ResultT>
+void printSolveMetadata(raw_ostream &OS, const ResultT &Result) {
   if (!Result.hasSolveMetadata()) {
     return;
   }
@@ -318,12 +316,12 @@ template <typename ResultT> void printSolveMetadata(raw_ostream &OS,
 
 } // namespace
 
-void ElimReachablePass::getAnalysisUsage(AnalysisUsage &AU) const {
+void ElimReachabilityPass::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
 }
 
-bool ElimReachablePass::runOnFunction(Function &F) {
-  Result = runIntraElimReachable(&F, getElimOptions());
+bool ElimReachabilityPass::runOnFunction(Function &F) {
+  Result = runIntraElimReachability(&F, getElimOptions());
   if (ElimReachPrint) {
     errs() << "== Elimination Reachability: " << F.getName() << " ==\n";
     printSolveMetadata(errs(), Result);
@@ -455,18 +453,19 @@ bool ElimAvailableExpressionsPass::runOnFunction(Function &F) {
   return false;
 }
 
-void ElimUninitVariablesPass::getAnalysisUsage(AnalysisUsage &AU) const {
+void ElimUninitializedVariablesPass::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
   AU.addRequired<AAResultsWrapperPass>();
   AU.addRequired<AssumptionCacheTracker>();
   AU.addRequired<DominatorTreeWrapperPass>();
 }
 
-bool ElimUninitVariablesPass::runOnFunction(Function &F) {
+bool ElimUninitializedVariablesPass::runOnFunction(Function &F) {
   auto &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
   auto &AC = getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
   auto &DT = getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-  Result = runIntraElimUninitVariables(&F, &AA, &AC, &DT, getElimOptions());
+  Result =
+      runIntraElimUninitializedVariables(&F, &AA, &AC, &DT, getElimOptions());
   if (ElimUninitPrint) {
     errs() << "== Elimination Uninitialized Variables: " << F.getName()
            << " ==\n";
@@ -479,7 +478,7 @@ bool ElimUninitVariablesPass::runOnFunction(Function &F) {
         if (const auto *Fact = Result.tryIN(&I)) {
           printUninitSet(errs(), *Fact);
         } else {
-          const UninitVariablesFact Empty{};
+          const UninitializedVariablesFact Empty{};
           printUninitSet(errs(), Empty);
         }
         errs() << "\n";
@@ -550,12 +549,12 @@ bool ElimNonNullPass::runOnFunction(Function &F) {
   return false;
 }
 
-void ElimSignAnalysisPass::getAnalysisUsage(AnalysisUsage &AU) const {
+void ElimSignPass::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
 }
 
-bool ElimSignAnalysisPass::runOnFunction(Function &F) {
-  Result = runIntraElimSignAnalysis(&F, getElimOptions());
+bool ElimSignPass::runOnFunction(Function &F) {
+  Result = runIntraElimSign(&F, getElimOptions());
   if (ElimSignPrint) {
     errs() << "== Elimination Sign Analysis: " << F.getName() << " ==\n";
     printSolveMetadata(errs(), Result);
@@ -578,8 +577,8 @@ bool ElimSignAnalysisPass::runOnFunction(Function &F) {
   return false;
 }
 
-char ElimReachablePass::ID = 0;
-static RegisterPass<ElimReachablePass>
+char ElimReachabilityPass::ID = 0;
+static RegisterPass<ElimReachabilityPass>
     X("elim-reachable", "Elimination-based reachability (intra)");
 
 char ElimConstantPropagationPass::ID = 0;
@@ -594,8 +593,8 @@ char ElimAvailableExpressionsPass::ID = 0;
 static RegisterPass<ElimAvailableExpressionsPass>
     AE("elim-available", "Elimination-based available expressions (intra)");
 
-char ElimUninitVariablesPass::ID = 0;
-static RegisterPass<ElimUninitVariablesPass>
+char ElimUninitializedVariablesPass::ID = 0;
+static RegisterPass<ElimUninitializedVariablesPass>
     Z("elim-uninit", "Elimination-based uninitialized variables (intra)");
 
 char ElimLocksetPass::ID = 0;
@@ -604,10 +603,10 @@ static RegisterPass<ElimLocksetPass>
 
 char ElimNonNullPass::ID = 0;
 static RegisterPass<ElimNonNullPass> NN("elim-nonnull",
-                                         "Elimination-based nonnull (intra)");
+                                        "Elimination-based nonnull (intra)");
 
-char ElimSignAnalysisPass::ID = 0;
-static RegisterPass<ElimSignAnalysisPass>
-    SA("elim-sign", "Elimination-based sign analysis (intra)");
+char ElimSignPass::ID = 0;
+static RegisterPass<ElimSignPass> SA("elim-sign",
+                                     "Elimination-based sign analysis (intra)");
 
 } // namespace elimination

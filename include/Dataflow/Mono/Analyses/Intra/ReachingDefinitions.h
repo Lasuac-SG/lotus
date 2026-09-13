@@ -1,5 +1,4 @@
-#ifndef LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_REACHINGDEFINITIONS_H_
-#define LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_REACHINGDEFINITIONS_H_
+#pragma once
 
 #include "Dataflow/Mono/Domains/ReachingDefinitionsDomain.h"
 #include "Dataflow/Mono/Support/Result.h"
@@ -37,14 +36,14 @@ namespace mono {
  * **Performance:**
  * This implementation uses std::set by default. For large functions (>500
  * instructions), consider using the bit-vector variant
- * (runReachingDefinitionsAnalysisBitVector) which is 5-10x faster.
+ * (runIntraMonoReachingDefinitionsBitVector) which is 5-10x faster.
  *
  * @param F The function to analyze
  * @return DataFlowResult containing reaching definition sets for each
  * instruction
  */
 std::unique_ptr<DataFlowResult>
-runReachingDefinitionsAnalysis(llvm::Function *F);
+runIntraMonoReachingDefinitions(llvm::Function *F);
 
 /**
  * @brief Run reaching definitions analysis using bit-vector optimization
@@ -72,8 +71,6 @@ runReachingDefinitionsAnalysis(llvm::Function *F);
  * instruction
  */
 std::unique_ptr<DataFlowResult>
-runReachingDefinitionsAnalysisBitVector(llvm::Function *F);
+runIntraMonoReachingDefinitionsBitVector(llvm::Function *F);
 
 } // namespace mono
-
-#endif // LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_REACHINGDEFINITIONS_H_

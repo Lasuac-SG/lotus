@@ -1,9 +1,8 @@
-#ifndef LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_UNINITIALIZEDVARIABLES_H_
-#define LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_UNINITIALIZEDVARIABLES_H_
+#pragma once
 
 #include "Dataflow/Mono/Domains/UninitializedVariablesDomain.h"
-#include "Dataflow/Mono/Support/Result.h"
 #include "Dataflow/Mono/Support/MonoDebug.h"
+#include "Dataflow/Mono/Support/Result.h"
 
 #include <memory>
 
@@ -15,9 +14,7 @@ namespace mono {
 
 // Forward uninitialized variables analysis (intraprocedural).
 std::unique_ptr<DataFlowResult>
-runIntraMonoUninitVariables(llvm::Function *F,
-                            const DebugConfig &DebugCfg = DebugConfig{});
+runIntraMonoUninitializedVariables(llvm::Function *F,
+                                   const DebugConfig &DebugCfg = DebugConfig{});
 
 } // namespace mono
-
-#endif // LOTUS_DATAFLOW_MONO_ANALYSES_INTRA_UNINITIALIZEDVARIABLES_H_

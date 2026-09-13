@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_UNINITIALIZEDVARIABLES_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_UNINITIALIZEDVARIABLES_H_
+#pragma once
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumptionCache.h"
@@ -14,23 +13,20 @@
 
 namespace elimination {
 
-using UninitVariablesResult =
-    DataFlowResultT<llvm::Instruction *, UninitVariablesFact,
+using UninitializedVariablesResult =
+    DataFlowResultT<llvm::Instruction *, UninitializedVariablesFact,
                     llvm::Instruction *>;
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  EliminationOptions Opts = {});
+UninitializedVariablesResult
+runIntraElimUninitializedVariables(llvm::Function *F,
+                                   EliminationOptions Opts = {});
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  llvm::AAResults *AA,
-                                                  EliminationOptions Opts = {});
+UninitializedVariablesResult
+runIntraElimUninitializedVariables(llvm::Function *F, llvm::AAResults *AA,
+                                   EliminationOptions Opts = {});
 
-UninitVariablesResult runIntraElimUninitVariables(llvm::Function *F,
-                                                  llvm::AAResults *AA,
-                                                  llvm::AssumptionCache *AC,
-                                                  llvm::DominatorTree *DT,
-                                                  EliminationOptions Opts = {});
+UninitializedVariablesResult runIntraElimUninitializedVariables(
+    llvm::Function *F, llvm::AAResults *AA, llvm::AssumptionCache *AC,
+    llvm::DominatorTree *DT, EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_UNINITIALIZEDVARIABLES_H_

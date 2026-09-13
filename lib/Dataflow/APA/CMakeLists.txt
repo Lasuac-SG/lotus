@@ -14,11 +14,14 @@ set(APA_SOURCES
   Analyses/Intra/Lockset.cpp
   Analyses/Intra/NonNull.cpp
   Analyses/Intra/Sign.cpp
-  Analyses/Intra/IntraAffineEqualities.cpp
+  Analyses/Intra/AffineEqualities.cpp
   Analyses/Inter/Reachability.cpp
+  Analyses/Inter/AvailableExpressions.cpp
   Analyses/Inter/ConstantPropagation.cpp
   Analyses/Inter/Lockset.cpp
+  Analyses/Inter/NonNull.cpp
   Analyses/Inter/ReachingDefinitions.cpp
+  Analyses/Inter/Sign.cpp
   Analyses/Inter/UninitializedVariables.cpp
   Analyses/Inter/AffineEqualities.cpp
 )

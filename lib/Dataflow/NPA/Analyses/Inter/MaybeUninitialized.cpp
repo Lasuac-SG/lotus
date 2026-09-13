@@ -5,6 +5,7 @@
 #include "Dataflow/NPA/Analyses/Inter/MaybeUninitialized.h"
 
 #include "Dataflow/NPA/LLVM/ForwardInterEngine.h"
+#include "Dataflow/NPA/LLVM/IntraEngine.h"
 
 #include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/Argument.h>
@@ -338,5 +339,24 @@ InterMaybeUninitialized::run(llvm::Module &M, bool verbose,
                            engineResult.blockEntryFacts.end());
   return result;
 }
+
+namespace detail {
+
+InterMaybeUninitialized::Result
+runIntraMaybeUninitialized(llvm::Function &F, bool verbose,
+                           LinearStrategy linearStrategy,
+                           NewtonRoundStrategy roundStrategy) {
+  MaybeUninitializedAnalysis analysis(*F.getParent());
+  auto engineResult =
+      IntraEngine<TaintTransformer, MaybeUninitializedAnalysis>::run(
+          F, analysis, verbose, linearStrategy, roundStrategy);
+  InterMaybeUninitialized::Result result;
+  result.status = engineResult.status;
+  result.summaries[{&F}] = std::move(engineResult.summary);
+  result.blockFacts = std::move(engineResult.blockEntryFacts);
+  return result;
+}
+
+} // namespace detail
 
 } // namespace npa

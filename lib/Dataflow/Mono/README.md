@@ -17,6 +17,12 @@ and compiled into consumers.
 - **Analyses/Intra/** — intraprocedural analysis clients
 - **Analyses/Inter/** — interprocedural analysis clients
 
+Both analysis directories expose the same eight analysis families: available
+expressions, constant propagation, full constant propagation, live variables,
+reachability, reaching definitions, taint analysis, and uninitialized
+variables. Solver test fixtures live under `tests/`, not in the production
+analysis directories.
+
 The public and implementation trees are intentionally not exact mirrors.
 `include/Dataflow/Mono/` contains template implementations that must remain
 visible to clients, while `lib/Dataflow/Mono/` contains only separately

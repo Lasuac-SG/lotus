@@ -201,16 +201,20 @@ Notable entry points:
 - `Solver/Newton/Linear/SccSolver.h` implements the ordinary inner
   linearized-system machinery used by Newton/NPA.
 - `Solver/Newton/Linear/Tensor/` contains the optional TOPLAS tensor backend.
+- `LLVM/IntraEngine.h` contains intraprocedural equation construction for
+  transformer-domain clients.
 - `LLVM/ForwardInterEngine.h` and `LLVM/BackwardInterEngine.h` contain the
   interprocedural LLVM infrastructure.
 - `LLVM/BitVectorSolver.h` contains the intraprocedural bit-vector bridge.
-- `Analyses/Inter/` contains the public analysis wrappers used by
-  the in-tree constant-propagation, interval, taint, nullability, and related
-  clients.
+- `Analyses/Intra/` and `Analyses/Inter/` expose the same eight analysis
+  families: constant propagation, interval analysis, live variables,
+  maybe-uninitialized values, nullability, reachable blocks, reaching
+  definitions, and taint analysis.
 
 ## Usage notes
 
-- Intraprocedural clients can use `BitVectorSolver` and related local engines.
+- Intraprocedural clients use `BitVectorSolver` for bit-vector problems and
+  `IntraEngine<Domain, Analysis>` for transformer-domain problems.
 - Inter forward clients use `InterEngine<Domain, Analysis>`.
 - Inter backward clients use `BackwardInterEngine<Domain, Analysis>`.
 - `TransformerSummary` is the current bounded abstract-summary path used

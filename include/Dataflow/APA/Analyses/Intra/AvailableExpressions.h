@@ -1,5 +1,4 @@
-#ifndef DATAFLOW_APA_CLIENTS_LLVM_INTRA_AVAILABLEEXPRESSIONS_H_
-#define DATAFLOW_APA_CLIENTS_LLVM_INTRA_AVAILABLEEXPRESSIONS_H_
+#pragma once
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/MemorySSA.h"
@@ -36,5 +35,3 @@ AvailableExpressionsResult runIntraElimAvailableExpressions(
     EliminationOptions Opts = {});
 
 } // namespace elimination
-
-#endif // DATAFLOW_APA_CLIENTS_LLVM_INTRA_AVAILABLEEXPRESSIONS_H_

@@ -7,9 +7,9 @@
 #include <iterator>
 #include <vector>
 
+#include <gtest/gtest.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <gtest/gtest.h>
 
 namespace {
 
@@ -17,7 +17,7 @@ using lotus::unittest::findInstructionByName;
 using lotus::unittest::parseModule;
 
 std::vector<elimination::AffineState> materializedAffineStatesForBlock(
-    const std::map<elimination::BlockKey,
+    const std::map<elimination::AffineBlockKey,
                    elimination::AffineRelationDomain::value_type> &facts,
     const llvm::BasicBlock *block) {
   std::vector<elimination::AffineState> out;
@@ -31,7 +31,7 @@ std::vector<elimination::AffineState> materializedAffineStatesForBlock(
 
 std::vector<const elimination::AffineRelationDomain::value_type *>
 relationsForBlock(
-    const std::map<elimination::BlockKey,
+    const std::map<elimination::AffineBlockKey,
                    elimination::AffineRelationDomain::value_type> &facts,
     const llvm::BasicBlock *block) {
   std::vector<const elimination::AffineRelationDomain::value_type *> out;

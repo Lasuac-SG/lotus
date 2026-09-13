@@ -1,3 +1,5 @@
+#include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
+
 #include "llvm/Analysis/MemoryLocation.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
@@ -5,10 +7,9 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 
-#include "Dataflow/APA/Analyses/Inter/FlowHelpers.h"
-#include "Dataflow/APA/Analyses/Inter/UninitializedVariables.h"
 #include "Dataflow/APA/LLVM/InterProblem.h"
 #include "Dataflow/APA/Solver/ForwardInterSummarySolver.h"
+#include "FlowHelpers.h"
 
 #include <algorithm>
 #include <iterator>
@@ -21,17 +22,18 @@ namespace {
 
 struct InterUninitializedVariablesAnalysisTypes {
   using n_t = llvm::Instruction *;
-  using fact_t = UninitVariablesFact;
+  using fact_t = UninitializedVariablesFact;
   using transfer_t = llvm::Instruction *;
   using f_t = llvm::Function *;
   using i_t = dataflow::controlflow::InterCFG;
   using abstract_domain_t = UninitializedVariablesDomain;
 };
 
-class InterElimUninitVariablesProblem
-    : public LLVMInterEliminationProblem<InterUninitializedVariablesAnalysisTypes> {
+class InterElimUninitializedVariablesProblem
+    : public LLVMInterEliminationProblem<
+          InterUninitializedVariablesAnalysisTypes> {
 public:
-  explicit InterElimUninitVariablesProblem(
+  explicit InterElimUninitializedVariablesProblem(
       llvm::Function *Entry, llvm::AAResults *AA = nullptr,
       llvm::AssumptionCache *AC = nullptr, llvm::DominatorTree *DT = nullptr,
       const dataflow::controlflow::InterCFG *ICF = nullptr)
@@ -237,8 +239,8 @@ private:
           for (auto &Op : I.operands())
             Record(Op.get());
           if (auto *Store = llvm::dyn_cast<llvm::StoreInst>(&I)) {
-            if (llvm::isGuaranteedNotToBeUndefOrPoison(
-                    Store->getValueOperand(), AC, Store, DT))
+            if (llvm::isGuaranteedNotToBeUndefOrPoison(Store->getValueOperand(),
+                                                       AC, Store, DT))
               GuaranteedInitialized.insert(Store);
           }
         }
@@ -277,9 +279,9 @@ private:
       for (auto *Candidate : Values) {
         if (!Candidate->getType()->isPointerTy())
           continue;
-        llvm::MemoryLocation CandLoc(
-            Candidate, llvm::LocationSize::beforeOrAfterPointer(),
-            llvm::AAMDNodes());
+        llvm::MemoryLocation CandLoc(Candidate,
+                                     llvm::LocationSize::beforeOrAfterPointer(),
+                                     llvm::AAMDNodes());
         if (AA->alias(StoreLoc, CandLoc) != llvm::AliasResult::NoAlias)
           Kill.insert(Candidate);
       }
@@ -365,11 +367,10 @@ private:
 
 } // namespace
 
-InterUninitVariablesResult
-runInterElimUninitVariables(llvm::Function *Entry, llvm::AAResults *AA,
-                            llvm::AssumptionCache *AC, llvm::DominatorTree *DT,
-                            const dataflow::controlflow::InterCFG *ICF) {
-  InterUninitVariablesResult Out;
+InterUninitializedVariablesResult runInterElimUninitializedVariables(
+    llvm::Function *Entry, llvm::AAResults *AA, llvm::AssumptionCache *AC,
+    llvm::DominatorTree *DT, const dataflow::controlflow::InterCFG *ICF) {
+  InterUninitializedVariablesResult Out;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Out;
   }
@@ -381,9 +382,10 @@ runInterElimUninitVariables(llvm::Function *Entry, llvm::AAResults *AA,
     ICF = OwnedICF.get();
   }
 
-  InterElimUninitVariablesProblem Problem(Entry, AA, AC, DT, ICF);
-  InterEliminationSolver<InterUninitializedVariablesAnalysisTypes,
-                         kDefaultInterElimUninitVariablesCallStringLength>
+  InterElimUninitializedVariablesProblem Problem(Entry, AA, AC, DT, ICF);
+  InterEliminationSolver<
+      InterUninitializedVariablesAnalysisTypes,
+      kDefaultInterElimUninitializedVariablesCallStringLength>
       Solver(Problem);
   auto Status = Solver.solve();
   if (const auto *Res = Solver.getResults()) {
@@ -393,11 +395,11 @@ runInterElimUninitVariables(llvm::Function *Entry, llvm::AAResults *AA,
   return Out;
 }
 
-InterUninitVariablesResult runInterSummaryElimUninitVariables(
+InterUninitializedVariablesResult runInterSummaryElimUninitializedVariables(
     llvm::Function *Entry, llvm::AAResults *AA, llvm::AssumptionCache *AC,
     llvm::DominatorTree *DT, const dataflow::controlflow::InterCFG *ICF,
     PathSummaryEquationOptions Options) {
-  InterUninitVariablesResult Out;
+  InterUninitializedVariablesResult Out;
   if (Entry == nullptr || Entry->isDeclaration()) {
     return Out;
   }
@@ -409,9 +411,10 @@ InterUninitVariablesResult runInterSummaryElimUninitVariables(
     ICF = OwnedICF.get();
   }
 
-  InterElimUninitVariablesProblem Problem(Entry, AA, AC, DT, ICF);
-  ForwardInterSummarySolver<InterUninitializedVariablesAnalysisTypes,
-                            kDefaultInterElimUninitVariablesCallStringLength>
+  InterElimUninitializedVariablesProblem Problem(Entry, AA, AC, DT, ICF);
+  ForwardInterSummarySolver<
+      InterUninitializedVariablesAnalysisTypes,
+      kDefaultInterElimUninitializedVariablesCallStringLength>
       Solver(Problem, Options);
   auto Status = Solver.solve();
   if (const auto *Res = Solver.getResults()) {

@@ -5,7 +5,8 @@
 namespace elimination {
 namespace {
 
-class ElimReachableProblem : public LLVMIntraEliminationProblem<ReachableFact, ReachabilityDomain> {
+class ElimReachableProblem
+    : public LLVMIntraEliminationProblem<ReachableFact, ReachabilityDomain> {
 public:
   explicit ElimReachableProblem(llvm::Function *F)
       : LLVMIntraEliminationProblem<ReachableFact, ReachabilityDomain>(F) {}
@@ -20,15 +21,15 @@ public:
 
 } // namespace
 
-ReachableResult runIntraElimReachable(llvm::Function *F,
-                                      EliminationOptions Opts) {
+ReachabilityResult runIntraElimReachability(llvm::Function *F,
+                                            EliminationOptions Opts) {
   if (F == nullptr || F->isDeclaration()) {
-    return ReachableResult{};
+    return ReachabilityResult{};
   }
 
   ElimReachableProblem Problem(F);
-  IntraEliminationSolver<LLVMAnalysisTypes<ReachableFact, ReachabilityDomain>> Solver(Problem,
-                                                                      Opts);
+  IntraEliminationSolver<LLVMAnalysisTypes<ReachableFact, ReachabilityDomain>>
+      Solver(Problem, Opts);
   auto Status = Solver.solve();
   auto Out = Solver.getResults();
   Out.setSolveMetadata(Status, Solver.getDiagnostics());
@@ -50,10 +51,10 @@ struct ReachableTranslator {
 };
 } // namespace
 
-ReachableResult runIntraTranslApaReachable(llvm::Function *F,
-                                           EliminationOptions Opts) {
+ReachabilityResult runIntraTranslApaReachability(llvm::Function *F,
+                                                 EliminationOptions Opts) {
   if (F == nullptr || F->isDeclaration()) {
-    return ReachableResult{};
+    return ReachabilityResult{};
   }
 
   // See IntraReachingDefinitions.cpp for the rationale: under EAN/Greedy the
@@ -71,10 +72,8 @@ ReachableResult runIntraTranslApaReachable(llvm::Function *F,
   auto Diag = Solver.getDiagnostics();
 
   ReachableTranslator Tr;
-  auto TT =
-      translapa::foldFillGenKillTimed<
-          LLVMAnalysisTypes<ReachableFact, ReachabilityDomain>>(Problem, Out,
-                                                                Tr);
+  auto TT = translapa::foldFillGenKillTimed<
+      LLVMAnalysisTypes<ReachableFact, ReachabilityDomain>>(Problem, Out, Tr);
   Diag.norm_time_us += TT.extract_us;
   Diag.interp_time_us = TT.fold_us;
   Out.setSolveMetadata(Status, Diag);

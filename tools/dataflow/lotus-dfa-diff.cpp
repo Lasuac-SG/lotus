@@ -41,11 +41,11 @@ static cl::opt<bool> StdoutOpt(
     "stdout",
     cl::desc("Write analysis results to stdout when --out-dir is not set"),
     cl::init(false));
-static cl::opt<std::string> AnalysisOpt(
-    "analysis",
-    cl::desc("Analysis: reaching_defs (default), uninitialized, "
-             "constant_prop, available_exprs, reachable"),
-    cl::init("reaching_defs"));
+static cl::opt<std::string>
+    AnalysisOpt("analysis",
+                cl::desc("Analysis: reaching_defs (default), uninitialized, "
+                         "constant_prop, available_exprs, reachable"),
+                cl::init("reaching_defs"));
 static cl::opt<std::string> ElimMethodOpt(
     "elim-method",
     cl::desc("Elimination solver method: state|adt-simple|adt-delayed"),
@@ -220,8 +220,8 @@ void runElimReachingDefinitions(raw_ostream &OS, const FunctionView &View,
 
 void runElimUninitialized(raw_ostream &OS, const FunctionView &View,
                           const elimination::EliminationOptions &Opts) {
-  auto Res =
-      elimination::runIntraElimUninitVariables(&View.Function, nullptr, Opts);
+  auto Res = elimination::runIntraElimUninitializedVariables(&View.Function,
+                                                             nullptr, Opts);
   lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
     lotus::dataflow_tool::formatValueSet(OS, Res.IN(I), View.ValueToId);
   });
@@ -259,7 +259,7 @@ void runElimAvailableExpressions(raw_ostream &OS, const FunctionView &View,
 
 void runElimReachable(raw_ostream &OS, const FunctionView &View,
                       const elimination::EliminationOptions &Opts) {
-  auto Res = elimination::runIntraElimReachable(&View.Function, Opts);
+  auto Res = elimination::runIntraElimReachability(&View.Function, Opts);
   lotus::dataflow_tool::printInstructionStates(
       OS, View, [&](Instruction *I) { OS << (Res.IN(I) ? "true" : "false"); });
 }
@@ -271,7 +271,7 @@ struct MonoHandler final {
 
 void runMonoReachable(raw_ostream &OS, const FunctionView &View) {
   if (auto Res =
-          mono::runReachableAnalysis(&View.Function, quietMonoDebugConfig()))
+          mono::runIntraMonoReachability(&View.Function, quietMonoDebugConfig()))
     lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
       lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);
     });
@@ -292,7 +292,7 @@ void runMonoConstantPropagation(raw_ostream &OS, const FunctionView &View) {
 }
 
 void runMonoUninitialized(raw_ostream &OS, const FunctionView &View) {
-  if (auto Res = mono::runIntraMonoUninitVariables(&View.Function,
+  if (auto Res = mono::runIntraMonoUninitializedVariables(&View.Function,
                                                    quietMonoDebugConfig()))
     lotus::dataflow_tool::printInstructionStates(OS, View, [&](Instruction *I) {
       lotus::dataflow_tool::formatValueSet(OS, Res->IN(I), View.ValueToId);
