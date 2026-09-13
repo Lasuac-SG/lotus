@@ -129,7 +129,9 @@ bool solveADTSimpleWith(IntraEliminationSolverContext<AnalysisTypesT> &Ctx,
     }
     auto *Leaf = It->second;
     Ctx.Results.ExprTo(N) = Leaf->SimpleExpr;
-    Ctx.Results.IN(N) = Ctx.eval(Leaf->SimpleExpr, Init);
+    if (!Ctx.Opts.EnableEAN) {
+      Ctx.Results.IN(N) = Ctx.eval(Leaf->SimpleExpr, Init);
+    }
   }
   return true;
 }

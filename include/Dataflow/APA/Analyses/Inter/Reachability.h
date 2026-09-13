@@ -23,6 +23,13 @@ InterReachableResult runInterSummaryElimReachable(
     llvm::Function *Entry, const dataflow::controlflow::InterCFG *ICF = nullptr,
     PathSummaryEquationOptions Options = {});
 
+// Modular (E6) variant: builds per-procedure summaries and interprets them with
+// a context-insensitive (functional) fixpoint. Opt-in alternative to the
+// whole-program ForwardInterSummarySolver above.
+InterReachableResult runModularInterReachable(
+    llvm::Function *Entry, const dataflow::controlflow::InterCFG *ICF = nullptr,
+    PathSummaryEquationOptions Options = {});
+
 } // namespace elimination
 
 #endif // DATAFLOW_APA_CLIENTS_LLVM_INTER_REACHABILITY_H_

@@ -14,6 +14,7 @@ set(APA_SOURCES
   Analyses/Intra/Lockset.cpp
   Analyses/Intra/NonNull.cpp
   Analyses/Intra/Sign.cpp
+  Analyses/Intra/IntraAffineEqualities.cpp
   Analyses/Inter/Reachability.cpp
   Analyses/Inter/ConstantPropagation.cpp
   Analyses/Inter/Lockset.cpp

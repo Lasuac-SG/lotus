@@ -2,10 +2,12 @@
 
 #include "Solvers/EGraph/EGraph.h"
 
+#include <deque>
 #include <functional>
 #include <limits>
 #include <optional>
 #include <type_traits>
+#include <unordered_set>
 
 #include <llvm/ADT/SmallVector.h>
 

@@ -34,6 +34,20 @@ public:
   // reducibility assumptions do not hold; in that case we transparently fall
   // back to the generic state-elimination engine.
   SolveStatus solve() {
+    SolveStatus S = solveImpl();
+    // Run a post-optimization pass once after a successful solve, before results
+    // are read. EAN and Greedy are mutually exclusive (EAN takes precedence).
+    if (S != SolveStatus::InvalidProblem) {
+      if (Opts.EnableEAN) {
+        Ctx.applyEAN();
+      } else if (Opts.EnableGreedy) {
+        Ctx.applyGreedy();
+      }
+    }
+    return S;
+  }
+
+  SolveStatus solveImpl() {
     UsedADT = false;
     LastStatus = SolveStatus::Ok;
     Ctx.Diagnostics = {};
